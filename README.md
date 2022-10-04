@@ -2,8 +2,8 @@
  infrastructure
 
 
-=> [VPS SearXNG](./vps searxng/installation.txt)
+=> [VPS SearXNG](./vps%20searxng/installation.txt)
 
-=> [ROCKPro64 NAS](./ROCKPro64 NAS/DietPi.txt)
+=> [ROCKPro64 NAS](./ROCKPro64%20NAS/DietPi.txt)
 
-=> [raspberry pi-hole](./raspberry pi-hole/pi-hole dnscrypt-proxy.txt)
+=> [raspberrypi-hole](./raspberry%20pi-hole/pi-hole%20dnscrypt-proxy.txt)
