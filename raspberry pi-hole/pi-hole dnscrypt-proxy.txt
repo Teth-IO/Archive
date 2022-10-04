@@ -16,7 +16,7 @@ systemctl disable bluetooth
 systemctl disable wpa_supplicant
 -> inet6 en dhcp provoque un bug de raise au demarrage (~5 minute d'attente)
 
-#zram ici car pas de module zswap par défaut sous debian (cat /sys/module/zswap/parameters/enabled = N) :
+#zram ici car pas de module zswap par défaut ici (cat /sys/module/zswap/parameters/enabled = N) :
 sudo apt install zram-tools
 echo -e "ALGO=zstd\nPERCENT=60" | sudo tee -a /etc/default/zramswap
 systemctl reload zramswap.service

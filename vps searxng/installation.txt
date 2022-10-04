@@ -8,7 +8,7 @@ sudo vim /etc/fstab
         /swapfile none swap sw 0 0
         tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0
 
-zram ici car pas de module zswap par défaut sous debian (/sys/module/zswap/parameters/enabled) :
+zram ici car pas de module zswap par défaut ici (/sys/module/zswap/parameters/enabled) :
 sudo apt install zram-tools
 echo -e "ALGO=zstd\nPERCENT=40" | sudo tee -a /etc/default/zramswap
 systemctl reload zramswap.service
