@@ -1,0 +1,39 @@
+server {
+    # Listens on http
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    ssl_certificate /home/admin/cert.pem;
+    ssl_certificate_key /home/admin/key.pem;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:MozSSL:10m;  # about 40000 sessions
+    ssl_session_tickets off;
+
+    # Your server name
+    server_name searx.example.org ;
+
+    ssl_protocols TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    # If you want to log user activity, comment these
+    access_log /dev/null;
+    error_log  /dev/null;
+
+    location / {
+        uwsgi_pass unix:///usr/local/searxng/run/socket;
+
+        include uwsgi_params;
+
+        uwsgi_param    HTTP_HOST             $host;
+        uwsgi_param    HTTP_CONNECTION       $http_connection;
+
+        # see flaskfix.py
+        uwsgi_param    HTTP_X_SCHEME         $scheme;
+        uwsgi_param    HTTP_X_SCRIPT_NAME    /searxng;
+
+        # see limiter.py
+        uwsgi_param    HTTP_X_REAL_IP        $remote_addr;
+        uwsgi_param    HTTP_X_FORWARDED_FOR  $proxy_add_x_forwarded_for;
+
+    }
+}

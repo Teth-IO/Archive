@@ -1,0 +1,104 @@
+dietpi dashboard
+NFS
+ReadyMedia (dlna, upnp)
+openssh (dropbear ne gère pas le sftp)
+
+########################
+### deprecated : zfs ###
+########################
+
+besoin d'installer le bon headers (pas arm64)
+uname -a
+-> headers de rockchip64
+linux-headers-current-rockchip64
+(apt search montre la version du kernel associé au current headers, même version que le kernel actuellement installé)
+
+installer le zfs, ici de la façon recommander, par le DKMS
+apt install zfsutils-linux zfs-dkms
+
+=> echec de la compilation du dkms alors que le headers et le kernel sont a la même version
+
+### zpool create mypool mirror /dev/sda /dev/sdb
+### => monte automatiquement le pool sur /mypool
+### zpool status -> donne les info sur l'état du RAID
+###
+### zfs create -o encryption=aes-256-gcm -o keyformat=passphrase poolname/newdataset
+### => ne chiffre qu'un dossier (dataset) et non un pool
+### => a chaque démarrage il faut :
+###     -> zfs load-key poolname/newdataset
+###     -> zfs mount poolname/newdataset
+
+#############
+### btrfs ###
+#############
+
+apt install btrfs-progs
+mkfs.btrfs -L data -d raid1 -m raid1 -f /dev/sda /dev/sdb
+mkdir /data
+mount /dev/sda /data
+
+    monitoring
+
+btrfs filesystem usage /data
+btrfs device stats /data
+
+    montage automatique
+
+dietpi-drive_manager (rajoute l'entrée du disque monté manuellement automatiquement dans fstab)
+
+###########
+### NFS ###
+###########
+
+/etc/exports
+
+    config par défaut
+
+nfs : secure,ro,sync,wdelay,hide,subtree_check
+acl : no_root_squash
+
+    on explicite :
+
+/data 192.168.1.0/24(insecure,rw,async,no_subtree_check,all_squash)
+
+############
+### dlna ###
+############
+
+par ReadyMedia, pour les appareils compatible et eviter le NFS sur eux
+modifier /etc/minidlna.conf pour conf les dossier media
+A for audio, V for video, P for pictures and PV for both pictures and videos
+
+#############
+### rsync ###
+#############
+
+rsync fonctionne par ssh par defaut
+cron job?
+rsync -avzu ./source root@192.168.1.201:/data/Backup --delete --chmod=700
+
+--delete fait en sorte de supprimer les fichiers présents à la destination qui ont été supprimer à la source
+-a correspond au mode archive, mode qui comprend les options rlptgoD (recursif, copie des symlinks, preservation des permissions, preservation des dates de mofis, preservation des groupes, même propriétaire, copie les fichiers devices, copie les fichiers spéciales)
+=> besoin de changer les permsission, archives en 700
+-v correspond au mode verbose
+-z compression des fichiers pendant le transfert
+-u update, skip les fichiers plus récents chez le destinataire
+--chmod=700 fait en sorte de n'accorder l'accès qu'a root, comme la backup est sur le RAID1 integralement accessible en NFS anonyme
+
+######################
+### web monitoring ###
+######################
+
+dietpi-dashboard
+
+systemctl (start, enable, restart, disable, stop) dietpi-dashboard
+
+autres :
+
+-> ZRAM car même si sous dietpi le zswap est activer on préfaire éviter du swap sur une carte sd (cat /sys/module/zswap/parameters/enabled = Y)
+sudo apt install zram-tools
+echo -e "ALGO=zstd\nPERCENT=60" | sudo tee -a /etc/default/zramswap
+systemctl reload zramswap.service
+(redemarrer sinon)
+
+=> checker les priorité entre le swap et la zram : cat /proc/swaps

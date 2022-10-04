@@ -1,0 +1,41 @@
+chiffrement des disques
+rsync -> mega
+NFS (accès libre par le réseau) -> transfert jeux/film/image
+minidlna -> dlna/upnp pour lire les films depuis le nas
+torrenting pour télécharger depuis le nas
+raid 1 sur les 2 disk
+smtpd -> mail avec monitoring du raid/disques
+
+/CloudLocalBackup => rsync
+/Stock => NFS/dlnas/torrent
+
+https://doc.huc.fr.eu.org/fr/sys/openbsd/omv-it-nas/
+
+voir pour zram, zswap et swap
+
+##########
+# NetBSD #
+##########
+
+ffs2 -> pour les disques de 2to
+a tmpfs
+Raidframe pour le RAID
+disk encryption with CGD (Crypto-Graphic Disk system)
+
+###########
+# freebsd #
+###########
+
+UFS sur la carte Sd
+raid et chiffrement par le framework GEOM (GELI et pas GBDE) ou par ZFS
+a tmpfs
+a ZFS
+=> zfs mirroir chiffré. Consommera trop de RAM ?
+
+###########
+# OpenBSD #
+###########
+
+FFSv2 -> pour les disques de 2to
+pas de tmpfs :(
+encryption & raid par bioctl

@@ -1,0 +1,53 @@
+sudo apt install dig vim htop dnsutils nginx
+
+sudo dd if=/dev/zero of=/swapfile bs=1M count=1024 status=progress
+sudo chmod 600 /swapfile
+sudo mkswap -U clear /swapfile
+sudo swapon /swapfile
+sudo vim /etc/fstab
+        /swapfile none swap sw 0 0
+        tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0
+
+zram ici car pas de module zswap par défaut sous debian (/sys/module/zswap/parameters/enabled) :
+sudo apt install zram-tools
+echo -e "ALGO=zstd\nPERCENT=40" | sudo tee -a /etc/default/zramswap
+systemctl reload zramswap.service
+
+=> checker les priorité entre le swap et la zram : cat /proc/swaps
+
+tmpfs:
+dans fstab
+tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0
+
+dans fstab remplacer les "rw, relatime" par "noatime"
+
+dnscrypt-proxy:
+wget https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/2.1.2/dnscrypt-proxy-linux_x86_64-2.1.2.tar.gz
+tar -xzf dnscrypt-proxy-linux_x86_64-2.1.2.tar.gz
+mv linux-x86_64 dnscrypt-proxy
+cd dnscrypt-proxy
+cp example-dnscrypt-proxy.toml dnscrypt-proxy.toml
+vim dnscrypt-proxy.toml
+	## on configure listen en localhost ipv6 + ipv6 true + DNSCrypt + DNSSEC + non-logging et non-blocking
+	## virer le doh
+sudo ./dnscrypt-proxy -service install
+sudo systemctl start dnscrypt-proxy
+sudo systemctl enable dnscrypt-proxy
+
+modifier dhclient.conf (no dns)
+resolv.conf
+        nameserver ::1
+        nameserver 127.0.0.1
+
+congestion tcp bbr :
+sudo vim /etc/sysctl.conf
+        net.core.default_qdisc=fq
+        net.ipv4.tcp_congestion_control=bbr
+sudo sysctl -p
+
+git clone https://github.com/searxng/searxng.git searxng
+cd searxng
+sudo -H ./utils/searxng.sh install all
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
+sudo openssl rsa -in key.pem -out keye.pem

@@ -1,0 +1,64 @@
+#config de base
+raspberry os lite
+sudo passwd root
+su root
+apt update && upgrade
+apt install vim
+vim /etc/ssh/sshd-config
+	permit root login yes
+vim /etc/network/interfaces
+	auto eth0
+	iface eth0 inet static
+		adddress 192.168.1.200/24
+		gateway 192.168.1.254
+systemctl disable dhcpcd
+systemctl disable bluetooth
+systemctl disable wpa_supplicant
+-> inet6 en dhcp provoque un bug de raise au demarrage (~5 minute d'attente)
+
+#zram ici car pas de module zswap par défaut sous debian (cat /sys/module/zswap/parameters/enabled = N) :
+sudo apt install zram-tools
+echo -e "ALGO=zstd\nPERCENT=60" | sudo tee -a /etc/default/zramswap
+systemctl reload zramswap.service
+(redemarrer sinon)
+
+=> checker les priorité entre le swap et la zram : cat /proc/swaps
+
+#tmpfs
+dans fstab
+tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0
+
+#dans fstab remplacer les "rw, relatime" par "noatime"
+
+#ipv6
+#ipv6 mac = mac to ipv6 (ex: 9a:02:79:45:ce:d2 -> fe80::9802:79ff:fe45:ced2. on vire fe80::et on rentre le prefix du reseau a la place ex : 2a02:810a:8240:a2c:)
+#chez nous: prefix 2a01:e0a:ec:4ab0: suffix e65f:01ff:fe8b:8ac9 = OUI
+vim /etc/network/interfaces
+	iface eth0 inet6 static
+        address 2a01:e0a:ec:4ab0:e65f:01ff:fe8b:8ac9/64
+
+#Pi-hole
+curl -sSL https://install.pi-hole.net | bash
+
+une fois l'installation fini noter le mdp et se connecter à l'interfaces web
+
+aller dans group management
+la partir Adlist permet d'ajouter des listes de nom de domaine a bloquer
+=> ici pour des listes https://firebog.net/
+
+#DNSCrypt
+cd /opt
+wget https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/2.1.1/dnscrypt-proxy-linux_arm64-2.1.1.tar.gz
+(voir https://github.com/DNSCrypt/dnscrypt-proxy/releases pour la dernière release)
+tar -xzf dnscrypt-proxy-linux_arm64-2.1.1.tar.gz
+mv linux-arm dnscrypt-proxy
+cd dnscrypt-proxy
+cp example-dnscrypt-proxy.toml dnscrypt-proxy.toml
+vim dnscrypt-proxy.toml
+	listen_addresses = ['(localhost ipv6):5300'] (comme 53 est deja pris par pi-hole)
+	## on configure DNSCrypt + DNSSEC + non-logging et non-blocking
+./dnscrypt-proxy -service install
+systemctl start dnscrypt-proxy
+systemctl enable dnscrypt-proxy
+
+-> la suite https://github.com/pi-hole/pi-hole/wiki/DNSCrypt-2.0
