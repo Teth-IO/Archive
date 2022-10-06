@@ -15,7 +15,7 @@ truc en plus dessus :
 
 NAS DIY avec la ROCKPro64 sous Dietpi :
  - RAID 1 par btrfs
- - NFS
+ - Rclone SFTP
  - DLNA/UPnP
  - Rsync
  - web monitoring
