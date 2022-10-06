@@ -46,9 +46,9 @@ btrfs device stats /data
 
 dietpi-drive_manager (rajoute l'entrée du disque monté manuellement automatiquement dans fstab)
 
-###########
-### NFS ###
-###########
+########################
+### deprecated : NFS ###
+########################
 
 /etc/exports
 
@@ -60,6 +60,14 @@ acl : no_root_squash
     on explicite :
 
 /data 192.168.1.0/24(insecure,rw,async,no_subtree_check,all_squash)
+
+####################
+### rclone(SFTP) ###
+####################
+
+rclone config
+
+rclone mount nas:/data X:
 
 ############
 ### dlna ###
