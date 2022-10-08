@@ -83,7 +83,7 @@ A for audio, V for video, P for pictures and PV for both pictures and videos
 
 rsync fonctionne par ssh par defaut
 cron job?
-rsync -avzu ./source root@192.168.1.201:/data/Backup --delete --chmod=700
+rsync -avzu ./source root@192.168.1.201:/data/Backup --delete
 
 --delete fait en sorte de supprimer les fichiers présents à la destination qui ont été supprimer à la source
 -a correspond au mode archive, mode qui comprend les options rlptgoD (recursif, copie des symlinks, preservation des permissions, preservation des dates de mofis, preservation des groupes, même propriétaire, copie les fichiers devices, copie les fichiers spéciales)
@@ -91,7 +91,6 @@ rsync -avzu ./source root@192.168.1.201:/data/Backup --delete --chmod=700
 -v correspond au mode verbose
 -z compression des fichiers pendant le transfert
 -u update, skip les fichiers plus récents chez le destinataire
---chmod=700 fait en sorte de n'accorder l'accès qu'a root, comme la backup est sur le RAID1 integralement accessible en NFS anonyme
 
 ######################
 ### web monitoring ###
