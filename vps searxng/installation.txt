@@ -45,9 +45,15 @@ sudo vim /etc/sysctl.conf
         net.ipv4.tcp_congestion_control=bbr
 sudo sysctl -p
 
+searxng:
 git clone https://github.com/searxng/searxng.git searxng
 cd searxng
 sudo -H ./utils/searxng.sh install all
 
+clefs ssl :
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
 sudo openssl rsa -in key.pem -out keye.pem
+
+mise a jour de searxng:
+-> dans le dossier cloné de git
+sudo -H ./utils/searxng.sh instance update
