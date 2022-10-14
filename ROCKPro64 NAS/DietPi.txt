@@ -2,6 +2,7 @@ dietpi dashboard
 NFS
 ReadyMedia (dlna, upnp)
 openssh (dropbear ne gère pas le sftp)
+Syncthing 
 
 ########################
 ### deprecated : zfs ###
