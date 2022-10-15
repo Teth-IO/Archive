@@ -1,6 +1,7 @@
-dietpi dashboard
-NFS
-ReadyMedia (dlna, upnp)
+dietpi dashboard -> 5252
+syncthing -> 8384
+ReadyMedia (dlna, upnp) -> 8200
+qbittorrent -> 1340
 openssh (dropbear ne gère pas le sftp)
 
 ########################
@@ -108,4 +109,11 @@ echo -e "ALGO=zstd\nPERCENT=60" | sudo tee -a /etc/default/zramswap
 systemctl reload zramswap.service
 (redemarrer sinon)
 
-=> checker les priorité entre le swap et la zram : cat /proc/swaps
+=> pour checker les priorité entre le swap et la zram : cat /proc/swaps
+
+##############################
+## qbittorrent et syncthing ##
+##############################
+
+juste a vérifier les ACL aux dossier utilisé par ses services
+-> pour syncthing pas mis de vérification périodique de changement car le NAS ne fait que récupéré les indos des pair et les redistribuer, pas besoin de réveiller les disques du NAS pour rien
