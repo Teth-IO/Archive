@@ -3,6 +3,7 @@ syncthing -> 8384
 ReadyMedia (dlna, upnp) -> 8200
 qbittorrent -> 1340
 openssh (dropbear ne gère pas le sftp)
+Syncthing 
 
 ########################
 ### deprecated : zfs ###
