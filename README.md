@@ -2,7 +2,7 @@
 
 => [VPS SearXNG](./vps%20searxng/installation.txt)
 
-Pour profiter d'un métamoteur de recherche et pour ne pas utilisé directment google.
+Métamoteur de recherche, permet de choisir ce que l'on veut comme outil de recherche. 
 
 truc en plus dessus :
  - swapfile
@@ -25,7 +25,7 @@ tmpfs par défaut
 
 => [raspberrypi-hole](./raspberry%20pi-hole/pi-hole%20dnscrypt-proxy.txt)
 
-Serveur DNS menteur de la maison, redirige les requête sur DNScrypt Proxy :
+Serveur DNS menteur, redirige les requête sur DNScrypt Proxy :
  - Zram
  - tmpfs
  - DNScrypt Proxy
