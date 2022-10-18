@@ -21,8 +21,7 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - web monitoring
  - Syncthing
  - Zram
- - tmpfs
- - IPv6 statique
+ipv6 par dhcp et tmpfs par défaut
 
 => [raspberrypi-hole](./raspberry%20pi-hole/pi-hole%20dnscrypt-proxy.txt)
 
