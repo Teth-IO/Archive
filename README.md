@@ -29,3 +29,12 @@ Serveur DNS menteur, redirige les requête sur DNScrypt Proxy :
  - Zram
  - tmpfs
  - DNScrypt Proxy
+
+=> [OpenWrt](./no%20box%20OpenWrt/OpenWrt.txt)
+
+Remplacement de la freebox mini 4k par OpenWrt sur un Mikrotik hEX s.
+Internet en dual stack fonctionnel.
+OpenWrt est tellement cali qu'il n'y a que quelque ajustement a faire :
+ - routage static vers la wan pour l'IPv4 (l'IPv6 marche sans)
+ - inclure wan4 dans la zone wan du pare-feu
+ - une option dans les DHCP pour ajouter les DNS interne
