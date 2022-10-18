@@ -21,12 +21,11 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - web monitoring
  - Syncthing
  - Zram
-ipv6 par dhcp et tmpfs par défaut
+tmpfs par défaut
 
 => [raspberrypi-hole](./raspberry%20pi-hole/pi-hole%20dnscrypt-proxy.txt)
 
 Serveur DNS menteur de la maison, redirige les requête sur DNScrypt Proxy :
- - IPv6 statique
  - Zram
  - tmpfs
  - DNScrypt Proxy
