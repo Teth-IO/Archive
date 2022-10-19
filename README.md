@@ -29,6 +29,7 @@ Serveur DNS menteur, redirige les requête sur DNScrypt Proxy :
  - Zram
  - tmpfs
  - DNScrypt Proxy
+ - IPv6 statique
 
 => [OpenWrt](./no%20box%20OpenWrt/OpenWrt.txt)
 
