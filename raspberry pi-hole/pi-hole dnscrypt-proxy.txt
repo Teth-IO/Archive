@@ -61,3 +61,8 @@ systemctl start dnscrypt-proxy
 systemctl enable dnscrypt-proxy
 
 -> la suite https://github.com/pi-hole/pi-hole/wiki/DNSCrypt-2.0
+
+#pour rafraichir le dashboard 
+service pihole-FTL stop
+mv /etc/pihole/pihole-FTL.db pihole-FTL.db.old
+service pihole-FTL start
