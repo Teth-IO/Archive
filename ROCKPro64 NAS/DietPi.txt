@@ -4,7 +4,6 @@ ReadyMedia (dlna, upnp) -> 8200
 qbittorrent -> 1340
 openssh (dropbear ne gère pas le sftp)
 
-
 ########################
 ### deprecated : zfs ###
 ########################
@@ -118,3 +117,6 @@ systemctl reload zramswap.service
 
 juste a vérifier les ACL aux dossier utilisé par ses services
 -> pour syncthing pas mis de vérification périodique de changement car le NAS ne fait que récupéré les indos des pair et les redistribuer, pas besoin de réveiller les disques du NAS pour rien
+
+Versioning -> trash can et nettoyage après 30j
+avancé -> watch for change, rescan après 3600s, dossier en send & receive, minimum free disk de 1%
