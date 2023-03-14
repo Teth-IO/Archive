@@ -4,7 +4,7 @@
 
 Métamoteur de recherche, permet de choisir ce que l'on veut comme outil de recherche. 
 
-truc en plus dessus :
+Sur un debian truc en plus dessus :
  - swapfile
  - Zram
  - tmpfs
@@ -25,7 +25,7 @@ tmpfs par défaut
 
 => [raspberrypi-hole](./raspberry%20pi-hole/pi-hole%20dnscrypt-proxy.txt)
 
-Serveur DNS menteur, redirige les requête sur DNScrypt Proxy :
+Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScrypt Proxy :
  - Zram
  - tmpfs
  - DNScrypt Proxy
