@@ -1,0 +1,153 @@
+###################
+#### Sécurité #####
+###################
+
+Logiciel -> App UWP : sandboxing par AppContainer
+Matériel : Sécurité basé sur la virtualisation
+
+#Matériel
+vérifier les features de sécurité de windows ->
+    protection contre les virus et menaces :
+        Paramètres de protection contre les virus et menaces -> activer tout
+        protection contre les ransomware :
+            Dispositif d'accès contrôlée aux dossiers (CFA) -> activer, nécessitera de whitelister des app
+    Contrôle des applications et du navigateur :
+        Protection fondée sur la réputation -> tout activer, désactiver en cas de problème
+        Navigation isolée -> installe windows Defender application guard (WDAG), permet une navigation isolée par edge -> voir hardening de edge
+        Exploit protection (WDEG (Windows Defender Exploit Guard)) -> tout mettre sur activé dans paramètre système
+    Sécurité des appareils :
+        Isolation du noyau :
+            intégrité de la mémoire (HVCI) -> Activée. Peut rentrer en conflit avec certains drivers
+            protection de l'autorité de sécurité locale (lsass.exe) -> activer
+            liste de blocage des pilotes vulnérables de ms -> apparemment pas mis a jour donc sert à rien
+sandboxing de defender :
+   PS admin : setx /M MP_FORCE_USE_SANDBOX 1
+   doit démarrer MsMpEngCP.exe au prochain démarrage (onglet détail du gestionnaire des taches)
+prévention de l’exécution des données (DEP) : (par défaut ne s'applique au processus windows)
+    Système -> paramètres avancés du système -> performance -> prévention de l'execution des données -> sur toutes la app (peut necessiter whitelister des app)
+    Au prochain démarrage on peut voir dans les paramètre de boot (bcdedit) une entré nx OptOut
+CET (Control-flow Enforcement Technology) : nécessite l'application est été compilé avec /CETCOMPAT. On l'active au cas par cas dans Defender -> exploit protection paramètre du programme : Protection des piles appliquées par le matériel (CPU)
+    -> on peut tester si l'application est comptabile on peux la lancé avec intel SDE et le flag -cet (exemple : ./sde -cet -- firefox)
+    -> par défaut, une fois l'application ajouté au cet, celui-ci ne s'applique qu'aux modules compatibles mais c'est suffisant pour casser certaines app ou les programmes enfants de cette app -> preque aucune app n'est compatible
+
+#Si applicable :
+Contrôle intelligent des applications (Smart App Control) -> que depuis une installation propre de windows (a voir)
+firmware protection (system guard secure launch)-> Nécessite processeur vpro + carte mère vpro + https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-defender-system-guard/system-guard-secure-launch-and-smm-protection
+Memory access protection (Kernel DMA Protection) -> n'apparait pas. prérequis ?
+
+#Au niveau des stratégies de groupes
+Computer Configuration > Administrative Templates > System > Device Guard
+    Activer la sécurité basée sur la virtualisation -> Activée
+        Platform security level : Secure boot et DMA
+        VBS pour intégrité du code : activé avec verouillage UEFI
+        Demander la table des attributs de mémoire UEFI
+        Credential guard : activé avec verouillage UEFI
+        lancement sécurisé : activé
+        Protection de la pile appliquée par le matériel en mode noyau : activé en mode de mise en conformité
+Computer Configuration > Administrative Templates > System > Kernel DMA protection
+    Stratégie d'énumération pour les appareils externes compatibles DMA incompatibles avec le remappage DMA -> Activé : bloquer tout
+Computer Configuration > Administrative Templates > System > Autorité de sécurité locale
+    Configurer LSASS pour qu'io s'execute en tant que processus protégé -> Activé : Activé avec verrouillage UEFI
+
+=> Faire un tour dans msinfo32.exe pour s'assurer de l'application des paramètres :
+    secure boot -> activé
+    protection DMA du noyau -> si applicable, activé
+    vbs (services en cours d'execution) -> credential guard, intégrité du code appliquée par l'hyperviseur, lancement sécurisé(si applicable), protection des piles appliquées par le matériel
+
+=> faire un tour dans le gestionnaire des tâches -> détail
+    ajouter la colonne prévention de l'exécution des données pour voir l'application du DEP
+    ajouter la colonne protection des piles appliquées par le matériel pour voir l'application du CET
+
+#supplément (STIG + CIS + Microsoft Security Baselines) :
+=> Mettre les .admx et pack dans langue dans C:\Windows\PolicyDefinitions
+Structured Exception Handling Overwrite Protection (SEHOP)
+    Computer Configuration >> Administrative Templates >> MS Security Guide
+        Enable Structured Exception Handling Overwrite Protection (SEHOP) -> activé
+Les autoplay :
+    Computer Configuration >> Administrative Templates >> Windows Components >> Stratégie d'exécution automatique
+        Désactiver l'exécution automatique -> activé : tout les lecteurs
+        Interdire l'execution automatique pour les périphériques autres que ceux du volume -> activé
+        Définir le comportement par défaut d'Autorun -> activé : n'exécuter aucune commande autorun
+Empêcher les exceptions pour explorer :
+    Computer Configuration >> Administrative Templates >> Windows Components >> Explorateur de fichier
+        Désactiver la prévention de l'exécution des donées pour l'exploreur -> désactiver (DEP)
+        Désactiver le mode protégé du protocole noyau -> Désactiver
+Activer defender SmartScreen
+    Computer Configuration >> Administrative Templates >> Windows Components >> Explorateur de fichier
+        Configurer Windows Defender SmartScreen  -> Activer : avertir
+Télémétrie :
+    Computer Configuration >> Administrative Templates >> Windows Components >> Data Collection and Preview Builds
+        Autoriser les données de diagnostic -> désactiver
+Enregistrement et jeux Windows :
+    Computer Configuration >> Administrative Templates >> Windows Components >> Enregistrement et diffusion de jeux Windows
+        Activer ou désactiver Enregistrement et diffusion de jeux Windows -> désactiver
+antimalware à lancement anticipé :
+    Computer Configuration >> Administrative Templates >> System >> logiciel anti-programme malveillant à lancement anticipé
+        stratégie d'initialisation des pilotes de démrrage -> activé : Bons, inconnus et mauvais mais critiques
+désactiver le téléchargement des listes de fournisseurs pour les Assistants Publication de sites Web et Commande en ligne
+    Computer Configuration >> Administrative Templates >> System >> Gestion de la communication internet >> Paramètres de communication internet
+        Désactiver le téléchargement à partir d'internet pour les assistants Publications de sites web et commande en ligne -> activé
+source routing :
+    Computer Configuration >> Administrative Templates >> MSS (Legacy)
+        MSS: (DisableIPSourceRouting IPv6) IP source routing protection level (protects against packet spoofing) -> activé : Highest protection, source routing is completely disabled
+        MSS: (DisableIPSourceRouting) IP source routing protection level (protects against packet spoofing) -> activé : Highest protection, source routing is completely disabled
+Wifi sense :
+    Computer Configuration >> Administrative Templates >> Network >> Service de réseau local sans fil -> paramètres de réseau local sans fil
+        Autoriser Windows à se connecter automatiquement aux points d'accès ouverts suggérés, aux réseaux partagés par mes contacts, aux points d'accès offrant des services payant -> désactiver
+Expérience consommateur de windows :
+    Computer Configuration >> Administrative Templates >> Windows Components >> contenu cloud
+        désactiver les expériences consommateurs de Microsoft -> activé
+Autorisé le compte microsoft à être facultatif pour les app modernes (uwp) :
+    Computer Configuration >> Administrative Templates >> Windows Components >> exécution de l'application
+        Autoriser les comptes microsoft à être facultatifs -> activé
+ICMP redirect :
+    Configuration >> Administrative Templates >> MSS (Legacy)
+        MSS: (EnableICMPRedirect) Allow ICMP redirects to override OSPF generated routes -> désactivé
+Ignorer les release request de NetBIOS :
+    Computer Configuration >> Administrative Templates >> MSS (Legacy)
+        MSS: (NoNameReleaseOnDemand) Allow the computer to ignore NetBIOS name release requests except from WINS servers -> activé
+désactivation du Internet Router Discovery Protocol
+    Configuration >> Administrative Templates >> MSS (Legacy)
+        MSS: (PerformRouterDiscovery) Allow IRDP to detect and configure Default Gateway addresses (could lead to DoS) -> désactivé
+LLMNR et NetBios :
+    Computer Configuration >> Administrative Templates >> Réseau >> Client DNS
+        Désactiver la résolution de noms multidiffusion -> activé
+        Configurer les paramètres NetBios -> activé : désactiver la résolution de nom NetBIOS
+Windows spotlight et à la une :
+    User Configuration >> Windows Components >> Cloud Content
+        Ne pas suggérer de contenu tiers dans windows à la une -> activé
+        Désactiver toutes les fonctionnalités windows à la une -> activé
+3rd parties :
+    Computer Configuration\Policies\Administrative Templates\WindowsComponents\Widgets
+        autoriser les widgets -> désactivé
+
+#Mention :
+network protection (https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/network-protection?view=o365-worldwide) : protection basé sur la réputation des domaines. Sécurité relatives, dépend de la qualité de base de donnée de microsoft. Même logique pour la réputation des drivers, des PUA et du Smart App Control
+BitLocker Countermeasures (https://learn.microsoft.com/en-us/windows/security/information-protection/bitlocker/bitlocker-countermeasures)
+XFG, une évolution du CFG -> aucune idée de comment l'acitver -> monitoeing en ajoutant la colonne protection du flux de contrôle dans le gestionnaire des tâches -> détail
+
+#fonctionnalités
+Virer Windows PowerShell 2.0
+s'assurer que les services TCP/IP simplifié & SMB 1.0 ne sont pas installés
+
+#Logiciel
+
+UWP :
+Par le Store ou https://store.rg-adguard.net/ :
+un uwp créer un dossier dans C:\Users\*username*\AppData\Local\Packages
+L'application est installé dans C:\Program Files\WindowsApps
+-> changer le propritaire du dossier pour pouvoir le manipuler
+penser à supprimer les dossier inutilisés (après désinstallation)
+    pour les uwp sans extension installer avec PS : add-appxpackage
+
+application classique :
+par winget
+
+####################
+#### networking ####
+####################
+
+utilisation de dnssec proxy
+
+hardening firefox :
+-> voir le fichier
