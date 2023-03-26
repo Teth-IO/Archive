@@ -39,3 +39,10 @@ Une fois les interfaces fonctionnels il n'y a que quelques ajustements à faire 
  - routage static vers la wan pour l'IPv4 (l'IPv6 marche sans)
  - inclure wan4 dans la zone wan du pare-feu
  - une option dans les DHCP pour ajouter les DNS interne
+
+ => [Windows 11 hardened Workstation](./windows%2011%20hardened%20workstation/windows%2011%20hardening.txt)
+
+ Renforcement de windows :
+ - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
+ - Un contrôle des fonctionnalités avec les GP
+ - Au niveau des application avec une préférence pour les UWP qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
