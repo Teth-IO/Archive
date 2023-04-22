@@ -124,7 +124,7 @@ Windows spotlight et à la une :
 #Mention :
 network protection (https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/network-protection?view=o365-worldwide) : protection basé sur la réputation des domaines. Sécurité relatives, dépend de la qualité de base de donnée de microsoft. Même logique pour la réputation des drivers, des PUA et du Smart App Control
 BitLocker Countermeasures (https://learn.microsoft.com/en-us/windows/security/information-protection/bitlocker/bitlocker-countermeasures)
-XFG, une évolution du CFG (control flow guard | protection du flux de controle) -> aucune idée de comment l'acitver -> monitoring en ajoutant la colonne protection du flux de contrôle dans le gestionnaire des tâches -> détail
+XFG, une évolution du CFG (control flow guard | protection du flux de controle) -> n'est pas encore dispo mais monitoring deja possible en ajoutant la colonne protection du flux de contrôle dans le gestionnaire des tâches -> détail
 
 #fonctionnalités
 Virer Windows PowerShell 2.0
