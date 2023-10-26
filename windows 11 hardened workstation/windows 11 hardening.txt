@@ -149,5 +149,5 @@ par winget
 
 utilisation de dnssec proxy
 
-hardening firefox :
--> voir le fichier
+hardening firefox et edge :
+-> voir les fichier
