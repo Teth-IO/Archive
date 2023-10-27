@@ -1,5 +1,6 @@
 #config de base
 raspberry os lite
+
 sudo passwd root
 su root
 apt update && upgrade
@@ -47,15 +48,24 @@ la partir Adlist permet d'ajouter des listes de nom de domaine a bloquer
 
 #DNSCrypt
 cd /opt
-wget https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/2.1.1/dnscrypt-proxy-linux_arm64-2.1.1.tar.gz
+wget https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/2.1.5/dnscrypt-proxy-linux_arm64-2.1.5.tar.gz
 (voir https://github.com/DNSCrypt/dnscrypt-proxy/releases pour la dernière release)
-tar -xzf dnscrypt-proxy-linux_arm64-2.1.1.tar.gz
+tar -xzf dnscrypt-proxy-linux_arm64-2.1.5.tar.gz 
 mv linux-arm dnscrypt-proxy
 cd dnscrypt-proxy
 cp example-dnscrypt-proxy.toml dnscrypt-proxy.toml
 vim dnscrypt-proxy.toml
-	listen_addresses = ['(localhost ipv6):5300'] (comme 53 est deja pris par pi-hole)
-	## on configure DNSCrypt + DNSSEC + non-logging et non-blocking
+	listen_addresses = ['[::]:5300'] (comme 53 est deja pris par pi-hole)
+	## on configure ipv6_servers + DoH (pour ECH) + DNSSEC + non-logging et non-blocking
+	ipv4_servers = true
+	ipv6_servers = true
+	dnscrypt_servers = false
+	doh_servers = true
+	odoh_servers = false
+	require_dnssec = true
+	require_nolog = true
+	requiere_nofilter = true
+
 ./dnscrypt-proxy -service install
 systemctl start dnscrypt-proxy
 systemctl enable dnscrypt-proxy
