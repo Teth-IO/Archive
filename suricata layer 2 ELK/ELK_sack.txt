@@ -1,0 +1,98 @@
+https://www.elastic.co/guide/en/elasticsearch/reference/8.10/rpm.html#rpm-repo
+
+rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+cat << EOF > /etc/yum.repos.d/elasticsearch.repo
+[elasticsearch]
+name=Elasticsearch repository for 8.x packages
+baseurl=https://artifacts.elastic.co/packages/8.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=0
+autorefresh=1
+type=rpm-md
+EOF
+
+dnf install --enablerepo=elasticsearch elasticsearch
+
+noter le elastic built-in superuser password : 2Y8tGJOgqQ8Hbh_UBtB2
+
+vim /etc/elasticsearch/elasticsearch.yml
+-> server.host: "IP(pour joindre bdd)"
+ajouter "verification_mode: none" a "xpack.security.http.ssl" et "xpack.security.http.ssl"
+ajouter discovery.type: single-node
+commenter 'cluster.initial_master_nodes: ["localhost"]'
+
+systemctl start elasticsearch.service
+systemctl enable elasticsearch
+
+cd /usr/share/elasticsearch/bin/
+./elasticsearch-reset-password -u kibana_system
+noter le mdp kibana_system : ClVcHr=DzeZvhxkI=z13
+
+cat << EOF > /etc/yum.repos.d/kibana.repo
+[kibana-8.x]
+name=Kibana repository for 8.x packages
+baseurl=https://artifacts.elastic.co/packages/8.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+EOF
+
+dnf install kibana
+
+cd /usr/share/kibana/bin/
+./kibana-encryption-keys generate -q
+
+xpack.encryptedSavedObjects.encryptionKey: f25a954c822d5855dca948ae0560682d
+xpack.reporting.encryptionKey: 315b7f10ee0227dc510be395514bdf0c
+xpack.security.encryptionKey: d7ab3d1a3f39c3bf543d9c4773fa886a
+
+copier l'output dans /etc/kibana/kibana.yml
+
+vim /etc/kibana/kibana.yml
+-> server.host: "IP(pour l'interface web)"
+-> elasticsearch.hosts: ["https://IP:9200"]
+-> elasticsearch.username: "kibana_system"
+-> elasticsearch.password: "pass"
+-> elasticsearch.ssl.verificationMode: none
+
+systemctl start kibana
+systemctl enable kibana
+
+http:IP:5601
+log avec elastic
+
+eventually :
+firewall-cmd --permanent --add-port=5601/tcp
+firewall-cmd --permanent --add-port=9200/tcp
+firewall-cmd --permanent --add-port=8220/tcp
+firewall-cmd --reload
+
+#######################
+Intstal  de filebeat sur server suricata
+
+curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-8.10.4-x86_64.rpm
+rpm -vi filebeat-8.10.4-x86_64.rpm
+
+vim /etc/filebeat/filebeat.yml
+-> maj host kibana
+-> maj host elasticsearch (["https://IP:9200"]) + id&mdp
+-> ajouter dans output.elasticsearch
+    ssl.verification_mode: none
+	protocol: "https"
+
+vim /etc/filebeat/modules.d/suricata.yml
+	- module: suricata 
+		eve: 
+			enabled: true
+			var.paths: ["/var/log/suricata/eve.json"] 
+
+
+filebeat modules enable suricata
+filebeat setup
+
+systemctl start filebeat.service
+systemctl enable filebeat.service

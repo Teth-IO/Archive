@@ -1,0 +1,68 @@
+#install
+
+dnf install epel-release dnf-plugins-core
+dnf copr enable @oisf/suricata-7.0
+dnf install suricata vim
+
+#couche 2 AF_PACKET
+
+vim /etc/suricata/suricata.yaml
+
+af-packet:
+  - interface: eth1
+    threads: auto
+    defrag: no
+    cluster-type: cluster_flow
+    cluster-id: 98
+    copy-mode: ips
+    copy-iface: eth2
+    buffer-size: 64535
+    use-mmap: yes
+  - interface: eth2
+    threads: auto
+    cluster-id: 97
+    defrag: no
+    cluster-type: cluster_flow
+    copy-mode: ips
+    copy-iface: eth1
+    buffer-size: 64535
+    use-mmap: yes
+
+=> virer des trucs dans outputs - eve-log (que alert et anomaly)
+
+suricata-update update-sources
+suricata-update enable-source et/open
+suricata-update enable-source oisf/trafficid
+suricata-update enable-source sslbl/ssl-fp-blacklist
+suricata-update enable-source sslbl/ja3-fingerprints
+suricata-update enable-source etnetera/aggressive
+suricata-update enable-source tgreen/hunting
+suricata-update enable-source malsilo/win-malware
+suricata-update enable-source stamus/lateral
+suricata-update
+
+suricata -c /etc/suricata/suricata.yaml --af-packet
+
+vim /lib/systemd/system/suricata.service
+
+--> Modifier ExecStart=/sbin/suricata -c /etc/suricata/suricata.yaml --af-packet
+
+systemctl enable suricata
+systemctl start suricata
+
+#enable mac spoofing
+
+###########################
+règle pour test
+
+vim /etc/suricata/local.rules
+
+drop icmp any any -> any any (msg: "drop ping"; sid:1;)
+
+vim /etc/suricata/suricata.yaml
+
+default-rule-path: /var/lib/suricata/rules
+
+rule-files:
+  - suricata.rules
+  *- /etc/suricata/local.rules

@@ -1,0 +1,70 @@
+set interfaces ethernet eth0 address dhcp
+set interfaces ethernet eth1 address '10.0.0.254/24'
+
+set service ssh port '22'
+
+set service dhcp-server shared-network-name LAN subnet 10.0.0.0/24 default-router '10.0.0.254'
+set service dhcp-server shared-network-name LAN subnet 10.0.0.0/24 name-server '10.0.0.254'
+set service dhcp-server shared-network-name LAN subnet 10.0.0.0/24 domain-name 'vyos.net'
+set service dhcp-server shared-network-name LAN subnet 10.0.0.0/24 lease '86400'
+set service dhcp-server shared-network-name LAN subnet 10.0.0.0/24 range 0 start '10.0.0.50'
+set service dhcp-server shared-network-name LAN subnet 10.0.0.0/24 range 0 stop '10.0.0.200'
+
+set service dns forwarding cache-size '0'
+set service dns forwarding listen-address '10.0.0.254'
+set service dns forwarding allow-from '10.0.0.0/24'
+
+set nat source rule 100 outbound-interface 'eth0'
+set nat source rule 100 source address '10.0.0.0/24'
+set nat source rule 100 translation address masquerade
+
+set firewall group interface-group WAN interface eth0
+set firewall group interface-group LAN interface eth1
+set firewall group network-group NET-INSIDE-v4 network '10.0.0.0/24'
+
+set firewall ipv4 name CONN_FILTER default-action 'return'
+
+set firewall ipv4 name CONN_FILTER rule 10 action 'accept'
+set firewall ipv4 name CONN_FILTER rule 10 state established 'enable'
+set firewall ipv4 name CONN_FILTER rule 10 state related 'enable'
+
+set firewall ipv4 name CONN_FILTER rule 20 action 'drop'
+set firewall ipv4 name CONN_FILTER rule 20 state invalid 'enable'
+
+set firewall ipv4 forward filter rule 10 action 'jump'
+set firewall ipv4 forward filter rule 10 jump-target CONN_FILTER
+
+set firewall ipv4 input filter rule 10 action 'jump'
+set firewall ipv4 input filter rule 10 jump-target CONN_FILTER
+
+set firewall ipv4 name OUTSIDE-IN default-action 'drop'
+
+set firewall ipv4 forward filter rule 100 action jump
+set firewall ipv4 forward filter rule 100 jump-target OUTSIDE-IN
+set firewall ipv4 forward filter rule 100 inbound-interface interface-group WAN
+set firewall ipv4 forward filter rule 100 destination group network-group NET-INSIDE-v4
+
+set firewall ipv4 input filter default-action 'drop'
+
+set firewall ipv4 name VyOS_MANAGEMENT default-action 'return'
+
+set firewall ipv4 input filter rule 20 action jump
+set firewall ipv4 input filter rule 20 jump-target VyOS_MANAGEMENT
+set firewall ipv4 input filter rule 20 destination port 22
+set firewall ipv4 input filter rule 20 protocol tcp
+
+set firewall ipv4 name VyOS_MANAGEMENT rule 15 action 'accept'
+set firewall ipv4 name VyOS_MANAGEMENT rule 15 inbound-interface interface-group 'LAN'
+
+set firewall ipv4 input filter rule 30 action 'accept'
+set firewall ipv4 input filter rule 30 icmp type-name 'echo-request'
+set firewall ipv4 input filter rule 30 protocol 'icmp'
+set firewall ipv4 input filter rule 30 state new 'enable'
+
+set firewall ipv4 input filter rule 40 action 'accept'
+set firewall ipv4 input filter rule 40 destination port '53'
+set firewall ipv4 input filter rule 40 protocol 'tcp_udp'
+set firewall ipv4 input filter rule 40 source group network-group NET-INSIDE-v4
+
+set firewall ipv4 input filter rule 50 action 'accept'
+set firewall ipv4 input filter rule 50 source address 127.0.0.0/8
