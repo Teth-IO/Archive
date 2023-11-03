@@ -36,3 +36,11 @@ administration :
 docker-compose down -v (detruit les conteneur)
 docker-compose up -d (démarre les conteneurs)
 docker logs 'id conteneur guacd' (syslog de guacd) 
+
+totp :
+# ajouter TOTP_ENABLED: 'true' à l'environnement de l'instance guacamole
+ guacamole:
+    ***
+    environment:
+      ****
+      TOTP_ENABLED: 'true'
