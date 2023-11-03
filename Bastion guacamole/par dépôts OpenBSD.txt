@@ -34,11 +34,12 @@ import du databse schemas
 cd /usr/local/share/doc/guacamole-auth-jdbc/mysql/schema/
 cat *.sql | mysql -u root -p guacamole
 
-
 extension pour le totp
 ----------------------
 pkg_add guacamole-totp
 
+activationd des extensions
+--------------------------
 At startup, guacamole-client searches /etc/guacamole/extensions and loads any extensions discovered there
 You can either symlink the entire installed extensions directory (and lib, if present; not used by all extensions) from the package into place:
 
@@ -65,8 +66,8 @@ mysql-user-password-require-digit: true
 mysql-user-password-prohibit-username: true
 mysql-ssl-mode: disabled
 
-config du server web
---------------------
+config du server web pour TLS
+-----------------------------
 mkdir /etc/tomcat/ssl
 openssl ecparam -name prime256v1 -genkey -out /etc/tomcat/ssl/self-ssl.key
 openssl req -x509 -sha256 -key /etc/tomcat/ssl/self-ssl.key -out /etc/tomcat/ssl/self.cert
@@ -90,18 +91,14 @@ vim /etc/tomcat/server.xml
 rcctl start tomcat 
 rcctl start guacd  
 
+http://ip:8080/guacamole
+https://ip:8443/guacamole
+guacadmin
+guacadmin
+
 Logs : cat /var/tomcat/logs/catalina.out
 
 WIP 
 ---
 #JDBC en SSL
 mysql en ssl
-
-rcctl restart guacd  
-rcctl restart tomcat 
-
-http://ip:8080/guacamole
-https://ip:8443/guacamole
-
-guacadmin
-guacadmin
