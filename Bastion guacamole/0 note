@@ -5,9 +5,16 @@ https://guacamole.apache.org/doc/gug/installing-guacamole.html
 => 
 Installation impossible sous red hat like (alma, oracle linux) car dépendances manquantes 
 Installation impossible sous debian, plante au ./configure 
-Au niveaux des conteneurs : 
-          Ne fonctionne pas sous podman-compose 
-          Ne fonctionne pas sous gvisor 
+
+2 solutions :
+docker-compose -> https://github.com/boschkundendienst/guacamole-docker-compose
+	Ne fonctionne pas sous podman-compose 
+        Ne fonctionne pas sous gvisor 
+	=> tester kata container
+dépots des BSD 
+	openbsd : https://openports.pl/path/net/guacamole/client
+	freebsd : https://ogris.de/guaca/
+		  https://wiki.freebsd.org/Ports/www/guacamole-client
 
 ***************************
 # Installation de gvisor:
