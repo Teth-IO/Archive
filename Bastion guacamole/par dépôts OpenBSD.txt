@@ -105,5 +105,3 @@ https://ip:8443/guacamole
 
 guacadmin
 guacadmin
-
-template web :
