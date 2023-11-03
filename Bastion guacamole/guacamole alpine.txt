@@ -1,7 +1,15 @@
           HTTPS                                RDP | SSH
 IPsec --------------- > Bastion guacamole --------------------> Tier1
 
--> ne fonctionne ni sous podman ni sous gvisor
+Note : 
+Installation impossible sous red hat like (alma, oracle linux) car dépendances manquantes 
+Installation impossible sous debian, plante au ./configure 
+Au niveaux des conteneurs : 
+          Ne fonctionne pas sous podman-compose 
+          Ne fonctionne pas sous gvisor 
+Attention! Ne pas toucher au template nginx sous réserve de tout faire planter 
+
+********************************************************************
 
 vi /etc/apk/repositories
 -> uncomment la deuxième ligne
