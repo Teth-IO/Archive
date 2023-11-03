@@ -1,6 +1,8 @@
           HTTPS                                RDP | SSH
 IPsec --------------- > Bastion guacamole --------------------> Tier1
 
+-> ne fonctionne ni sous podman ni sous gvisor
+
 vi /etc/apk/repositories
 -> uncomment la deuxième ligne
 apk update
