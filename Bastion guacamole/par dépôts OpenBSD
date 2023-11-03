@@ -1,0 +1,109 @@
+pkg_add guacamole
+pkg_add guacamole-server
+
+ln -s /usr/local/share/guacamole/guacamole.war /var/tomcat/webapps/
+
+rcctl enable tomcat
+rcctl enable guacd
+rcctl enable messagebus
+rcctl start messagebus
+
+mariadb
+-------
+pkg_add mariadb-server
+rcctl enable mysqld
+/usr/local/bin/mariadb-install-db
+rcctl start mysqld
+mysql_secure_installation
+
+création de la BDD
+------------------
+mysql -u root -p
+CREATE DATABASE guacamole;
+CREATE USER 'guacamole'@'localhost' IDENTIFIED BY 'S3curePassw0rd';
+GRANT SELECT,INSERT,UPDATE,DELETE ON guacamole.* TO 'guacamole'@'localhost';
+FLUSH PRIVILEGES;
+quit
+
+extension pour authentification par JDBC (SQL)
+----------------------------------------------
+pkg_add guacamole-jdbc
+
+import du databse schemas
+-------------------------
+cd /usr/local/share/doc/guacamole-auth-jdbc/mysql/schema/
+cat *.sql | mysql -u root -p guacamole
+
+
+extension pour le totp
+----------------------
+pkg_add guacamole-totp
+
+At startup, guacamole-client searches /etc/guacamole/extensions and loads any extensions discovered there
+You can either symlink the entire installed extensions directory (and lib, if present; not used by all extensions) from the package into place:
+
+mkdir /etc/guacamole/{extensions,lib}
+ln -s /usr/local/share/guacamole/extensions/*extension*.jar \
+     /etc/guacamole/extensions/
+ln -s /usr/local/share/guacamole/lib/*extension*.jar /etc/guacamole/lib/
+
+connecter guacamol et mariadb
+------------------------------
+vim /etc/guacamole/guacamole.properties
+guacd-hostname: localhost
+guacd-port:     4822
+mysql-hostname: localhost
+mysql-port: 3306
+mysql-database: guacamole
+mysql-username: guacamole
+mysql-password: S3curePassw0rd
+mysql-server-timezone: Europe/Paris
+mysql-user-password-min-length: 8
+mysql-user-password-require-multiple-case: true
+mysql-user-password-require-symbol: true
+mysql-user-password-require-digit: true
+mysql-user-password-prohibit-username: true
+mysql-ssl-mode: disabled
+
+config du server web
+--------------------
+mkdir /etc/tomcat/ssl
+openssl ecparam -name prime256v1 -genkey -out /etc/tomcat/ssl/self-ssl.key
+openssl req -x509 -sha256 -key /etc/tomcat/ssl/self-ssl.key -out /etc/tomcat/ssl/self.cert
+
+vim /etc/tomcat/server.xml
+<Connector
+    port="8443"
+	addres="0.0.0.0" SSLEnabled="true"
+	maxParameterCount="1000">
+    <SSLHostConfig
+        disableSessionTickets="true"
+        honorCipherOrder="false"
+        protocols="TLSv1.3">
+        <Certificate
+            certificateFile="/etc/tomcat/ssl/self.cert"
+            certificateKeyFile="/etc/tomcat/ssl/self-ssl.key" />
+    </SSLHostConfig>
+    <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+</Connector>
+
+rcctl start tomcat 
+rcctl start guacd  
+
+Logs : cat /var/tomcat/logs/catalina.out
+
+WIP 
+---
+#JDBC en SSL
+mysql en ssl
+
+rcctl restart guacd  
+rcctl restart tomcat 
+
+http://ip:8080/guacamole
+https://ip:8443/guacamole
+
+guacadmin
+guacadmin
+
+template web :
