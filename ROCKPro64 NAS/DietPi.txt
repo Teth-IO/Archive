@@ -1,12 +1,66 @@
-dietpi dashboard -> 5252
 syncthing -> 8384
-ReadyMedia (dlna, upnp) -> 8200
 qbittorrent -> 1340
 openssh (dropbear ne gère pas le sftp)
 
-########################
-### deprecated : zfs ###
-########################
+Installation : 
+https://dietpi.com/docs/dietpi_tools/
+
+dietpi-launcher : All the DietPi programs in one place
+dietpi-config   : Feature rich configuration tool for your device
+dietpi-software : Select optimised software for installation
+
+dietpi-update
+
+#############
+### btrfs ###
+#############
+
+apt install btrfs-progs
+mkfs.btrfs -L data -d raid1 -m raid1 -f /dev/sda /dev/sdb
+mkdir /data
+mount /dev/sda /data
+
+    monitoring
+
+btrfs filesystem usage /data
+btrfs device stats /data
+
+    montage automatique
+
+dietpi-drive_manager (rajoute l'entrée du disque monté manuellement automatiquement dans fstab)
+
+##############################
+## qbittorrent et syncthing ##
+##############################
+
+juste a vérifier les ACL aux dossier utilisé par ses services
+-> pour syncthing pas mis de vérification périodique de changement car le NAS ne fait que récupéré les indos des pair et les redistribuer, pas besoin de réveiller les disques du NAS pour rien
+
+Versioning -> trash can et nettoyage après 30j
+avancé -> watch for change, rescan après 3600s, dossier en send & receive, minimum free disk de 1%
+
+autres :
+
+-> ZRAM car même si sous dietpi le zswap est activer on préfaire éviter du swap sur une carte sd (cat /sys/module/zswap/parameters/enabled = Y)
+sudo apt install zram-tools
+echo -e "ALGO=zstd\nPERCENT=60" | sudo tee -a /etc/default/zramswap
+systemctl reload zramswap.service
+(redemarrer sinon)
+
+=> pour checker les priorité entre le swap et la zram : cat /proc/swaps
+
+
+### mappage linux/windows : rclone(SFTP) ###
+
+rclone config
+
+rclone mount nas:/data X:
+
+****************************************************************************
+vieille notes :
+
+
+### zfs 
 
 besoin d'installer le bon headers (pas arm64)
 uname -a
@@ -29,27 +83,8 @@ apt install zfsutils-linux zfs-dkms
 ###     -> zfs load-key poolname/newdataset
 ###     -> zfs mount poolname/newdataset
 
-#############
-### btrfs ###
-#############
 
-apt install btrfs-progs
-mkfs.btrfs -L data -d raid1 -m raid1 -f /dev/sda /dev/sdb
-mkdir /data
-mount /dev/sda /data
-
-    monitoring
-
-btrfs filesystem usage /data
-btrfs device stats /data
-
-    montage automatique
-
-dietpi-drive_manager (rajoute l'entrée du disque monté manuellement automatiquement dans fstab)
-
-########################
-### deprecated : NFS ###
-########################
+### NFS 
 
 /etc/exports
 
@@ -62,25 +97,7 @@ acl : no_root_squash
 
 /data 192.168.1.0/24(insecure,rw,async,no_subtree_check,all_squash)
 
-####################
-### rclone(SFTP) ###
-####################
-
-rclone config
-
-rclone mount nas:/data X:
-
-############
-### dlna ###
-############
-
-par ReadyMedia, pour les appareils compatible et eviter le NFS sur eux
-modifier /etc/minidlna.conf pour conf les dossier media
-A for audio, V for video, P for pictures and PV for both pictures and videos
-
-#############
-### rsync ###
-#############
+### rsync 
 
 rsync fonctionne par ssh par defaut
 cron job?
@@ -92,31 +109,3 @@ rsync -avzu ./source root@192.168.1.201:/data/Backup --delete
 -v correspond au mode verbose
 -z compression des fichiers pendant le transfert
 -u update, skip les fichiers plus récents chez le destinataire
-
-######################
-### web monitoring ###
-######################
-
-dietpi-dashboard
-
-systemctl (start, enable, restart, disable, stop) dietpi-dashboard
-
-autres :
-
--> ZRAM car même si sous dietpi le zswap est activer on préfaire éviter du swap sur une carte sd (cat /sys/module/zswap/parameters/enabled = Y)
-sudo apt install zram-tools
-echo -e "ALGO=zstd\nPERCENT=60" | sudo tee -a /etc/default/zramswap
-systemctl reload zramswap.service
-(redemarrer sinon)
-
-=> pour checker les priorité entre le swap et la zram : cat /proc/swaps
-
-##############################
-## qbittorrent et syncthing ##
-##############################
-
-juste a vérifier les ACL aux dossier utilisé par ses services
--> pour syncthing pas mis de vérification périodique de changement car le NAS ne fait que récupéré les indos des pair et les redistribuer, pas besoin de réveiller les disques du NAS pour rien
-
-Versioning -> trash can et nettoyage après 30j
-avancé -> watch for change, rescan après 3600s, dossier en send & receive, minimum free disk de 1%
