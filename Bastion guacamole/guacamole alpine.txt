@@ -18,12 +18,7 @@ cd guacamole-docker-compose
 openssl ecparam -name prime256v1 -genkey -out nginx/ssl/self-ssl.key
 openssl req -x509 -sha256 -key nginx/ssl/self-ssl.key -out nginx/ssl/self.cert
 
-vim nginx/templates/guacamole.conf.template
-	ssl_protocols TLSv1.3;
-    ssl_prefer_server_ciphers off;
-
 docker-compose up -d
-docker-compose down -v
 
 clef ssh :
 ssh-keygen -t ed25519 -o -a 100
