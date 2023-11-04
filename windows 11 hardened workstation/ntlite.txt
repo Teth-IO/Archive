@@ -1,3 +1,0 @@
-Ntlite :
-    -> virer le windows store
-    -> virer le contenu sponsorisé
