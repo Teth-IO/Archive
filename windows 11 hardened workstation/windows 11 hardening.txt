@@ -151,3 +151,15 @@ utilisation de dnssec proxy
 
 hardening firefox et edge :
 -> voir les fichier
+
+###################
+#### Conf perso ###
+###################
+
+Wsl 2 Arch linux
+Powershell preview
+Termial preview
+Power toys
+Fira code nerd fonts
+JanDeDobbeleer.OhMyPosh
+theme : oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\wopian.omp.json" | Invoke-Expression
