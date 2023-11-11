@@ -27,7 +27,7 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - Zram
 tmpfs par défaut
 
-OBSOLÈTE :
+-------------------------------------- OBSOLÈTE --------------------------------------
 
 => [VPS SearXNG](./vps%20searxng/installation.txt)
 
