@@ -1,6 +1,18 @@
 # infra
+ => [Bation guacamole](./Bastion%20guacamole/)
 
- => [Windows 11 hardened Workstation](./windows%2011%20hardened%20workstation/windows%2011%20hardening.txt)
+ Bastion pour centraliser l'administration des serveurs.
+ 2 version :
+  - Version OpenBSD (par les dépôts)
+  - Version Docker-compose
+
+ => [Suricata IPS avec ELK](./windows%2011%20hardened%20workstation/
+
+Sous Oracle Linux :
+ - Suricata en mode IPS en couche 2 (AF_PACKET)
+ -  Stack ELK pour la partie SIEM
+
+ => [Windows 11 hardened Workstation](./suricata%20layer%202%20ELK)
 
  Renforcement de windows :
  - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
@@ -11,10 +23,6 @@
 
 NAS DIY avec la ROCKPro64 sous Dietpi :
  - RAID 1 par btrfs
- - Rclone SFTP
- - DLNA/UPnP
- - Rsync
- - web monitoring
  - Syncthing
  - Zram
 tmpfs par défaut
