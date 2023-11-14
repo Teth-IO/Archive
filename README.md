@@ -1,9 +1,9 @@
 # infra
  => [Setup road warrior](./road-warrior/)
 
-Conf et css pour LibreWolf
-docker-compose pour routage du métamoteur searxng sur VPN
-possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN
+Conf et css pour LibreWolf <br />
+docker-compose pour routage du métamoteur searxng sur VPN <br />
+possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN <br />
 
  => [Bation guacamole](./Bastion%20guacamole/)
 
