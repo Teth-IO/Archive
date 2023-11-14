@@ -1,0 +1,50 @@
+--------------------- Conf de Navigateur ---------------------
+
+LibreWolf
+
+https://gitlab.com/librewolf-community/settings/-/wikis/
+suppression des cookies et historique en quittant => withelisting 
+DNS cloudflare pour ECH
+
+blocage de l'autoplay :
+-----------------------
+media.autoplay.default = 5 [0:allow; 1:blockAudible; 5:blockAll]
+media.autoplay.allow-extension-background-pages = false
+media.autoplay.block-event.enabled = true
+media.autoplay.blocking_policy = 1
+
+--------------------- customization CSS ---------------------
+
+https://github.com/christorange/VerticalFox
+
+Couleur :
+primaire : #302020
+secondaire : #3f3f3f
+hovering : #101010
+
+userChrome.css :
+----------------
+# modifier
+--bg: #302020;
+--urlbar-bg: #3f3f3f;
+--urldrop-bg: #302020;
+# ajouter
+menupopup {
+    background-color: #302020 !important;
+    -moz-appearance: none !important;
+}
+menugroup {
+	padding: 0 !important;
+	background-color: #302020 !important;
+}
+
+userContent.css :
+-----------------
+# voir fichier
+
+sidebery css :
+--------------
+# modifier 
+--bg: #302020 !important;
+--tabs-bg-hover: #101010 !important;
+--tabs-activated-bg: #101010 !important;
