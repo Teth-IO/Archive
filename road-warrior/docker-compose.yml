@@ -1,0 +1,32 @@
+version: "3"
+services:
+  gluetun:
+   image: qmcgaw/gluetun
+   container_name: gluetun
+   cap_add:
+    - NET_ADMIN
+   devices:
+    - /dev/net/tun:/dev/net/tun
+   ports:
+    - 127.0.0.1:8388:8388/tcp #shadowsocks
+    - 127.0.0.1:8388:8388/udp #shadowsocks
+    - 127.0.0.1:8080:8080/tcp #searxng
+   volumes:
+    - /yourpath:/gluetun
+   environment:
+    - SHADOWSOCKS=on
+    - SHADOWSOCKS_PASSWORD=***
+    - SHADOWSOCKS_CIPHER=chacha20-ietf-poly1305
+    - VPN_SERVICE_PROVIDER=custom
+    - VPN_TYPE=wireguard
+    - VPN_ENDPOINT_IP=***
+    - VPN_ENDPOINT_PORT=***
+    - WIREGUARD_PUBLIC_KEY=***
+    - WIREGUARD_PRIVATE_KEY=***
+    - WIREGUARD_ADDRESSES=***
+   restart: always
+
+  searxng:
+   image: searxng/searxng
+   network_mode: "service:gluetun"
+   restart: always
