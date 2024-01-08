@@ -19,6 +19,7 @@ Sous Oracle Linux :
  -  Stack ELK pour la partie SIEM
 
  => [MAAS/JUJU - OpenStack](/MAAS%20JUJU%20-%20OpenStack/)
+ 
  Déploiment d'openstack minimal distribué par MAAS (server provisionning) et JUJU (orchestration d'application)
 
  => [Windows 11 hardened Workstation](./suricata%20layer%202%20ELK)
