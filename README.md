@@ -18,6 +18,9 @@ Sous Oracle Linux :
  - Suricata en mode IPS en couche 2 (AF_PACKET)
  -  Stack ELK pour la partie SIEM
 
+ => [MAAS/JUJU - OpenStack](/MAAS%20JUJU%20-%20OpenStack/)
+ Déploiment d'openstack minimal distribué par MAAS (server provisionning) et JUJU (orchestration d'application)
+
  => [Windows 11 hardened Workstation](./suricata%20layer%202%20ELK)
 
  Renforcement de windows :

@@ -1,0 +1,427 @@
+Ubuntu 22.04 LTS (Jammy)
+
+hardware :
+1 x MAAS system: 8GiB RAM, 2 CPUs, 1 NIC, 1 x HDD
+1 x Juju controller node: 4GiB RAM, 2 CPUs, 1 NIC, 1 x HDD
+4 x cloud nodes: 8GiB RAM, 2 CPUs, 1 NIC, 5 x HDD
+
+Notes :
+les nodes ont besoin de la virtualisation
+seul MAAS a besoin de l'iso, les autres machines se font PXE
+commencer par installer ubuntu sur la machine MAAS
+il sera le serveur DHCP du réseau donc faire attentation de ne pas en avoir ailleur
+
+##########################
+# Installation de MAAS : #
+##########################
+
+sudo snap install maas-test-db
+sudo snap install maas --channel=3.3/stable
+# http://ip = l'adresse ip du serveur MAAS
+sudo maas init region+rack --maas-url http://ip:5240/MAAS --database-uri maas-test-db:///
+# creation du compte admin
+sudo maas createadmin --username admin --password ubuntu --email admin@example.com
+# export le clef api
+sudo maas apikey --username admin > ~/admin-api-key
+
+se connecter à l'interface web : http://ip:5240/MAAS
+Username: admin
+Password: ubuntu
+
+=> compléter le setup (skip l'étape des clefs ssh)
+
+important : 
+mettre en place le DHCP
+Verifier les images a fournir 
+Ajouter les noeuds en les démarrants en PXE
+modifier le mode d'alimentation en manuel (comme les machines sont des VM)
+commissionner les noeuds
+optionnel : les rennomer pour leur donner un nom convivial
+leur attribuer un tag :
+	mettre la machine juju sous un tag juju
+	mettre les noeuds sous un tag compute
+	(les tags permettent une segregation des machines dans l'attribution des conteneur, on peux aussi specifié des options de kernel dedans (e.g. randomize_kstack_offset=on lockdown=CONFIDENTIALITY)) 
+créer un bride OVS (openvswitch) (onglet réseau des machines)
+	nom : br-ex
+	subnet en 10.0.0.0/24
+	ip mode : auto assign
+
+###################
+# Ajout de Juju : #
+###################
+(toujours sur le seveur MAAS)
+
+sudo snap install juju --channel 3.1
+
+cat << EOF > ~/maas-cloud.yaml
+clouds:
+  maas-one:
+    type: maas
+    auth-types: [oauth1]
+    endpoint: http://ip:5240/MAAS
+EOF
+
+juju add-cloud --client -f maas-cloud.yaml maas-one
+
+cat ~/admin-api-key
+=> MAAS API key, a mettre dans maas-oauth ci-dessous
+
+cat << EOF > ~/maas-creds.yaml
+credentials:
+  maas-one:
+    anyuser:
+      auth-type: oauth1
+      maas-oauth: MAAS API key
+EOF
+
+juju add-credential --client -f maas-creds.yaml maas-one
+
+juju bootstrap --bootstrap-series=jammy --constraints tags=juju maas-one maas-controller
+
+juju add-model --config default-series=jammy openstack
+
+##############################
+# Installation d'openstack : #
+##############################
+=> pour monitorer l'installation et le comportement des conteneur il est utilise d'avoir dan une fenetres : watch -n 5 -c juju status --color
+
+juju switch maas-controller:openstack
+
+# Ceph OSD :
+----------
+cat << EOF > ~/ceph-osd.yaml
+ceph-osd:
+  osd-devices: /dev/sdb /dev/sdc /dev/sdd /dev/sde
+EOF
+
+juju deploy -n 4 --channel reef/stable --config ceph-osd.yaml --constraints tags=compute ceph-osd
+
+# Nova Compute :
+--------------
+cat << EOF > ~/nova-compute.yaml
+nova-compute:
+  config-flags: default_ephemeral_format=ext4
+  enable-live-migration: true
+  enable-resize: true
+  migration-auth-type: ssh
+  virt-type: qemu
+EOF
+
+juju deploy -n 3 --to 1,2,3 --channel 2023.2/stable --config nova-compute.yaml nova-compute
+
+# MySQL InnoDB Cluster :
+----------------------
+juju deploy -n 3 --to lxd:0,lxd:1,lxd:2 --channel 8.0/stable mysql-innodb-cluster
+
+# Vault :
+-------
+juju deploy --to lxd:3 --channel 1.8/stable vault
+juju deploy --channel 8.0/stable mysql-router vault-mysql-router
+juju integrate vault-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate vault-mysql-router:shared-db vault:shared-db
+
+# client vault :
+sudo snap install vault
+# ip = ip public de l'unit
+export VAULT_ADDR="http://ip:8200"
+vault operator init -key-shares=5 -key-threshold=3
+
+# noter les unseal key et le root token
+# unseal vault avec 3 clefs (https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing). Exemple :
+vault operator unseal jDviFNTgGzzBRFjUXqy4v9vCGxeb8422FBpLO217kaTK
+vault operator unseal KO9ZVOR9ebtnHUuOptlOrSmX8CkWvpxsVLlWwHtuzN0y
+vault operator unseal j2YaLbSwuL4ASI7UFjyDE7018xCgy4h5rdO0tE6/lzaN
+
+# générer un root token, VAULT_TOKEN = le root token inital 
+export VAULT_TOKEN=s.Jtkbuuc5P6CbgD36bvesnwEb
+vault token create -ttl=10m
+
+# authoriser le vault charm a accéder au deploiment de vault, token = root token precedemment généré (ttl de 10 minutes)
+juju run vault/leader authorize-charm token=s.yCTv2vYPfUUL4Za8J63IAvAJ
+
+# Générer un Self-signed root CA certificate (pour que vault puisse émettre des certificats)
+juju run vault/leader generate-root-ca
+
+juju integrate mysql-innodb-cluster:certificates vault:certificates
+# l'unit vault doit être en "Unit is ready (active: true, mlock: disabled)"
+
+# Neutron networking :
+--------------------
+cat << EOF > ~/neutron.yaml
+ovn-chassis:
+  bridge-interface-mappings: br-ex:eth0
+  ovn-bridge-mappings: physnet1:br-ex
+neutron-api:
+  neutron-security-groups: true
+  flat-network-providers: physnet1
+EOF
+
+juju deploy -n 3 --to lxd:0,lxd:1,lxd:2 --channel 23.09/stable ovn-central
+
+juju deploy --to lxd:1 --channel 2023.2/stable --config neutron.yaml neutron-api
+
+juju deploy --channel 2023.2/stable neutron-api-plugin-ovn
+juju deploy --channel 23.09/stable --config neutron.yaml ovn-chassis
+
+juju integrate neutron-api-plugin-ovn:neutron-plugin neutron-api:neutron-plugin-api-subordinate
+juju integrate neutron-api-plugin-ovn:ovsdb-cms ovn-central:ovsdb-cms
+juju integrate ovn-chassis:ovsdb ovn-central:ovsdb
+juju integrate ovn-chassis:nova-compute nova-compute:neutron-plugin
+juju integrate neutron-api:certificates vault:certificates
+juju integrate neutron-api-plugin-ovn:certificates vault:certificates
+juju integrate ovn-central:certificates vault:certificates
+juju integrate ovn-chassis:certificates vault:certificates
+
+juju deploy --channel 8.0/stable mysql-router neutron-api-mysql-router
+juju integrate neutron-api-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate neutron-api-mysql-router:shared-db neutron-api:shared-db
+
+# Keystone :
+----------
+juju deploy --to lxd:0 --channel 2023.2/stable keystone
+
+juju deploy --channel 8.0/stable mysql-router keystone-mysql-router
+juju integrate keystone-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate keystone-mysql-router:shared-db keystone:shared-db
+
+juju integrate keystone:identity-service neutron-api:identity-service
+juju integrate keystone:certificates vault:certificates
+
+# RabbitMQ :
+----------
+juju deploy --to lxd:2 --channel 3.9/stable rabbitmq-server
+
+juju integrate rabbitmq-server:amqp neutron-api:amqp
+juju integrate rabbitmq-server:amqp nova-compute:amqp
+
+# Nova cloud controller :
+-----------------------
+cat << EOF > ~/ncc.yaml
+nova-cloud-controller:
+  network-manager: Neutron
+EOF
+
+juju deploy --to lxd:3 --channel 2023.2/stable --config ncc.yaml nova-cloud-controller
+
+juju deploy --channel 8.0/stable mysql-router ncc-mysql-router
+juju integrate ncc-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate ncc-mysql-router:shared-db nova-cloud-controller:shared-db
+
+juju integrate nova-cloud-controller:identity-service keystone:identity-service
+juju integrate nova-cloud-controller:amqp rabbitmq-server:amqp
+juju integrate nova-cloud-controller:neutron-api neutron-api:neutron-api
+juju integrate nova-cloud-controller:cloud-compute nova-compute:cloud-compute
+juju integrate nova-cloud-controller:certificates vault:certificates
+
+# Placement :
+-----------
+juju deploy --to lxd:3 --channel 2023.2/stable placement
+
+juju deploy --channel 8.0/stable mysql-router placement-mysql-router
+juju integrate placement-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate placement-mysql-router:shared-db placement:shared-db
+
+juju integrate placement:identity-service keystone:identity-service
+juju integrate placement:placement nova-cloud-controller:placement
+juju integrate placement:certificates vault:certificates
+
+# OpenStack dashboard :
+---------------------
+juju deploy --to lxd:2 --channel 2023.2/stable openstack-dashboard
+
+juju deploy --channel 8.0/stable mysql-router dashboard-mysql-router
+juju integrate dashboard-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate dashboard-mysql-router:shared-db openstack-dashboard:shared-db
+
+juju integrate openstack-dashboard:identity-service keystone:identity-service
+juju integrate openstack-dashboard:certificates vault:certificates
+
+# Glance :
+---------
+juju deploy --to lxd:3 --channel 2023.2/stable glance
+
+juju deploy --channel 8.0/stable mysql-router glance-mysql-router
+juju integrate glance-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate glance-mysql-router:shared-db glance:shared-db
+
+juju integrate glance:image-service nova-cloud-controller:image-service
+juju integrate glance:image-service nova-compute:image-service
+juju integrate glance:identity-service keystone:identity-service
+juju integrate glance:certificates vault:certificates
+
+# Ceph monitor :
+--------------
+cat << EOF > ~/ceph-mon.yaml
+ceph-mon:
+  expected-osd-count: 4
+  monitor-count: 3
+EOF
+
+juju deploy -n 3 --to lxd:0,lxd:1,lxd:2 --channel reef/stable --config ceph-mon.yaml ceph-mon
+
+juju integrate ceph-mon:osd ceph-osd:mon
+juju integrate ceph-mon:client nova-compute:ceph
+juju integrate ceph-mon:client glance:ceph
+
+# Cinder :
+--------
+cat << EOF > ~/cinder.yaml
+cinder:
+  block-device: None
+  glance-api-version: 2
+EOF
+
+juju deploy --to lxd:1 --channel 2023.2/stable --config cinder.yaml cinder
+
+juju deploy --channel 8.0/stable mysql-router cinder-mysql-router
+juju integrate cinder-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate cinder-mysql-router:shared-db cinder:shared-db
+
+juju integrate cinder:cinder-volume-service nova-cloud-controller:cinder-volume-service
+juju integrate cinder:identity-service keystone:identity-service
+juju integrate cinder:amqp rabbitmq-server:amqp
+juju integrate cinder:image-service glance:image-service
+juju integrate cinder:certificates vault:certificates
+
+juju deploy --channel 2023.2/stable cinder-ceph
+
+juju integrate cinder-ceph:storage-backend cinder:storage-backend
+juju integrate cinder-ceph:ceph ceph-mon:client
+juju integrate cinder-ceph:ceph-access nova-compute:ceph-access
+
+# Ceph RADOS Gateway :
+--------------------
+juju deploy --to lxd:0 --channel reef/stable ceph-radosgw
+
+juju integrate ceph-radosgw:mon ceph-mon:radosgw
+
+=> Tout doit être actif dans juju status
+
+#############################
+# configuration openstack : #
+#############################
+
+# Installation du client OpenStack
+sudo snap install openstackclients
+
+# Paramétrage de l'environnement admin :
+--------------------------------------
+vim openrc
+(copier le contenu de https://docs.openstack.org/project-deploy-guide/charm-deployment-guide/latest/_downloads/c894c4911b9572f0b5f86bdfc5d12d8e/openrc)
+source ~/openrc
+# listing des variables
+env | grep OS_
+
+# création d'une image et d'un gabarit :
+--------------------------------------
+mkdir ~/cloud-images
+
+wget http://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
+   -O ~/cloud-images/jammy-amd64.img
+   
+openstack image create --public --container-format bare \
+   --disk-format qcow2 --file ~/cloud-images/jammy-amd64.img \
+   jammy-amd64
+   
+openstack flavor create --ram 2048 --disk 20 --ephemeral 20 m1.small
+
+# public networking : (reprendre l'adressage du réseau MAAS)
+-------------------
+openstack network create --external --share \
+   --provider-network-type flat --provider-physical-network physnet1 \
+   ext_net
+   
+openstack subnet create --network ext_net --no-dhcp \
+  --gateway 10.0.0.254 --subnet-range 10.0.0.0/24 \
+  --allocation-pool start=10.0.0.200,end=10.0.0.220 \
+  ext_subnet
+  
+# Paramétrage d'un environnement utilisateur :
+--------------------------------------------
+openstack domain create domain1
+openstack project create --domain domain1 project1
+openstack user create --domain domain1 --project project1 --password-prompt user1
+# id = id du user de l'output précédent
+openstack role add --user id \
+   --project project1 Member
+   
+# exemple d'un fichier d'auth pour ‘user1’ :
+# ip = ip de echo $OS_AUTH_URL
+# attention a modifier /home/username avec le bon chemin
+cat << EOF > ~/project1-rc
+export OS_AUTH_URL=https://ip:5000/v3
+export OS_USERNAME=user1
+export OS_PASSWORD=ubuntu
+export OS_USER_DOMAIN_NAME=domain1
+export OS_PROJECT_NAME=project1
+export OS_PROJECT_DOMAIN_NAME=domain1
+export OS_AUTH_VERSION=3
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME=RegionOne
+export OS_AUTH_PROTOCOL=https
+export OS_CACERT=/home/username/snap/openstackclients/common/root-ca.crt
+export OS_AUTH_TYPE=password
+EOF
+
+source project1-rc
+echo $OS_USERNAME
+
+# pour verifier que tout marche jusqu'ici on peut faire # openstack image list
+# doit afficher l'image cloud-init précedement téléchargé
+
+# création d'un réseau privé :
+---------------------------- 
+openstack network create --internal user1_net
+
+# dns-nameserver = MAAS server
+openstack subnet create --network user1_net --dns-nameserver 10.0.0.10 \
+   --subnet-range 192.168.0/24 \
+   --allocation-pool start=192.168.0.10,end=192.168.0.99 \
+   user1_subnet
+
+openstack router create user1_router
+openstack router add subnet user1_router user1_subnet
+openstack router set user1_router --external-gateway ext_net
+
+# SSH et groupes de sécurité :
+----------------------------
+mkdir ~/cloud-keys
+
+ssh-keygen -q -N '' -f ~/cloud-keys/user1-key
+
+openstack keypair create --public-key ~/cloud-keys/user1-key.pub user1
+
+openstack security group create --description 'Allow SSH' Allow_SSH
+openstack security group rule create --proto tcp --dst-port 22 Allow_SSH
+
+# Crée et accéder à une instance :
+--------------------------------
+
+openstack server create --image jammy-amd64 --flavor m1.small \
+   --key-name user1 --network user1_net --security-group Allow_SSH \
+   jammy-1
+
+FLOATING_IP=$(openstack floating ip create -f value -c floating_ip_address ext_net)
+openstack server add floating ip jammy-1 $FLOATING_IP
+
+openstack server list
+openstack console log show jammy-1
+
+ssh -i ~/cloud-keys/user1-key ubuntu@$FLOATING_IP
+
+# accès au dashbord :
+-------------------
+
+# mot de passe admin 
+juju exec --unit keystone/leader leader-get admin_passwd
+
+# acces, ip = ip de l'unit openstack-dashboard :
+http://ip/horizon
+
+User Name: admin
+Domain: admin_domain
+
+# accès console depuis le dashboard :
+-----------------------------------
+
+juju config nova-cloud-controller console-access-protocol=novnc
