@@ -1,5 +1,6 @@
 syncthing -> 8384
 qbittorrent -> 1340
+grafana -> 3001
 openssh (dropbear ne gère pas le sftp)
 
 Installation : 
@@ -56,56 +57,64 @@ rclone config
 
 rclone mount nas:/data X:
 
-****************************************************************************
-vieille notes :
+##############
+# InfluxDB : #
+##############
 
+-> dietpi install
 
-### zfs 
+# database sur HDD (pas carteSD) :
+----------------------------------
 
-besoin d'installer le bon headers (pas arm64)
-uname -a
--> headers de rockchip64
-linux-headers-current-rockchip64
-(apt search montre la version du kernel associé au current headers, même version que le kernel actuellement installé)
+mkdir /data/to/influxdb
+sudo chown influxdb:influxdb influxdb
 
-installer le zfs, ici de la façon recommander, par le DKMS
-apt install zfsutils-linux zfs-dkms
+Edit the following three lines of your /etc/influxdb/influxdb.conf so that they point to your new location:
 
-=> echec de la compilation du dkms alors que le headers et le kernel sont a la même version
+# under [meta]
+dir = "/data/influxdb/meta"
 
-### zpool create mypool mirror /dev/sda /dev/sdb
-### => monte automatiquement le pool sur /mypool
-### zpool status -> donne les info sur l'état du RAID
-###
-### zfs create -o encryption=aes-256-gcm -o keyformat=passphrase poolname/newdataset
-### => ne chiffre qu'un dossier (dataset) et non un pool
-### => a chaque démarrage il faut :
-###     -> zfs load-key poolname/newdataset
-###     -> zfs mount poolname/newdataset
+# under [data]
+dir = "/data/influxdb/data"
+wal-dir = "/data/influxdb/wal"
 
+Restart the InfluxDB daemon.
 
-### NFS 
+# Create database :
+-------------------
 
-/etc/exports
+influx -precision rfc3339
+CREATE DATABASE mydb
+USE mydb
 
-    config par défaut
+##############
+# telegraf : #
+##############
+- Windows :
+(# gpu, temp et alimentation electrique par LibreHardwareMonitor et WMI (Get-WmiObject -Namespace root/LibreHardwareMonitor Sensor))
 
-nfs : secure,ro,sync,wdelay,hide,subtree_check
-acl : no_root_squash
+wget https://dl.influxdata.com/telegraf/releases/telegraf-1.29.4_windows_amd64.zip -UseBasicParsing -OutFile telegraf-1.29.4_windows_amd64.zip
+Expand-Archive .\utFile -DestinationPath 'C:\Program Files\InfluxData\telegraf'
 
-    on explicite :
+Move the telegraf.exe and telegraf.conf files from 
+C:\Program Files\InfluxData\telegraf\telegraf-1.29.0 to the parent directory 
+C:\Program Files\InfluxData\telegraf
 
-/data 192.168.1.0/24(insecure,rw,async,no_subtree_check,all_squash)
+=> remplacer telegraf.conf par celui du git
 
-### rsync 
+# installation du service :
+.\telegraf.exe --service install `
+--config "C:\Program Files\InfluxData\telegraf\telegraf.conf"
 
-rsync fonctionne par ssh par defaut
-cron job?
-rsync -avzu ./source root@192.168.1.201:/data/Backup --delete
+# test :
+.\telegraf.exe `
+--config C:\"Program Files"\InfluxData\telegraf\telegraf.conf --test
 
---delete fait en sorte de supprimer les fichiers présents à la destination qui ont été supprimer à la source
--a correspond au mode archive, mode qui comprend les options rlptgoD (recursif, copie des symlinks, preservation des permissions, preservation des dates de mofis, preservation des groupes, même propriétaire, copie les fichiers devices, copie les fichiers spéciales)
-=> besoin de changer les permsission, archives en 700
--v correspond au mode verbose
--z compression des fichiers pendant le transfert
--u update, skip les fichiers plus récents chez le destinataire
+# démarrage :
+.\telegraf.exe --service start
+
+#############
+# Grafana : #
+#############
+
+importer le json

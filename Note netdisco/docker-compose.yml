@@ -1,0 +1,63 @@
+version: '2.3'
+services:
+
+  netdisco-postgresql:
+    image: netdisco/netdisco:latest-postgresql
+    volumes:
+      - "./netdisco/pgdata:/var/lib/postgresql/data"
+      
+  netdisco-backend:
+    image: netdisco/netdisco:latest-backend
+    init: true
+    volumes:
+      - "./netdisco/nd-site-local:/home/netdisco/nd-site-local"
+      - "./netdisco/config:/home/netdisco/environments"
+      - "./netdisco/logs:/home/netdisco/logs"
+    environment:
+      NETDISCO_DOMAIN:  discover
+      NETDISCO_DB_HOST: netdisco-postgresql
+    depends_on:
+      - netdisco-postgresql
+    dns_opt:
+      - 'ndots:0'
+      - 'timeout:1'
+      - 'retries:0'
+      - 'attempts:1'
+      - edns0
+      - trustad
+
+  netdisco-web:
+    image: netdisco/netdisco:latest-web
+    init: true
+    volumes:
+      - "./netdisco/nd-site-local:/home/netdisco/nd-site-local"
+      - "./netdisco/config:/home/netdisco/environments"
+    environment:
+      NETDISCO_DOMAIN:  discover
+      NETDISCO_DB_HOST: netdisco-postgresql
+      IPV: 4
+    ports:
+      - "5000:5000"
+    depends_on:
+      - netdisco-postgresql
+    dns_opt:
+      - 'ndots:0'
+      - 'timeout:1'
+      - 'retries:0'
+      - 'attempts:1'
+      - edns0
+      - trustad
+      
+  netdisco-do:
+    image: netdisco/netdisco:latest-do
+    volumes:
+      - "./netdisco/nd-site-local:/home/netdisco/nd-site-local"
+      - "./netdisco/config:/home/netdisco/environments"
+    environment:
+      NETDISCO_DOMAIN:  discover
+      NETDISCO_DB_HOST: netdisco-postgresql
+    depends_on:
+      - netdisco-postgresql
+    profiles:
+      - cli-manual
+

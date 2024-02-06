@@ -1,0 +1,258 @@
+Kubernetes on bare metal
+MAAS & JUJU
+
+Kubernetes :
+------------
+kata-container
+jenkins
+kafka
+portainer
+helm
+kubeflow
+OpenEBS
+
+Management :
+------------
+landscape
+juju dashboard
+
+1 controlleur maas
+1 controlleur juju
+
+1 controlleur landscape + juju dashboard (model par défaut)
+
+tags :
+k8s pour les 10 worker
+juju pour le controlleur juju
+management pour le dashboard et landscape 
+
+Notes :
+virtualisation pour lxd ?
+seul MAAS a besoin de l'iso, les autres machines se font PXE
+commencer par installer ubuntu sur la machine MAAS
+il sera le serveur DHCP du réseau donc faire attentation de ne pas en avoir ailleur
+
+Besoin d'un bride OVS (openvswitch) (onglet réseau des machines dans MAAS) pour installer les charm en LXD
+-> hyper-v : activer l'urupation d'adresse mac 
+
+##########################
+# Installation de MAAS : #
+##########################
+
+sudo snap install maas-test-db
+sudo snap install maas --channel=3.3/stable
+# http://ip = l'adresse ip du serveur MAAS
+sudo maas init region+rack --maas-url http://ip:5240/MAAS --database-uri maas-test-db:///
+# creation du compte admin
+sudo maas createadmin --username admin --password ubuntu --email admin@example.com
+# export le clef api
+sudo maas apikey --username admin > ~/admin-api-key
+
+se connecter à l'interface web : http://ip:5240/MAAS
+Username: admin
+Password: ubuntu
+
+=> compléter le setup 
+
+générer une pair de clefs ssh :
+ssh-keygen -t ed25519 -o -a 100
+ssh-copy-id -i ~/.ssh/id_ed25519.pub root@ip
+
+important : 
+mettre en place le DHCP
+Verifier les images a fournir 
+Ajouter les noeuds en les démarrants en PXE
+modifier le mode d'alimentation en manuel (comme les machines sont des VM)
+commissionner les noeuds
+optionnel : les rennomer pour leur donner un nom convivial
+leur attribuer les tags
+
+###################
+# Ajout de Juju : #
+###################
+(toujours sur le seveur MAAS)
+
+sudo snap install juju --channel 3.1
+
+cat << EOF > ~/maas-cloud.yaml
+clouds:
+  maas-one:
+    type: maas
+    auth-types: [oauth1]
+    endpoint: http://ip:5240/MAAS
+EOF
+
+juju add-cloud --client -f maas-cloud.yaml maas-one
+
+cat ~/admin-api-key
+=> MAAS API key, a mettre dans maas-oauth ci-dessous
+
+cat << EOF > ~/maas-creds.yaml
+credentials:
+  maas-one:
+    anyuser:
+      auth-type: oauth1
+      maas-oauth: MAAS API key
+EOF
+
+juju add-credential --client -f maas-creds.yaml maas-one
+
+juju bootstrap --bootstrap-series=jammy --constraints tags=juju maas-one maas-controller
+
+(si serveur cassé et injoignable on peut le kill avec #jujuj kill-controller maas-controller)
+
+##############
+# Management #
+##############
+
+# passer au model du controller
+juju switch controller
+
+# installation du dashboard juju
+juju deploy juju-dashboard --constraints tags=management
+juju integrate juju-dashboard controller
+juju dashboard
+
+Your login credential is:
+  username: admin
+  password: 7aa09dacbab3147f85a7086f761d8666
+
+-------------------------------------------------------
+
+# installation du server landscape
+juju deploy landscape-server --constraints tags=management
+
+relation :
+db
+amqp
+haproxy
+
+################
+# Kubernetes : #
+################
+watch -n 5 -c juju status --color
+
+juju add-model --config default-series=jammy kubernetes
+(pour clear le model : juju destroy-model ***)
+
+# contraintes kubernetes
+contraintes par défaut => bundle.yaml https://github.com/charmed-kubernetes/bundle/blob/main/releases 
+	
+	0 : 1 core 4g
+	1 : 2 core 8g
+	2 : 2 core 8g
+	3 : 2 core 8g
+	4 : 1 core 4g
+	5 : 2 core 8g
+	6 : 2 core 8g
+	7 : 2 core 8g
+	8 : 2 core 8g
+	9 : 2 core 8g
+	
+cat << EOF > ~/bundle.yaml
+description: A highly-available, production-grade Kubernetes cluster.
+issues: https://bugs.launchpad.net/charmed-kubernetes-bundles
+series: jammy
+source: https://github.com/charmed-kubernetes/bundle
+website: https://ubuntu.com/kubernetes/charmed-k8s
+name: charmed-kubernetes
+applications:
+  calico:
+    annotations:
+      gui-x: '475'
+      gui-y: '605'
+    channel: 1.28/stable
+    charm: calico
+    options:
+      vxlan: Always
+  containerd:
+    annotations:
+      gui-x: '475'
+      gui-y: '800'
+    channel: 1.28/stable
+    charm: containerd
+  easyrsa:
+    annotations:
+      gui-x: '90'
+      gui-y: '420'
+    channel: 1.28/stable
+    charm: easyrsa
+    constraints: cores=1 mem=4G 
+    num_units: 1
+  etcd:
+    annotations:
+      gui-x: '800'
+      gui-y: '420'
+    channel: 1.28/stable
+    charm: etcd
+    constraints: cores=2 mem=4G 
+    num_units: 3
+    options:
+      channel: 3.4/stable
+  kubeapi-load-balancer:
+    annotations:
+      gui-x: '450'
+      gui-y: '250'
+    channel: 1.28/stable
+    charm: kubeapi-load-balancer
+    constraints: cores=1 mem=4G 
+    expose: true
+    num_units: 1
+  kubernetes-control-plane:
+    annotations:
+      gui-x: '800'
+      gui-y: '850'
+    channel: 1.28/stable
+    charm: kubernetes-control-plane
+    constraints: cores=2 mem=4G 
+    num_units: 2
+    options:
+      channel: 1.28/stable
+  kubernetes-worker:
+    annotations:
+      gui-x: '90'
+      gui-y: '850'
+    channel: 1.28/stable
+    charm: kubernetes-worker
+    constraints: cores=2 mem=4G 
+    expose: true
+    num_units: 3
+    options:
+      channel: 1.28/stable
+relations:
+- - kubernetes-control-plane:loadbalancer-external
+  - kubeapi-load-balancer:lb-consumers
+- - kubernetes-control-plane:loadbalancer-internal
+  - kubeapi-load-balancer:lb-consumers
+- - kubernetes-control-plane:kube-control
+  - kubernetes-worker:kube-control
+- - kubernetes-control-plane:certificates
+  - easyrsa:client
+- - etcd:certificates
+  - easyrsa:client
+- - kubernetes-control-plane:etcd
+  - etcd:db
+- - kubernetes-worker:certificates
+  - easyrsa:client
+- - kubeapi-load-balancer:certificates
+  - easyrsa:client
+- - calico:etcd
+  - etcd:db
+- - calico:cni
+  - kubernetes-control-plane:cni
+- - calico:cni
+  - kubernetes-worker:cni
+- - containerd:containerd
+  - kubernetes-worker:container-runtime
+- - containerd:containerd
+  - kubernetes-control-plane:container-runtime
+EOF
+
+juju deploy ./bundle.yaml
+
+sudo snap install kubectl --classic
+juju ssh kubernetes-control-plane/leader -- cat config > ~/.kube/config
+kubectl proxy --address=0.0.0.0 --accept-hosts='.*'
+http://ip:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/login
+
+https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md

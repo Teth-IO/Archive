@@ -22,6 +22,11 @@ Sous Oracle Linux :
  
  Déploiment d'openstack minimal distribué par MAAS (server provisionning) et JUJU (orchestration d'application)
 
+ => [MAAS/JUJU - Kubernetes](/MAAS%20JUJU%20-%20kubernetes/charmed_kubernetes.txt)
+
+ Déploiment de kubernetes minimal par MAAS (server provisionning) et JUJU (orchestration d'application)
+ WIP changement de runtime avec kata-container pour unsafe workload
+
  => [Windows 11 hardened Workstation](./suricata%20layer%202%20ELK)
 
  Renforcement de windows :
@@ -36,6 +41,12 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - Syncthing
  - Zram
 tmpfs par défaut
+ - Stack influDB et grafana pour supervision windows
+
+=> Notes :
+
+ - [cisco](./Note%20conf%20switch/conf%20switch.txt)
+ - [netdisco](./Note%20netdisco/docker-compose.yml)
 
 -------------------------------------- OBSOLÈTE --------------------------------------
 
