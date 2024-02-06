@@ -41,9 +41,12 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - Syncthing
  - Zram
 tmpfs par défaut
- - Stack influDB et grafana pour supervision windows
-     - ![Screenshot 1](./ROCKPro64%20NAS/1.png)
-     - ![Screenshot 2](./ROCKPro64%20NAS/2.png)
+ - Stack influDB, grafana et telegraf pour supervision windows :
+ressources par perfcounter
+![Screenshot 1](./ROCKPro64%20NAS/1.png)
+
+GPU, temperature et consommation électrique par WMI (populer par LibreHardwareMonitor)
+![Screenshot 2](./ROCKPro64%20NAS/2.png)
 
 => Notes :
 
