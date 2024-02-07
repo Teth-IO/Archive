@@ -425,6 +425,8 @@
             "mode": "thresholds"
           },
           "mappings": [],
+          "max": 32000000000,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1238,11 +1240,14 @@
             }
           },
           "mappings": [],
+          "max": 32000000000,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1273,7 +1278,9 @@
           ],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Name",
+          "sortDesc": false
         },
         "tooltip": {
           "mode": "multi",
@@ -1323,18 +1330,6 @@
             ]
           ],
           "tags": []
-        },
-        {
-          "alias": "$tag_host: $col",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "e9b5d7c7-8058-4ebf-9863-4160eb6ed268"
-          },
-          "hide": false,
-          "query": "SELECT mean(total) as total FROM \"mem\" WHERE host =~ /$hostname$/ AND $timeFilter GROUP BY time($interval), host fill(linear) ORDER BY asc",
-          "rawQuery": true,
-          "refId": "B",
-          "resultFormat": "time_series"
         }
       ],
       "title": "Memory Usage",
@@ -1402,7 +1397,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1504,7 +1500,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1662,7 +1659,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1900,7 +1898,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2039,7 +2038,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2208,7 +2208,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -2239,6 +2239,6 @@
   "timezone": "browser",
   "title": "Telegraf & Influx Windows Host Overview",
   "uid": "f460e027-c387-413d-b0b1-05167cebcb93",
-  "version": 25,
+  "version": 27,
   "weekStart": ""
 }
