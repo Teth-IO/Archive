@@ -28,15 +28,6 @@ userChrome.css :
 --bg: #302020;
 --urlbar-bg: #3f3f3f;
 --urldrop-bg: #302020;
-# ajouter
-menupopup {
-    background-color: #302020 !important;
-    -moz-appearance: none !important;
-}
-menugroup {
-	padding: 0 !important;
-	background-color: #302020 !important;
-}
 
 userContent.css :
 -----------------
@@ -45,6 +36,8 @@ userContent.css :
 sidebery css :
 --------------
 # modifier 
---bg: #302020 !important;
 --tabs-bg-hover: #101010 !important;
---tabs-activated-bg: #101010 !important;
+--tabs-activated-bg: #3f3f3f !important;
+# dans sidebery modifier :
+--toolbar-bg: #302020
+--frame-bg: #302020
