@@ -15,26 +15,26 @@ possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en
 
 -------------------------------------- Projets --------------------------------------
 
- - [cisco](./Note%20conf%20switch/conf%20switch.txt)
- - [netdisco](./Note%20netdisco/docker-compose.yml)
- - [Bation guacamole](./Bastion%20guacamole/)
+ => [cisco](./Note%20conf%20switch/conf%20switch.txt)
+ => [netdisco](./Note%20netdisco/docker-compose.yml)
+ => [Bation guacamole](./Bastion%20guacamole/)
 
  Bastion pour centraliser l'administration des serveurs.
  2 version :
    - Version OpenBSD (par les dépôts)
    - Version Docker-compose
 
-- [Suricata IPS avec ELK](./windows%2011%20hardened%20workstation/)
+ => [Suricata IPS avec ELK](./windows%2011%20hardened%20workstation/)
 
 Sous Oracle Linux :
   - Suricata en mode IPS en couche 2 (AF_PACKET)
   -  Stack ELK pour la partie SIEM
 
-- [MAAS/JUJU - OpenStack](/MAAS%20JUJU%20-%20OpenStack/)
+=> [MAAS/JUJU - OpenStack](/MAAS%20JUJU%20-%20OpenStack/)
  
  Déploiment d'openstack minimal distribué par MAAS (server provisionning) et JUJU (orchestration d'application)
 
-- [MAAS/JUJU - Kubernetes](/MAAS%20JUJU%20-%20kubernetes/charmed_kubernetes.txt)
+=> [MAAS/JUJU - Kubernetes](/MAAS%20JUJU%20-%20kubernetes/charmed_kubernetes.txt)
 
  Déploiment de kubernetes minimal par MAAS (server provisionning) et JUJU (orchestration d'application)
  WIP changement de runtime avec kata-container pour unsafe workload
