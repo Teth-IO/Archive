@@ -15,10 +15,10 @@
  - Au niveau des application avec une préférence pour les UWP qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
 
  => [WIP hardened gentoo](./Hardened%20gentoo/)
- - Compiler and runtime stack		GCC hardened
- - MAC								                 SELinux
- - UKI & Secure boot				       Dracut & sbsigntools
- - kernel							               kernel hardened (KSSP)
+ - Compiler and runtime stack		-> GCC hardened
+ - MAC	-> SELinux
+ - UKI & Secure boot	-> Dracut & sbsigntools
+ - kernel	-> kernel hardened (KSSP)
 
 -------------------------------------- Projets --------------------------------------
 
