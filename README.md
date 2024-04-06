@@ -5,6 +5,7 @@
 Conf et css pour LibreWolf <br />
 docker-compose pour routage du métamoteur searxng sur VPN <br />
 possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN <br />
+maj des conteneurs automatique par watchtower
 
  => [Windows 11 hardened Workstation](./suricata%20layer%202%20ELK)
 
