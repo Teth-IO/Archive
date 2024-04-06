@@ -2,10 +2,10 @@
 
  => [Setup road warrior](./road-warrior/)
 
-Conf et css pour LibreWolf <br />
-docker-compose pour routage du métamoteur searxng sur VPN <br />
-possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN <br />
-maj des conteneurs automatique par watchtower
+ - Conf et css pour LibreWolf <br />
+ - docker-compose pour routage du métamoteur searxng sur VPN <br />
+ - possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN <br />
+ - maj des conteneurs automatique par watchtower
 
  => [Windows 11 hardened Workstation](./Conf%20Windows%2011%20hardened%20workstation/))
 
@@ -16,9 +16,9 @@ maj des conteneurs automatique par watchtower
 
  => [WIP hardened gentoo](./Hardened%20gentoo/)
  - Compiler and runtime stack		GCC hardened
- - MAC								SELinux
- - UKI & Secure boot				Dracut & sbsigntools
- - kernel							kernel hardened (KSSP)
+ - MAC								                 SELinux
+ - UKI & Secure boot				       Dracut & sbsigntools
+ - kernel							               kernel hardened (KSSP)
 
 -------------------------------------- Projets --------------------------------------
 
