@@ -22,8 +22,8 @@
 
 -------------------------------------- Projets --------------------------------------
 
- => [cisco](./Znote%20-%20conf%20switch/)
- => [netdisco](./Znote%20-%20netdisco/)
+ => [cisco](./Znote%20-%20conf%20switch/)<br />
+ => [netdisco](./Znote%20-%20netdisco/)<br />
  => [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/)
 
  Bastion pour centraliser l'administration des serveurs.
