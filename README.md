@@ -21,14 +21,14 @@ possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en
 
  Bastion pour centraliser l'administration des serveurs.
  2 version :
-  - Version OpenBSD (par les dépôts)
-  - Version Docker-compose
+   - Version OpenBSD (par les dépôts)
+   - Version Docker-compose
 
 - [Suricata IPS avec ELK](./windows%2011%20hardened%20workstation/)
 
 Sous Oracle Linux :
- - Suricata en mode IPS en couche 2 (AF_PACKET)
- -  Stack ELK pour la partie SIEM
+  - Suricata en mode IPS en couche 2 (AF_PACKET)
+  -  Stack ELK pour la partie SIEM
 
 - [MAAS/JUJU - OpenStack](/MAAS%20JUJU%20-%20OpenStack/)
  
