@@ -1,0 +1,258 @@
+	General setup --->
+		[*] Auditing support																	SElinux		
+		Timers subsystem  --->																	
+			<*>   High Resolution Timer Support													ok, Qemu
+		[*] Configure standard kernel features (expert users)  --->								A activer, KSPP
+		Kexec and crash features
+			[ ] kexec system call                                                               A désactiver, KSPP
+[*] 64-bit kernel
+	Processor type and features  --->
+		[*] Symmetric multi-processing support													ok, perf
+		General architecture-dependent options  --->
+			[*] Provide system calls for 32-bit time_t
+		[ ] Enable vsyscall emulation															A désactiver, KSPP
+		< > /dev/cpu/*/msr - Model-specific register support                                    A désactiver, KSPP  
+		[*] EFI runtime service support 														ok, UEFI
+		[*]   EFI stub support																	ok, UEFI
+		[*]     EFI mixed-mode support                                                          ok, UEFI       
+        [ ] Enable the LDT (local descriptor table)                                             A désactiver, KSPP
+[*]	Mitigations for speculative execution vulnerabilites --->									
+	Power management and ACPI options  --->														
+		[ ] Hibernation (aka 'suspend to disk')													A désactiver, KSPP
+	Bus options (PCI etc.) --->
+	Binary Emulations --->
+		[*] IA32 Emulation																		ok, support binary 32bit
+[*]	Virtualization  --->
+		<*>   Kernel-based Virtual Machine (KVM) support										qemu
+		<*>   KVM for Intel processors support                                                  qemu
+	General architecture-dependent options --->
+		[*] GCC plugins  --->																	ok, KSPP
+[*]	Enable loadable module support --->
+-*-	Enable the block layer --->	
+		Partition Types --->
+			[*] Advanced partition selection													A activer, UEFI
+			[*] 	EFI GUID Partition support													A activer, UEFI
+	Executable file formats --->
+	Memory Management options --->
+		[ ] Disable heap randomization															ok, KSPP
+-*- Networking support ---> 
+		Networking options --->
+			[*] TCP: advanced congestion control --->
+				<*> BBR TCP 																	algorithme de control de congestion réseau aggressif
+			[*] Unix domain sockets																ok, qemu
+			<*> 802.1d Ethernet Bridging														a activer, Qemu
+	Device drivers ---->
+		Generic Driver Options --->
+			[*] Maintain a devtmpfs filesystem to mount at /dev                                 ok, perf
+			[*]   Automount devtmpfs at /dev, after the kernel mounted the rootfs               ok, perf
+		NVME Support --->
+			<*> NVM Express block device                                                        pas activé sur vm, dépend du hardware de base ?
+			[*] NVMe multipath support                                                          pas activé sur vm, dépend du hardware de base ?
+			[*] NVMe hardware monitoring                                                    	pas activé sur vm, dépend du hardware de base ?
+			<M> NVM Express over Fabrics FC host driver                                     	pas activé sur vm, dépend du hardware de base ?
+			<M> NVM Express over Fabrics TCP host driver                                    	pas activé sur vm, dépend du hardware de base ?
+		SCSI device support  ---> 
+			<*> SCSI device support                                                             ok
+			<*> SCSI disk support                                                               ok
+		<*> Serial ATA and Parallel ATA drivers (libata)  --->                                  ok
+			[*] ATA ACPI Support                                                                ok
+			[*] SATA Port Multiplier support                                                    ok
+			<*> AHCI SATA support (ahci)                                                        ok
+			[*] ATA BMDMA support                                                               ok
+			[*] ATA SFF support (for legacy IDE and PATA)                                       ok
+			<*> Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support (ata_piix)                       ok
+		[*] Network device support  --->                                                        ok, qemu
+			[*] Network core driver support                                                     ok, qemu
+				<*> Universal TUN/TAP device driver support                                     a activer, qemu
+		Character devices --->
+			[*] TPM Hardware Support --->                                                       a activer 
+				<*> TPM HW Random Number Generator support                                      a activer 
+				<*> TPM Interface Specification 1.2 Interface / TPM 2.0 FIFO Interface          a activer 
+				<*> TPM 2.0 CRB Interface                                                       a activer 
+		<*> Sound card support  --->                                                            ok, pipewire
+			<*> Advanced Linux Sound Architecture  --->                                         ok, pipewire
+				[*]   Sound Proc FS Support                                                     ok, pipewire
+				[*]     Verbose procfs contents                                                 ok, pipewire
+		HID support  --->
+			-*- HID bus support																	ok
+				[*]   Battery level reporting for HID devices									a activer
+				<*>   Generic HID driver														ok
+				USB HID support  --->
+					<*> USB HID transport layer                                                 ok
+		[*] USB support  --->                                                                   ok
+			<*>     xHCI HCD (USB 3.0) support                                                  ok
+			<*>     EHCI HCD (USB 2.0) support                                                  ok
+			<*>     OHCI HCD (USB 1.1) support                                                  ok
+		Graphics support  --->
+			Frame buffer Devices  --->
+				<*> Support for frame buffer devices  --->                                      a activer, UEFI
+					[*]   EFI-based Framebuffer Support                                         a activer, UEFI
+            <*> Intel 8xx/9xx/G3x/G4x/HD Graphics												ok, qemu
+            <*> Enable KVM host support Intel GVT-g graphics virtualization						a activer, qemu
+			Console display driver support  --->
+				[*] Framebuffer Console support													a activer, KSPP
+		[*] VHOST drivers  --->                                                                 ok, qemu
+			<*> Host kernel accelerator for virtio net                                          a activer, qemu
+		<*> VFIO Non-Privileged userspace driver framework										a activer, qemu
+            <*> Mediated device driver framework                                                a activer, qemu
+		[*] IOMMU Hardware Support  --->														ok, KSPP
+				IOMMU default domain type  --->													mettre Translated - Strict, KSPP
+		<*> Unified support for USB4 and Thunderbolt  --->										a activer
+	File systems --->
+		<*> XFS filesystem support																a activer, fs
+		DOS/FAT/NT Filesystems  --->                                                            ok, efi
+			<*> MSDOS fs support                                                                ok, efi
+			<*> VFAT (Windows-95) fs support                                                    ok, efi
+		Pseudo Filesystems --->
+			[ ] /proc/kcore support 															a désactiver, KSPP
+	Security options  --->
+		Kernel hardening options --->
+			Randomize layout of sensitive kernel structures ---> mettre 'Limit randomization of structure layout to cache-lines', KSPP
+		[*] Enable different security models                                                    ok, KSPP
+		[*] NSA SELinux Support                                                                 ok, SElinux
+		[x]   NSA SELinux boot parameter                                                        ok, SElinux
+		[x]   NSA SELinux runtime disable                                                       ok, SElinux
+		[*]   NSA SELinux Development Support                                                   ok, SElinux
+		[x]   NSA SELinux AVC Statistics                                                        ok, SElinux
+		(0)   NSA SELinux checkreqprot default value                                            ok, SElinux
+-*- Cryptographic API --->
+	Library routines --->
+	Kernel hacking  --->																													
+		Memory Debugging  --->
+			[*] Debug VM translations															a activer, Qemu
+	Gentoo Linux --->																			
+		[*] Gentoo Linux support																ok
+		[*]   Linux dynamic and persistent device naming (userspace devfs) support				ok
+		[*]   Select options required by Portage features										ok
+		[*] Kernel Self Protection Project  ---													A activer, hardening
+			[*]   Enable Kernel Self Protection Project Recommendations                         Masqué si tout les KSPP ne sont pas comforme, hardening
+			[*]     X86_64 KSPP Settings                                                        Masqué si tout les KSPP ne sont pas comforme, hardening
+		[*] Print firmware information that the kernel attempts to load							ok
+		
+		
+L'option Kernel Self Protection Project, une fois les X86_64 KSPP Settings viennent ajouter les paramètres suivants : https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project/Recommended_Settings
+
+udev : 
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+		
+webcam :
+Device Drivers  --->
+   <*> Multimedia support  --->
+      [*]   Filter media drivers
+      Media core support  --->
+         [*] Video4Linux core
+         [*] Media Controller API
+        Media device types  --->
+            [*] Cameras and video grabbers 
+        Video4Linux options  --->
+            <M> V4L2 flash API for LED flash class devices
+        Media drivers  ---> 
+            [*] Media USB Adapters  ---> 
+                <M>   USB Video Class (UVC)
+                    [*]   UVC input events device support
+					
+kernel :
+General setup  --->
+   [*] POSIX Message Queues
+   BPF subsystem  --->
+      [*] Enable bpf() system call (<span style="color:green;">Optional</span>)
+   [*] Control Group support  --->
+      [*] Memory controller 
+      [*] Swap controller (<span style="color:green;">Optional</span>)
+      [*]   Swap controller enabled by default (<span style="color:green;">Optional</span>)
+      [*] IO controller (<span style="color:green;">Optional</span>)
+      [*] CPU controller  --->
+         [*] Group scheduling for SCHED_OTHER (<span style="color:green;">Optional</span>)
+         [*]   CPU bandwidth provisioning for FAIR_GROUP_SCHED (<span style="color:green;">Optional</span>)
+         [*] Group scheduling for SCHED_RR/FIFO (<span style="color:green;">Optional</span>)
+      [*] PIDs controller (<span style="color:green;">Optional</span>)
+      [*] Freezer controller
+      [*] HugeTLB controller (<span style="color:green;">Optional</span>)
+      [*] Cpuset controller
+         [*]  Include legacy /proc/<pid>/cpuset file (<span style="color:green;">Optional</span>)
+      [*] Device controller
+      [*] Simple CPU accounting controller
+      [*] Perf controller (<span style="color:green;">Optional</span>)
+      [*] Support for eBPF programs attached to cgroups (<span style="color:green;">Optional</span>)
+   [*] Namespaces support
+      [*] UTS namespace
+      [*] IPC namespace
+      [*] User namespace (<span style="color:green;">Optional</span>)
+      [*] PID Namespaces
+      [*] Network namespace
+General architecture-dependent options  --->
+   [*] Enable seccomp to safely execute untrusted bytecode (<span style="color:green;">Optional</span>)
+[*] Enable the block layer  --->
+   [*] Block layer bio throttling support (<span style="color:green;">Optional</span>)
+[*] Networking support  --->
+    Networking options  --->
+       [*] Network packet filtering framework (Netfilter)  --->
+            [*] Advanced netfilter configuration
+            [*]   Bridged IP/ARP packets filtering
+               Core Netfilter Configuration  --->
+                  [*] Netfilter connection tracking support
+                  [*] Network Address Translation support 
+                  [*] MASQUERADE target support
+                  [*] Netfilter Xtables support
+                  [*]    "addrtype" address type match support
+                  [*]    "conntrack" connection tracking match support
+                  [*]    "ipvs" match support (<span style="color:green;">Optional</span>)
+                  [*]    "mark" match support 
+            [*] IP virtual server support  ---> (<span style="color:green;">Optional</span>)
+               [*] TCP load balancing support (<span style="color:green;">Optional</span>)
+               [*] UDP load balancing support (<span style="color:green;">Optional</span>)
+               [*] round-robin scheduling (<span style="color:green;">Optional</span>)
+               [*] Netfilter connection tracking (<span style="color:green;">Optional</span>)       
+            IP: Netfilter Configuration  --->
+               [*] IP tables support
+               [*]    Packet filtering
+               [*]    iptables NAT support
+               [*]      MASQUERADE target support
+               [*]      REDIRECT target support (<span style="color:green;">Optional</span>)
+        [*] 802.1d Ethernet Bridging
+        [*]   VLAN filtering
+        [*] QoS and/or fair queueing  --->  (<span style="color:green;">Optional</span>)
+           [*] Control Group Classifier (<span style="color:green;">Optional</span>)
+        [*] L3 Master device support
+        [*] Network priority cgroup (<span style="color:green;">Optional</span>)
+Device Drivers  --->
+   [*] Multiple devices driver support (RAID and LVM)  --->
+      [*] Device mapper support (<span style="color:green;">Optional</span>)
+      [*]  Thin provisioning target (<span style="color:green;">Optional</span>)
+    [*] Network device support  --->
+       [*] Network core drive support
+       [*]   Dummy net driver support
+       [*]   MAC-VLAN net driver support
+       [*]   IP-VLAN support
+       [*]   Virtual eXtensible Local Area Network (VXLAN)
+       [*]   Virtual ethernet pair device
+    Character devices  --->
+        -*- Enable TTY
+        -*-    Unix98 PTY support
+        [*]       Support multiple instances of devpts (option appears if you are using systemd)
+File systems  --->
+   [*] Btrfs filesystem support (<span style="color:green;">Optional</span>)
+   [*]   Btrfs POSIX Access Control Lists (<span style="color:green;">Optional</span>)
+   [*] Overlay filesystem support 
+   Pseudo filesystems  --->
+      [*] HugeTLB file system support (<span style="color:green;">Optional</span>)
+Security options  --->
+   [*] Enable access key retention support
