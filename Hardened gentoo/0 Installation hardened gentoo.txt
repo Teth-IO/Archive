@@ -224,6 +224,11 @@ rlpkg -a -r
 # chaque tache d'afiministration (e.g. installation) nécessite de passer par 
 newrole -r sysadm_r
 
+# pour sauvegarder les logs d'audit de SELinux il est nécessaire d'installer le paquets suivants
+sys-process/audit
+rc-service auditd start
+rc-update add auditd default
+
 UKI
 ---
 # /etc/kernel/cmdline is not used when generating Unified Kernel Images with Dracut
@@ -292,6 +297,8 @@ cp -v db.esl compound_db.esl
 sign-efi-sig-list -k PK.key -c PK.crt KEK compound_KEK.esl compound_KEK.auth
 sign-efi-sig-list -k KEK.key -c KEK.crt db compound_db.esl compound_db.auth 
 
+=> besoin d'un hardware pour continuer
+
 # redémmarage vers le bios et entrer en setup mode
 enrollement des clefs dans l'UEFI
 
@@ -321,6 +328,31 @@ vim /etc/dracut.conf
 uefi_secureboot_cert=/etc/efi-keys/db.crt
 uefi_secureboot_key=/etc/efi-keys/db.key
 
-# policices SElinux
+# SElinux enforcing
 -------------------
-avant de passer en SELinux enforcing il faut definir les policy sinon SELinux vas bloquer tout le système
+# avant de passer en SELinux enforcing il passer en revue les denied operations pour gérer de nouvelles stratégie (le systeme ne peut pas booter avec les règles par défaut)
+# # liste des permission sets https://selinuxproject.org/page/ObjectClassesPerms#Common_Permission_Sets
+# pour passer en revue les access vector cache (AVC) denials
+ausearch -m avc -ts recen
+# ou directement dans le fichier de log /var/log/audit/audit.log
+# pour pour une human-readable description
+audit2allow -w -a
+# on peut créer un policy package avec :
+audit2allow -a -M 'name'
+# Audit2allow creates a type enforcement (te) file in the current directory using the name given to the -M option
+# audit2allow also compiles this "te" file into a policy package (.pp) ready to be installed with the semodule command
+# When you install this MYPOLICY.pp, it will replace any previously install MYPOLICY.pp file
+# attention donc de ne pas créer un policy package du meme nom que ceux deja present sur le systeme 
+# policies location
+/usr/share/selinux/strict/
+# et l'activer 
+semodule -i 'name'.pp
+# How to Enable or Disable SELinux Boolean Values
+getsebool -a
+setsebool 'boolean' on|off
+
+# passer SELinux en enforcing
+vim /etc/selinux/config
+
+=> meme avec un allow AVC dmesg et auditd ne peut pas boot
+=> a voir
