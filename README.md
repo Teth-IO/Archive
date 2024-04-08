@@ -14,16 +14,8 @@
  - Un contrôle des fonctionnalités avec les GP
  - Au niveau des application avec une préférence pour les UWP qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
 
- => [WIP hardened gentoo](./Hardened%20gentoo/)
- - Compiler and runtime stack		-> GCC hardened
- - MAC	-> SELinux
- - UKI & Secure boot	-> Dracut & sbsigntools
- - kernel	-> kernel hardened (KSSP)
+-------------------------------------- diverses install --------------------------------------
 
--------------------------------------- Projets --------------------------------------
-
- => [cisco](./Znote%20-%20conf%20switch/)<br />
- => [netdisco](./Znote%20-%20netdisco/)<br />
  => [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/)
 
  Bastion pour centraliser l'administration des serveurs.
@@ -45,6 +37,17 @@ Sous Oracle Linux :
 
  Déploiment de kubernetes minimal par MAAS (server provisionning) et JUJU (orchestration d'application)
  WIP changement de runtime avec kata-container pour unsafe workload
+
+-------------------------------------- Note --------------------------------------
+
+ => [WIP hardened gentoo](./Znote%20-%20Hardened%20gentoo/)
+ - Compiler and runtime stack		-> GCC hardened
+ - MAC	-> SELinux
+ - UKI & Secure boot	-> Dracut & sbsigntools
+ - kernel	-> kernel hardened (KSSP)
+
+ => [cisco](./Znote%20-%20conf%20switch/)<br />
+ => [netdisco](./Znote%20-%20netdisco/)<br />
 
 -------------------------------------- OBSOLÈTE --------------------------------------
 
