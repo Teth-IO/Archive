@@ -1,6 +1,6 @@
 -------------------------------------- infra --------------------------------------
 
- => [Setup road warrior](./road-warrior/)
+ => [Setup road warrior](./Road-warrior/)
 
  - Conf et css pour LibreWolf <br />
  - docker-compose pour routage du métamoteur searxng sur VPN <br />
