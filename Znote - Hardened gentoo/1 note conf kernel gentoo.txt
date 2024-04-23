@@ -1,133 +1,133 @@
 	General setup --->
-		[*] Auditing support																	SElinux		
+		[*] Auditing support														SElinux		
 		Timers subsystem  --->																	
-			<*>   High Resolution Timer Support													ok, Qemu
-		[*] Configure standard kernel features (expert users)  --->								A activer, KSPP
+			<*>   High Resolution Timer Support											ok, Qemu
+		[*] Configure standard kernel features (expert users)  --->									A activer, KSPP
 		Kexec and crash features
-			[ ] kexec system call                                                               A désactiver, KSPP
+			[ ] kexec system call                                                               					A désactiver, KSPP
 [*] 64-bit kernel
 	Processor type and features  --->
-		[*] Symmetric multi-processing support													ok, perf
+		[*] Symmetric multi-processing support												ok, perf
 		General architecture-dependent options  --->
 			[*] Provide system calls for 32-bit time_t
-		[ ] Enable vsyscall emulation															A désactiver, KSPP
-		< > /dev/cpu/*/msr - Model-specific register support                                    A désactiver, KSPP  
-		[*] EFI runtime service support 														ok, UEFI
-		[*]   EFI stub support																	ok, UEFI
-		[*]     EFI mixed-mode support                                                          ok, UEFI       
-        [ ] Enable the LDT (local descriptor table)                                             A désactiver, KSPP
+		[ ] Enable vsyscall emulation													A désactiver, KSPP
+		< > /dev/cpu/*/msr - Model-specific register support                                    					A désactiver, KSPP  
+		[*] EFI runtime service support 												ok, UEFI
+		[*]   EFI stub support														ok, UEFI
+		[*]     EFI mixed-mode support                                                          					ok, UEFI       
+        [ ] Enable the LDT (local descriptor table)                                             						A désactiver, KSPP
 [*]	Mitigations for speculative execution vulnerabilites --->									
 	Power management and ACPI options  --->														
-		[ ] Hibernation (aka 'suspend to disk')													A désactiver, KSPP
+		[ ] Hibernation (aka 'suspend to disk')												A désactiver, KSPP
 	Bus options (PCI etc.) --->
 	Binary Emulations --->
-		[*] IA32 Emulation																		ok, support binary 32bit
+		[*] IA32 Emulation														ok, support binary 32bit
 [*]	Virtualization  --->
 		<*>   Kernel-based Virtual Machine (KVM) support										qemu
-		<*>   KVM for Intel processors support                                                  qemu
+		<*>   KVM for Intel processors support                                                  					qemu
 	General architecture-dependent options --->
-		[*] GCC plugins  --->																	ok, KSPP
+		[*] GCC plugins  --->														ok, KSPP
 [*]	Enable loadable module support --->
 -*-	Enable the block layer --->	
 		Partition Types --->
-			[*] Advanced partition selection													A activer, UEFI
-			[*] 	EFI GUID Partition support													A activer, UEFI
+			[*] Advanced partition selection											A activer, UEFI
+			[*] 	EFI GUID Partition support											A activer, UEFI
 	Executable file formats --->
 	Memory Management options --->
-		[ ] Disable heap randomization															ok, KSPP
+		[ ] Disable heap randomization													ok, KSPP
 -*- Networking support ---> 
 		Networking options --->
 			[*] TCP: advanced congestion control --->
-				<*> BBR TCP 																	algorithme de control de congestion réseau aggressif
-			[*] Unix domain sockets																ok, qemu
-			<*> 802.1d Ethernet Bridging														a activer, Qemu
+				<*> BBR TCP 													algorithme de control de congestion réseau aggressif
+			[*] Unix domain sockets													ok, qemu
+			<*> 802.1d Ethernet Bridging												a activer, Qemu
 	Device drivers ---->
 		Generic Driver Options --->
-			[*] Maintain a devtmpfs filesystem to mount at /dev                                 ok, perf
-			[*]   Automount devtmpfs at /dev, after the kernel mounted the rootfs               ok, perf
+			[*] Maintain a devtmpfs filesystem to mount at /dev                                 					ok, perf
+			[*]   Automount devtmpfs at /dev, after the kernel mounted the rootfs               					ok, perf
 		NVME Support --->
-			<*> NVM Express block device                                                        pas activé sur vm, dépend du hardware de base ?
-			[*] NVMe multipath support                                                          pas activé sur vm, dépend du hardware de base ?
-			[*] NVMe hardware monitoring                                                    	pas activé sur vm, dépend du hardware de base ?
-			<M> NVM Express over Fabrics FC host driver                                     	pas activé sur vm, dépend du hardware de base ?
-			<M> NVM Express over Fabrics TCP host driver                                    	pas activé sur vm, dépend du hardware de base ?
+			<*> NVM Express block device                                                        					pas activé sur vm, dépend du hardware de base ?
+			[*] NVMe multipath support                                                          					pas activé sur vm, dépend du hardware de base ?
+			[*] NVMe hardware monitoring                                                    					pas activé sur vm, dépend du hardware de base ?
+			<M> NVM Express over Fabrics FC host driver                                     					pas activé sur vm, dépend du hardware de base ?
+			<M> NVM Express over Fabrics TCP host driver                                    					pas activé sur vm, dépend du hardware de base ?
 		SCSI device support  ---> 
-			<*> SCSI device support                                                             ok
-			<*> SCSI disk support                                                               ok
-		<*> Serial ATA and Parallel ATA drivers (libata)  --->                                  ok
-			[*] ATA ACPI Support                                                                ok
-			[*] SATA Port Multiplier support                                                    ok
-			<*> AHCI SATA support (ahci)                                                        ok
-			[*] ATA BMDMA support                                                               ok
-			[*] ATA SFF support (for legacy IDE and PATA)                                       ok
-			<*> Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support (ata_piix)                       ok
-		[*] Network device support  --->                                                        ok, qemu
-			[*] Network core driver support                                                     ok, qemu
-				<*> Universal TUN/TAP device driver support                                     a activer, qemu
+			<*> SCSI device support                                                             					ok
+			<*> SCSI disk support                                                               					ok
+		<*> Serial ATA and Parallel ATA drivers (libata)  --->                                  					ok
+			[*] ATA ACPI Support                                                                					ok
+			[*] SATA Port Multiplier support                                                    					ok
+			<*> AHCI SATA support (ahci)                                                        					ok
+			[*] ATA BMDMA support                                                               					ok
+			[*] ATA SFF support (for legacy IDE and PATA)                                       					ok
+			<*> Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support (ata_piix)                       					ok
+		[*] Network device support  --->                                                        					ok, qemu
+			[*] Network core driver support                                                     					ok, qemu
+				<*> Universal TUN/TAP device driver support                                     				a activer, qemu
 		Character devices --->
-			[*] TPM Hardware Support --->                                                       a activer 
-				<*> TPM HW Random Number Generator support                                      a activer 
-				<*> TPM Interface Specification 1.2 Interface / TPM 2.0 FIFO Interface          a activer 
-				<*> TPM 2.0 CRB Interface                                                       a activer 
-		<*> Sound card support  --->                                                            ok, pipewire
-			<*> Advanced Linux Sound Architecture  --->                                         ok, pipewire
-				[*]   Sound Proc FS Support                                                     ok, pipewire
-				[*]     Verbose procfs contents                                                 ok, pipewire
+			[*] TPM Hardware Support --->                                                       					a activer 
+				<*> TPM HW Random Number Generator support                                      				a activer 
+				<*> TPM Interface Specification 1.2 Interface / TPM 2.0 FIFO Interface          				a activer 
+				<*> TPM 2.0 CRB Interface                                                       				a activer 
+		<*> Sound card support  --->                                                            					ok, pipewire
+			<*> Advanced Linux Sound Architecture  --->                                         					ok, pipewire
+				[*]   Sound Proc FS Support                                                     				ok, pipewire
+				[*]     Verbose procfs contents                                                 				ok, pipewire
 		HID support  --->
-			-*- HID bus support																	ok
+			-*- HID bus support													ok
 				[*]   Battery level reporting for HID devices									a activer
-				<*>   Generic HID driver														ok
+				<*>   Generic HID driver											ok
 				USB HID support  --->
-					<*> USB HID transport layer                                                 ok
-		[*] USB support  --->                                                                   ok
-			<*>     xHCI HCD (USB 3.0) support                                                  ok
-			<*>     EHCI HCD (USB 2.0) support                                                  ok
-			<*>     OHCI HCD (USB 1.1) support                                                  ok
+					<*> USB HID transport layer                                                 				ok
+		[*] USB support  --->                                                                   					ok
+			<*>     xHCI HCD (USB 3.0) support                                                  					ok
+			<*>     EHCI HCD (USB 2.0) support                                                  					ok
+			<*>     OHCI HCD (USB 1.1) support                                                  					ok
 		Graphics support  --->
 			Frame buffer Devices  --->
-				<*> Support for frame buffer devices  --->                                      a activer, UEFI
-					[*]   EFI-based Framebuffer Support                                         a activer, UEFI
+				<*> Support for frame buffer devices  --->                                      				a activer, UEFI
+					[*]   EFI-based Framebuffer Support                                         				a activer, UEFI
             <*> Intel 8xx/9xx/G3x/G4x/HD Graphics												ok, qemu
-            <*> Enable KVM host support Intel GVT-g graphics virtualization						a activer, qemu
+            <*> Enable KVM host support Intel GVT-g graphics virtualization									a activer, qemu
 			Console display driver support  --->
-				[*] Framebuffer Console support													a activer, KSPP
-		[*] VHOST drivers  --->                                                                 ok, qemu
-			<*> Host kernel accelerator for virtio net                                          a activer, qemu
+				[*] Framebuffer Console support											a activer, KSPP
+		[*] VHOST drivers  --->                                                                 					ok, qemu
+			<*> Host kernel accelerator for virtio net                                          					a activer, qemu
 		<*> VFIO Non-Privileged userspace driver framework										a activer, qemu
-            <*> Mediated device driver framework                                                a activer, qemu
-		[*] IOMMU Hardware Support  --->														ok, KSPP
-				IOMMU default domain type  --->													mettre Translated - Strict, KSPP
+            <*> Mediated device driver framework                                               							a activer, qemu
+		[*] IOMMU Hardware Support  --->												ok, KSPP
+				IOMMU default domain type  --->											mettre Translated - Strict, KSPP
 		<*> Unified support for USB4 and Thunderbolt  --->										a activer
 	File systems --->
-		<*> XFS filesystem support																a activer, fs
-		DOS/FAT/NT Filesystems  --->                                                            ok, efi
-			<*> MSDOS fs support                                                                ok, efi
-			<*> VFAT (Windows-95) fs support                                                    ok, efi
+		<*> XFS filesystem support													a activer, fs
+		DOS/FAT/NT Filesystems  --->                                                            					ok, efi
+			<*> MSDOS fs support                                                                					ok, efi
+			<*> VFAT (Windows-95) fs support                                                    					ok, efi
 		Pseudo Filesystems --->
-			[ ] /proc/kcore support 															a désactiver, KSPP
+			[ ] /proc/kcore support 												a désactiver, KSPP
 	Security options  --->
 		Kernel hardening options --->
-			Randomize layout of sensitive kernel structures ---> mettre 'Limit randomization of structure layout to cache-lines', KSPP
-		[*] Enable different security models                                                    ok, KSPP
-		[*] NSA SELinux Support                                                                 ok, SElinux
-		[x]   NSA SELinux boot parameter                                                        ok, SElinux
-		[x]   NSA SELinux runtime disable                                                       ok, SElinux
-		[*]   NSA SELinux Development Support                                                   ok, SElinux
-		[x]   NSA SELinux AVC Statistics                                                        ok, SElinux
-		(0)   NSA SELinux checkreqprot default value                                            ok, SElinux
+			Randomize layout of sensitive kernel structures ---> mettre 'Limit randomization of structure layout to cache-lines', 	KSPP
+		[*] Enable different security models                                                    					ok, KSPP
+		[*] NSA SELinux Support                                                                 					ok, SElinux
+		[x]   NSA SELinux boot parameter                                                        					ok, SElinux
+		[x]   NSA SELinux runtime disable                                                       					ok, SElinux
+		[*]   NSA SELinux Development Support                                                   					ok, SElinux
+		[x]   NSA SELinux AVC Statistics                                                        					ok, SElinux
+		(0)   NSA SELinux checkreqprot default value                                            					ok, SElinux
 -*- Cryptographic API --->
 	Library routines --->
 	Kernel hacking  --->																													
 		Memory Debugging  --->
-			[*] Debug VM translations															a activer, Qemu
+			[*] Debug VM translations												a activer, Qemu
 	Gentoo Linux --->																			
-		[*] Gentoo Linux support																ok
-		[*]   Linux dynamic and persistent device naming (userspace devfs) support				ok
+		[*] Gentoo Linux support													ok
+		[*]   Linux dynamic and persistent device naming (userspace devfs) support							ok
 		[*]   Select options required by Portage features										ok
-		[*] Kernel Self Protection Project  ---													A activer, hardening
-			[*]   Enable Kernel Self Protection Project Recommendations                         Masqué si tout les KSPP ne sont pas comforme, hardening
-			[*]     X86_64 KSPP Settings                                                        Masqué si tout les KSPP ne sont pas comforme, hardening
-		[*] Print firmware information that the kernel attempts to load							ok
+		[*] Kernel Self Protection Project  ---												A activer, hardening
+			[*]   Enable Kernel Self Protection Project Recommendations                         					Masqué si tout les KSPP ne sont pas comforme, hardening
+			[*]     X86_64 KSPP Settings                                                        					Masqué si tout les KSPP ne sont pas comforme, hardening
+		[*] Print firmware information that the kernel attempts to load									ok
 		
 		
 L'option Kernel Self Protection Project, une fois les X86_64 KSPP Settings viennent ajouter les paramètres suivants : https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project/Recommended_Settings
