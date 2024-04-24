@@ -6,13 +6,21 @@
  - docker-compose pour routage du métamoteur searxng sur VPN <br />
  - possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN <br />
 
- => [Windows 11 hardened Workstation](./Conf%20Windows%2011%20hardened%20workstation/))
+ => [Windows 11 hardened Workstation](./Windows%2011%20-%20hardened/)
 
  Renforcement de windows :
  - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
  - Un contrôle des fonctionnalités avec les GP
  - Au niveau des application avec une préférence pour les UWP qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
 
+ => [MicroOS aeon hardened workstation](/MicroOS%20aeon%20-%20hardened/)
+
+ Renforcement de MicroOS :
+ - support FIDO2 pour dechiffrement du disque (nécessite une maj LUKS1 vers LUKS2)
+ - Hardened memory allocator
+ - KSPP aux kernel command line options et sysctls
+ (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, modern solution (wayland, pipewire, systemd-boot))
+ 
 -------------------------------------- diverses install --------------------------------------
 
  => [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/)
