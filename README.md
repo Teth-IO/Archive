@@ -18,7 +18,7 @@
  Renforcement de MicroOS :
  - support FIDO2 pour dechiffrement du disque (nécessite une maj LUKS1 vers LUKS2)
  - Hardened memory allocator
- - KSPP aux kernel command line options et sysctls<br /
+ - KSPP aux kernel command line options et sysctls<br />
  (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, modern solution (wayland, pipewire, systemd-boot))
  
 -------------------------------------- diverses install --------------------------------------
