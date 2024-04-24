@@ -9,27 +9,32 @@ zypper --non-interactive remove sudo
 
 ## swapfile
 
-dd if=/dev/zero of=/swapfile bs=1M count=2048 status=progress
+truncate -s 0 /swapfile
+chattr +C /swapfile
+fallocate -l 2G /swapfile
 chmod 0600 /swapfile
 mkswap -U clear /swapfile
 swapon /swapfile
-sed ' a\ 
-/swapfile	none	swap	sw
-'
+sed -i '$a/swapfile	none	swap	sw' /etc/fstab
 
 ## dracut fido2
 
 echo "add_dracutmodules+=\" fido2 \"" | sudo tee /etc/dracut.conf.d/fido2.conf
 add_dracutmodules+=" fido2 "
 
-sed '/cr_root/ s/$/,fido2-device=auto/' /etc/crypttab
+sed -i '/cr_root/ s/$/,fido2-device=auto/' /etc/crypttab
 
 ## hardened malloc
 zypper --non-interactive install git glibc clang make
 git clone https://github.com/GrapheneOS/hardened_malloc
 export CC=clang
 export CXX=clang++
+cd hardened_malloc/
 make
+mv out/libhardened_malloc.so /usr/lib/libhardened_malloc.so
+cat << EOF > /etc/ld.so.preload
+/usr/lib/libhardened_malloc.so
+EOF
 
 ## sysctl
 cat << EOF > /etc/sysctl.d/hardening.conf
@@ -48,6 +53,7 @@ dev.tty.legacy_tiocsti = 0
 vm.unprivileged_userfaultfd = 0
 vm.mmap_rnd_bits = 32
 vm.mmap_rnd_compat_bits = 16
+vm.max_map_count = 1048576
 fs.protected_symlinks = 1
 fs.protected_hardlinks = 1
 fs.protected_fifos = 2
@@ -79,6 +85,6 @@ EOF
 
 ## kernel cmdline 
 
-sed '/options/ s/$/ security=selinux selinux=1 enforcing=1 hardened_usercopy=1 init_on_alloc=1 init_on_free=1 randomize_kstack_offset=on page_alloc.shuffle=1 slab_nomerge pti=on iommu.passthrough=0 iommu.strict=1/' /boot/efi/loader/entries/*
+sed -i '/options/ s/$/ security=selinux selinux=1 enforcing=1 hardened_usercopy=1 init_on_alloc=1 init_on_free=1 randomize_kstack_offset=on page_alloc.shuffle=1 slab_nomerge pti=on iommu.passthrough=0 iommu.strict=1/' /boot/efi/loader/entries/*
 
 dracut -f

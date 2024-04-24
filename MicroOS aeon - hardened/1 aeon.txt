@@ -12,19 +12,24 @@ enable firwall
 
 outils manquants :
 ------------------
+zypper --non-interactive install man
+
+PAM :
+-----
+# utilisateur non admin (root accessible que par clef)
 zypper --non-interactive remove sudo
 
 swapfile :
 ----------
 # pas de swap par défaut
 
-dd if=/dev/zero of=/swapfile bs=1M count=2048 status=progress
+truncate -s 0 /swapfile
+chattr +C /swapfile
+fallocate -l 2G /swapfile
 chmod 0600 /swapfile
 mkswap -U clear /swapfile
 swapon /swapfile
-sed ' a\ 
-/swapfile	none	swap	sw
-'
+sed -i '$a/swapfile	none	swap	sw' /etc/fstab
 
 ajout module fido2 à Dracut :
 -----------------------------
@@ -39,13 +44,19 @@ sed '/cr_root/ s/$/,fido2-device=auto/' /etc/crypttab
 
 installation hardened malloc :
 ------------------------------
-# memory allocator derivated from OpenBSD
+# memory allocator derivated from OpenBSD by GrapheneOS
+# https://github.com/GrapheneOS/hardened_malloc
 
 zypper --non-interactive install git glibc clang make
 git clone https://github.com/GrapheneOS/hardened_malloc
 export CC=clang
 export CXX=clang++
+cd hardened_malloc/
 make
+mv out/libhardened_malloc.so /usr/lib/libhardened_malloc.so
+cat << EOF > /etc/ld.so.preload
+/usr/lib/libhardened_malloc.so
+EOF
 
 sysctls :
 ---------
@@ -68,6 +79,7 @@ dev.tty.legacy_tiocsti = 0
 vm.unprivileged_userfaultfd = 0
 vm.mmap_rnd_bits=32
 vm.mmap_rnd_compat_bits=16
+vm.max_map_count = 1048576
 fs.protected_symlinks = 1
 fs.protected_hardlinks = 1
 fs.protected_fifos = 2
