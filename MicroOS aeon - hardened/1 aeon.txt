@@ -1,11 +1,23 @@
 opemsus aeon :
 
-note d'install :
+##################
+# I installation #
+##################
+
 systemd-boot
 disk encryption
 virer les subvolumes grub
 enable firwall
 
+######################################
+# II boot sur live USB pour maj LUKS #
+######################################
+
+cryptsetup convert --type luks2 /dev/sda2
+
+#####################################################
+# III first-boot (combustion avec enrollment fido2) #
+#####################################################
 ##############
 # combustion #
 ##############
@@ -121,21 +133,15 @@ kernel cmdline :
 # systemd-boot
 # /boot/efi/loader/entries/...
 
-sed '/options/ s/$/ security=selinux selinux=1 enforcing=1 hardened_usercopy=1 init_on_alloc=1 init_on_free=1 randomize_kstack_offset=on page_alloc.shuffle=1 slab_nomerge pti=on iommu.passthrough=0 iommu.strict=1/' /boot/efi/loader/entries/*
+sed '/options/ s/$/ security=selinux selinux=1 enforcing=1 hardened_usercopy=1 init_on_alloc=1 init_on_free=1 randomize_kstack_offset=on page_alloc.shuffle=1 slab_nomerge pti=on iommu.passthrough=0 iommu.strict=1 mitigations=auto/' /boot/efi/loader/entries/*
 
 # selinux fonctionne correctement une fois ajouter (et un relabel du fs)
 
 dracut -f
 
-############
-# maj LUKS #
-############
-
-
-
-##############
-# first boot #
-##############
+########
+# boot #
+########
 
 su root
 ssh-keygen -t ed25519 -o -a 100

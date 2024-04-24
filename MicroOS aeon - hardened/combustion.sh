@@ -2,7 +2,7 @@
 # combustion: network
 
 ## utils
-zypper --non-interactive install man
+zypper --non-interactive install man zsh
 
 ## PAM
 zypper --non-interactive remove sudo
@@ -85,6 +85,10 @@ EOF
 
 ## kernel cmdline 
 
-sed -i '/options/ s/$/ security=selinux selinux=1 enforcing=1 hardened_usercopy=1 init_on_alloc=1 init_on_free=1 randomize_kstack_offset=on page_alloc.shuffle=1 slab_nomerge pti=on iommu.passthrough=0 iommu.strict=1/' /boot/efi/loader/entries/*
+sed -i '/options/ s/$/ security=selinux selinux=1 enforcing=1 hardened_usercopy=1 init_on_alloc=1 init_on_free=1 randomize_kstack_offset=on page_alloc.shuffle=1 slab_nomerge pti=on iommu.passthrough=0 iommu.strict=1 mitigations=auto/' /boot/efi/loader/entries/*
+
+## cryptenroll
+
+systemd-cryptenroll --fido2-device auto /dev/sda2
 
 dracut -f
