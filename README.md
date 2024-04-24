@@ -15,6 +15,7 @@
 
  => [MicroOS aeon hardened workstation](/MicroOS%20aeon%20-%20hardened/)
 
+ WIP : attente du nouvel installeur pour le support de combustion
  Renforcement de MicroOS :
  - support FIDO2 pour dechiffrement du disque (nécessite une maj LUKS1 vers LUKS2)
  - Hardened memory allocator
