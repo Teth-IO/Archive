@@ -3,7 +3,7 @@
  => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20nas/)
 
  - NAS Nextcloud sous RAID1 <br />
- - Stack SearxNG/gluetun dnas une vm alpine linux <br />
+ - Stack SearxNG/gluetun dans une vm alpine linux <br />
  - HAProxy pour TLS <br />
  - Packet Filtering & smartd <br />
 
