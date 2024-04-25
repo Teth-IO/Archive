@@ -1,10 +1,11 @@
 -------------------------------------- infra --------------------------------------
 
- => [Setup road warrior](./Road-warrior/)
+ => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20nas/)
 
- - Conf et css pour LibreWolf <br />
- - docker-compose pour routage du métamoteur searxng sur VPN <br />
- - possibilité d'utiliser un [client shadoshock](https://shadowsocks5.github.io/en/download/clients.html) pour faire passer le traffic du navigateur sur VPN <br />
+ - NAS Nextcloud sous RAID1 <br />
+ - Stack SearxNG/gluetun dnas une vm alpine linux <br />
+ - HAProxy pour TLS <br />
+ - Packet Filtering & smartd <br />
 
  => [Windows 11 hardened Workstation](./Windows%2011%20-%20hardened/)
 
