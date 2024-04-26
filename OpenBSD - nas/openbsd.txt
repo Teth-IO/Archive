@@ -19,7 +19,8 @@
 # 18. vm alpine linux
 # 19. install docker
 # 20. reverse-proxy
-# 21. administration
+# 21. Packet Fileting avec bridge et tap 
+# 22. administration
 
 # 0. utils :
 ------------
@@ -62,9 +63,9 @@ set block-policy drop
 set skip on lo
 block in on egress
 pass out on egress
-pass in proto tcp from ! #LAN to port ssh
-pass in proto icmp from ! #LAN
-pass in proto tcp from ! #LAN to port https
+pass in proto tcp from #LAN to port ssh
+pass in proto icmp from #LAN
+pass in proto tcp from #LAN to port https
 EOF
 # remplacer #LAN par l'adresse du reseau a autoriser
 
@@ -345,10 +346,37 @@ backend searxng
   server searxng #VM:80
 EOF
 
-dernière maj de pf :
-pass in proto tcp from ! #lan to #vm port https
+# 21. Packet Fileting avec bridge et tap :
+------------------------------------------
+# rappel de la topologie
+    rge0 (the physical interface) groups egress
+    tap0 (vm interface) groups tap member
+    bridge0 groups bridge (tap0 & rge0)
+# bridge et tap étant liée a l'egress on a juste besoin de filtrer celui-ci (on ne fait de filtrage pour un dialogue hote/vm)
 
-# 21. administration :
+cat << EOF > /etc/pf.conf
+set block-policy drop
+set skip on lo
+block in on egress
+pass out on egress
+# necessaire ping6
+pass in proto icmp6 from any to any
+# admin
+pass in proto tcp from #LAN to port ssh
+pass in proto icmp from #LAN
+# services
+pass in proto tcp from #LAN to #BSD port https
+pass in proto tcp from #LAN to #VM port https
+pass in proto tcp from #LAN to #VM port http
+EOF
+# remplacer #LAN par l'adresse du reseau a autoriser
+
+# outils d'analyse
+# mettre match log (matches) dans pf.conf
+tcpdump -neti pflog0 -> inspection et matching aux regles
+pfctl -vvsr -> affiche les regles 
+
+# 22. administration :
 ----------------------
 
 conteneurs :
