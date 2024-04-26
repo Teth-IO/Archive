@@ -342,7 +342,7 @@ frontend www
 
 backend searxng
   mode http
-  server searxng #VM:8080
+  server searxng #VM:80
 EOF
 
 dernière maj de pf :
