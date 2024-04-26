@@ -343,7 +343,7 @@ frontend www
 
 backend searxng
   mode http
-  server searxng #VM:80
+  server searxng 127.0.0.1:80
 EOF
 
 # 21. Packet Fileting avec bridge et tap :
@@ -367,7 +367,6 @@ pass in proto icmp from #LAN
 # services
 pass in proto tcp from #LAN to #BSD port https
 pass in proto tcp from #LAN to #VM port https
-pass in proto tcp from #LAN to #VM port http
 EOF
 # remplacer #LAN par l'adresse du reseau a autoriser
 
