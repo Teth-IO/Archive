@@ -1,4 +1,4 @@
-########### hqrdening edge #############
+########### hardening edge #############
 
 edge insider pour Encrypted Client Hello (ECH)
 raccourci : "C:\Users\Teth_IO\AppData\Local\Microsoft\Edge SxS\Application\msedge.exe" --enable-features=EncryptedClientHello
