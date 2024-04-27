@@ -209,7 +209,7 @@ vim /var/www/nextcloud/config/config.php
 ---------------
 
 crontab -e
-*/15    *       *       *       *       su -m www -c "/usr/local/bin/php-8.3 -f /var/www/nextcloud/cron.php"
+*/15    *       *       *       *       su -m www -c "/usr/local/bin/php-8.2 -f /var/www/nextcloud/cron.php"
 
 # 13. chroot :
 --------------
