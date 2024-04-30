@@ -15,12 +15,14 @@
 # 14. montage du RAID
 # 15. web install nextcloud 
 # 16. SMART
-# 17. network bridge
-# 18. vm alpine linux
-# 19. install docker
-# 20. reverse-proxy
-# 21. Packet Fileting avec bridge et tap 
-# 22. administration
+# 17. Incremential backup
+# 18. network bridge
+# 19. vm alpine linux
+# 20. install docker
+# 21. reverse-proxy
+# 22. Packet Fileting avec bridge et tap 
+# 23. administration
+# note : client-side encryption
 
 # 0. utils :
 ------------
@@ -106,16 +108,21 @@ sd1> q
 bioctl -c 1 -l sd0a,sd1a softraid0
 
 # disklabel du RAID
+# on crée ici une partition n pour nextcloud(15) et une deuxième, d, pour le backups incrementielles(22) des datas
 disklabel -E sd3
-sd1> a a
+sd3> a n
 offset: [0]
-size: [XXXXX] *
+size: [XXXXX] XXXXX/2
 FS type: [4.2BSD]
+sd3> a d
+offset: *
+size: [XXXXX] *
 sd3*> w
 sd3> q 
 
 # newfs
-newfs /dev/rsd3a
+newfs /dev/rsd3n
+newfs /dev/rsd3d
 
 # pour voir le status du RAID $ bioctl sd3
 
@@ -224,9 +231,12 @@ cp /etc/resolv.conf /var/www/etc
 # 14. montage du RAID :
 -----------------------
 
-mount /dev/sd3a /var/www/nextcloud/data
+mount /dev/sd3n /var/www/nextcloud/data
+mkdir /mnt/backup
+mount /dev/sd3d /mnt/backup
 vim /etc/fstab
-	/dev/sd3a /var/www/nextcloud/data ffs rw,nodev,nosuid 1 2
+	/dev/sd3n /var/www/nextcloud/data ffs rw,nodev,nosuid 1 2
+	/dev/sd3d /mnt/backup ffs rw,nodev,nosuid 1 2
 chown www data
 
 # 15. install :
@@ -247,7 +257,41 @@ rcctl enable smartd
 # pour voir les info smartctl -i /dev/sd0c
 # smartd recolte les infos toutes les 30min, voir /var/log/daemon
 
-# 17. network bridge :
+# 17. Incremential backup :
+---------------------------
+
+pkg_add restic
+
+# preparation du repo
+restic init --repo /mnt/backup
+# backup
+restic -r /mnt/backup --verbose backup /var/www/nextcloud/data
+
+# automatisation :
+## auto backup
+cat << EOF > restic-variables
+export RESTIC_PASSWORD="YOURPASSWORDHERE"
+EOF
+cat << EOF > restic-backup-script
+#!/bin/bash
+. /root/restic-variables
+restic -r /mnt/backup backup /var/www/nextcloud/data
+EOF
+
+crontab -e
+0	1	*	*	*	/bin/ksh /root/restic-backup-script
+
+## suppression des vieilles snapshots (retention de 30 snapshots)
+cat << EOF > restic-prune-script
+#!/bin/bash
+. /root/restic-variables
+restic -r /mnt/backup forget --keep-last 30 --prune
+EOF
+
+crontab -e
+0	2	*	*	*	/bin/ksh /root/restic-backup-script
+
+# 18. network bridge :
 ----------------------
 https://www.openbsd.org/faq/pf/filter.html
 
@@ -269,7 +313,7 @@ EOF
 
 pfctl -f /etc/pf.conf
 
-# 18. vm alpine linux :
+# 19. vm alpine linux :
 -----------------------
 https://www.openbsd.org/faq/faq16.html
 
@@ -307,7 +351,7 @@ mkdir .ssh
 ssh-keygen -t ed25519 -o -a 100
 cat ~/.ssh/id_ed25519.pub > ~/.ssh/authorized_keys
 
-# 19. install docker :
+# 20. install docker :
 ----------------------
 
 vi /etc/apk/repositories
@@ -322,7 +366,7 @@ get docker-compose file
 
 docker-compose up -d
   
-# 20. reverse-proxy :
+# 21. reverse-proxy :
 ---------------------
 
 apk add haproxy
@@ -346,7 +390,7 @@ backend searxng
   server searxng 127.0.0.1:80
 EOF
 
-# 21. Packet Fileting avec bridge et tap :
+# 22. Packet Fileting avec bridge et tap :
 ------------------------------------------
 # rappel de la topologie
     rge0 (the physical interface) groups egress
@@ -375,7 +419,7 @@ EOF
 tcpdump -neti pflog0 -> inspection et matching aux regles
 pfctl -vvsr -> affiche les regles 
 
-# 22. administration :
+# 23. administration :
 ----------------------
 
 conteneurs :
@@ -391,3 +435,20 @@ bioctl sd3 # etat du RAID
 openbsd :
 sysupgrade # maj systeme
 pkg_add -iu # maj des paquets
+
+restic :
+management des snapshots :
+https://restic.readthedocs.io/en/latest/045_working_with_repos.html
+https://restic.readthedocs.io/en/latest/040_backup.html#comparing-snapshots
+restoration :
+https://restic.readthedocs.io/en/latest/050_restore.html
+
+# note : client-side encryption :
+---------------------------------
+
+gocryptfs:
+
+    Windows: cppcryptfs
+    Android: DroidFS
+		-> copie local du vault avant de pouvoir l'utiliser
+    Linux: gocryptfs

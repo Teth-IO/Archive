@@ -3,27 +3,18 @@
  => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20nas/)
 
  - NAS Nextcloud sous RAID1 <br />
+ - Backup incrémentielles journalières <br />
  - Stack SearxNG/gluetun dans une vm alpine linux <br />
  - HAProxy pour TLS <br />
  - Packet Filtering & smartd <br />
 
- => [Windows 11 hardened Workstation](./Windows%2011%20-%20hardened/)
+ => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened/)
 
  Renforcement de windows :
  - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
  - Un contrôle des fonctionnalités avec les GP
- - Au niveau des application avec une préférence pour les UWP qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
+ - Si besoin d'app, préférer les UWP (windows store) qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
 
- => [MicroOS aeon hardened workstation](/MicroOS%20aeon%20-%20hardened/)
-
- WIP : attente du nouvel installeur pour le support de combustion
- Renforcement de MicroOS :
- - support FIDO2 pour dechiffrement du disque (nécessite une maj LUKS1 vers LUKS2)
- - Hardened memory allocator
- - KSPP aux kernel command line options et sysctls<br />
- 
- (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, modern solution (wayland, pipewire, systemd-boot))
- 
 -------------------------------------- diverses install --------------------------------------
 
  => [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/)
@@ -50,11 +41,19 @@ Sous Oracle Linux :
 
 -------------------------------------- Note --------------------------------------
 
- => [WIP hardened gentoo](./Znote%20-%20Hardened%20gentoo/)
- - Compiler and runtime stack		-> GCC hardened
+ => [hardened gentoo](./Znote%20-%20Hardened%20gentoo/)
+ - Compiler and runtime stack	-> GCC hardened
  - MAC	-> SELinux
  - UKI & Secure boot	-> Dracut & sbsigntools
  - kernel	-> kernel hardened (KSSP)
+
+  => [MicroOS aeon hardened workstation](/Znote%20-%20MicroOS%20aeon%20-%20hardened/)
+ Attente upstream : nouvel installeur pour le support de combustion, systemd-cryptenroll
+ Renforcement de MicroOS :
+ - Hardened memory allocator => ne marche pas avec flatpak
+ - KSPP aux kernel command line options et sysctls<br />
+ 
+ (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, modern solution (wayland, pipewire, systemd-boot))
 
  => [cisco](./Znote%20-%20conf%20switch/)<br />
  => [netdisco](./Znote%20-%20netdisco/)<br />
