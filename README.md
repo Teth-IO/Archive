@@ -47,7 +47,7 @@ Sous Oracle Linux :
  - UKI & Secure boot	-> Dracut & sbsigntools
  - kernel	-> kernel hardened (KSSP)
 
-  => [MicroOS aeon hardened workstation](/Znote%20-%20MicroOS%20aeon%20-%20hardened/)
+  => [MicroOS aeon hardened workstation](/Znote%20-%20MicroOS%20aeon%20-%20hardened/) <br />
  Attente upstream : nouvel installeur pour le support de combustion, systemd-cryptenroll
  Renforcement de MicroOS :
  - Hardened memory allocator => ne marche pas avec flatpak
