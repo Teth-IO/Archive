@@ -376,6 +376,9 @@ backend searxng
   server searxng 127.0.0.1:80
 EOF
 
+rc-update add haproxy default
+service haproxy start
+
 # 22. Packet Fileting avec bridge et tap :
 ------------------------------------------
 # rappel de la topologie
