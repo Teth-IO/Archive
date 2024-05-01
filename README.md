@@ -5,7 +5,7 @@
  - NAS Nextcloud sous RAID1 <br />
     . Backup incrémentielles journalières & smartd <br />
  - SearxNG dans une vm alpine linux <br />
-    . Proxifié dans un tunnel wireguard <br />
+    . Proxifié dans un tunnel wireguard (tor aurait été mieux mais trop lent et settings de searxng instable) <br />
     . HAProxy pour TLS <br />
  - Packet Filtering <br />
 
