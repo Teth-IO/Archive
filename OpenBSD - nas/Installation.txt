@@ -427,9 +427,6 @@ docker-compose down -v (detruit les conteneur)
 docker-compose up -d (démarre les conteneurs)
 # prend les latest donc maj
 docker logs 'id conteneur' # logs du conteneur selectionne
-pour check l'ip publique des conteneurs ->
-	docker exec -it <mycontainer> sh
-	curl https://ipinfo.tw/ip
 
 stockage :
 /var/log/daemon # log de smartd
