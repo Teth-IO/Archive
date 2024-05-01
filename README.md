@@ -3,10 +3,11 @@
  => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20nas/)
 
  - NAS Nextcloud sous RAID1 <br />
- - Backup incrémentielles journalières <br />
- - Stack SearxNG/gluetun dans une vm alpine linux <br />
- - HAProxy pour TLS <br />
- - Packet Filtering & smartd <br />
+    . Backup incrémentielles journalières & smartd <br />
+ - SearxNG dans une vm alpine linux <br />
+    . Proxifié pardans tor (le circuit change toutes les 10 minutes) <br />
+    . HAProxy pour TLS <br />
+ - Packet Filtering <br />
 
  => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened/)
 
