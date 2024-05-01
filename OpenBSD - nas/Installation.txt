@@ -299,20 +299,6 @@ https://www.openbsd.org/faq/pf/filter.html
 echo 'add rge0' > /etc/hostname.bridge0
 sh /etc/netstart bridge0
 
-# modifier pf pour l'appliquer directement au bridge
-# les regles s'appliqurront donc a l'hypervisuer et la vm
-cat << EOF > /etc/pf.conf
-set block-policy drop
-set skip on lo
-block in on bridge from any to any
-pass out on bridge from any to any
-pass in proto tcp from ! #LAN to any port ssh
-pass in proto icmp from ! #LAN to any
-pass in proto tcp from ! #LAN to #NAS port https
-EOF
-
-pfctl -f /etc/pf.conf
-
 # 19. vm alpine linux :
 -----------------------
 https://www.openbsd.org/faq/faq16.html
