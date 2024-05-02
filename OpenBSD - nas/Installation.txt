@@ -272,27 +272,27 @@ cat << EOF > restic-variables
 export RESTIC_PASSWORD="YOURPASSWORDHERE"
 EOF
 cat << EOF > restic-backup-script
-#!/bin/bash
+#!/bin/sh
 . /root/restic-variables
-restic -r /mnt/backup backup /var/www/nextcloud/data
+/usr/local/bin/restic -r /mnt/backup backup /var/www/nextcloud/data
 EOF
 
 crontab -e
-0	1	*	*	*	/bin/ksh /root/restic-backup-script
+0	1	*	*	*	/root/restic-backup-script
 
 ## suppression des vieilles snapshots (retention de 30 snapshots)
 cat << EOF > restic-prune-script
-#!/bin/bash
+#!/bin/sh
 . /root/restic-variables
-restic -r /mnt/backup forget --keep-last 30 --prune
+/usr/local/bin/restic -r /mnt/backup forget --keep-last 30 --prune
 EOF
 
 crontab -e
-0	2	*	*	*	/bin/ksh /root/restic-prune-script
+0	2	*	*	*	/root/restic-prune-script
 
 # note sur cron :
 # log dans /var/cron/log
-# l'output de la commandande est mailer accessible par mail(1)
+# l'output de la commandande est mailed (accessible par mail(1))
 
 # 18. network bridge :
 ----------------------
