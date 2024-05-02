@@ -289,7 +289,7 @@ restic -r /mnt/backup forget --keep-last 30 --prune
 EOF
 
 crontab -e
-0	2	*	*	*	/bin/ksh /root/restic-backup-script
+0	2	*	*	*	/bin/ksh /root/restic-prune-script
 
 # 18. network bridge :
 ----------------------
