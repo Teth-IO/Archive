@@ -290,6 +290,10 @@ EOF
 crontab -e
 0	2	*	*	*	/bin/ksh /root/restic-prune-script
 
+# note sur cron :
+# log dans /var/cron/log
+# l'output de la commandande est mailer accessible par mail(1)
+
 # 18. network bridge :
 ----------------------
 https://www.openbsd.org/faq/pf/filter.html
