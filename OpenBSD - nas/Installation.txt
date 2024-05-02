@@ -28,6 +28,7 @@
 ------------
 rcctl disable smtpd
 pkg_add vim htop wget neofetch
+export EDITOR=/usr/local/bin/vim
 
 # 1. network :
 --------------
