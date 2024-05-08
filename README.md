@@ -3,10 +3,10 @@
  => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20NAS/)
 
  - NAS Nextcloud sous RAID1 <br />
-    . Backup incrémentielles journalières & smartd <br />
+    - Backup incrémentielles journalières & smartd <br />
  - SearxNG dans une vm alpine linux <br />
-    . Proxifié dans un tunnel wireguard (tor aurait été mieux mais trop lent et settings de searxng instable) <br />
-    . HAProxy pour TLS <br />
+    - Proxifié dans un tunnel wireguard (tor aurait été mieux mais trop lent et settings de searxng instable) <br />
+    - HAProxy pour TLS <br />
  - Packet Filtering <br />
 
  => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened%20gaming%20station/)
@@ -22,7 +22,7 @@ Notes d'install perso de Qubes OS
 - sys-* sous fedora pour selinux
 - qubes perso sous kicksecure
 - FDE avec cryptenroll
-- install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque)
+- install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque) <br />
 WIP : attente d'upstream pour sys-audio et sys-gui-gpu
 
 
