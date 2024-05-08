@@ -229,3 +229,10 @@ reboot
 			=> souris visible sur écran noir
 			gpu non supporter
 					=> attente de maj upstream
+
+# AEM (Anti Evil Maid) :
+------------------------
+https://github.com/QubesOS/qubes-antievilmaid
+
+ne fonctionne que sous TPM 1.2 et BIOS CSM
+=> attente maj TPM 2.0 & UEFI
