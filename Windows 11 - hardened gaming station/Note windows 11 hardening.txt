@@ -5,37 +5,48 @@
 Logiciel -> App UWP : sandboxing par AppContainer
 Matériel : Sécurité basé sur la virtualisation
 
-#Matériel
-vérifier les features de sécurité de windows ->
-    protection contre les virus et menaces :
-        Paramètres de protection contre les virus et menaces -> activer tout
-        protection contre les ransomware :
-            Dispositif d'accès contrôlée aux dossiers (CFA) -> activer, nécessitera de whitelister des app
-    Contrôle des applications et du navigateur :
-        Protection fondée sur la réputation -> tout activer, désactiver en cas de problème
-        Navigation isolée -> installe windows Defender application guard (WDAG), permet une navigation isolée par edge -> voir hardening de edge
-        Exploit protection (WDEG (Windows Defender Exploit Guard)) -> tout mettre sur activé dans paramètre système
-    Sécurité des appareils :
-        Isolation du noyau :
-            intégrité de la mémoire (HVCI) -> Activée. Peut rentrer en conflit avec certains drivers
-            protection de l'autorité de sécurité locale (lsass.exe) -> activer
-            liste de blocage des pilotes vulnérables de ms -> apparemment pas mis a jour donc sert à rien
-sandboxing de defender :
-   PS admin : setx /M MP_FORCE_USE_SANDBOX 1
-   doit démarrer MsMpEngCP.exe au prochain démarrage (onglet détail du gestionnaire des taches)
-prévention de l’exécution des données (DEP) : (par défaut ne s'applique au processus windows)
-    Système -> paramètres avancés du système -> performance -> prévention de l'execution des données -> sur toutes la app (peut necessiter whitelister des app)
-    Au prochain démarrage on peut voir dans les paramètre de boot (bcdedit) une entré nx OptOut
+# vérifier les features de sécurité de windows :
+------------------------------------------------
+
+protection contre les virus et menaces :
+    Paramètres de protection contre les virus et menaces -> activer tout
+    protection contre les ransomware :
+        Dispositif d'accès contrôlée aux dossiers (CFA) -> activer, nécessitera de whitelister des app
+Contrôle des applications et du navigateur :
+    Protection fondée sur la réputation -> tout activer, désactiver en cas de problème
+    Navigation isolée -> installe windows Defender application guard (WDAG), permet une navigation isolée par edge -> voir hardening de edge
+    Exploit protection (WDEG (Windows Defender Exploit Guard)) -> tout mettre sur activé dans paramètre système
+Sécurité des appareils :
+    Isolation du noyau :
+        intégrité de la mémoire (HVCI) -> Activée. Peut rentrer en conflit avec certains drivers
+        protection de l'autorité de sécurité locale (lsass.exe) -> activer
+        liste de blocage des pilotes vulnérables de ms -> apparemment pas mis a jour donc sert à rien
+		
+# sandboxing de defender :
+--------------------------
+
+PS admin : setx /M MP_FORCE_USE_SANDBOX 1
+doit démarrer MsMpEngCP.exe au prochain démarrage (onglet détail du gestionnaire des taches)
+
+# prévention de l’exécution des données (DEP) : (par défaut ne s'applique au processus windows)
+----------------------------------------------
+
+Système -> paramètres avancés du système -> performance -> prévention de l'execution des données -> sur toutes la app (peut necessiter whitelister des app)
+Au prochain démarrage on peut voir dans les paramètre de boot (bcdedit) une entré nx OptOut
+
+# Non applicable :
+------------------
+
 CET (Control-flow Enforcement Technology) : nécessite l'application est été compilé avec /CETCOMPAT. On l'active au cas par cas dans Defender -> exploit protection paramètre du programme : Protection des piles appliquées par le matériel (CPU)
     -> on peut tester si l'application est comptabile on peux la lancé avec intel SDE et le flag -cet (exemple : ./sde -cet -- firefox)
     -> par défaut, une fois l'application ajouté au cet, celui-ci ne s'applique qu'aux modules compatibles mais c'est suffisant pour casser certaines app ou les programmes enfants de cette app -> preque aucune app n'est compatible
-
-#Si applicable :
 Contrôle intelligent des applications (Smart App Control) -> que depuis une installation propre de windows (a voir)
 firmware protection (system guard secure launch)-> Nécessite processeur vpro + carte mère vpro + https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-defender-system-guard/system-guard-secure-launch-and-smm-protection
 Memory access protection (Kernel DMA Protection) -> n'apparait pas. prérequis ?
 
-#Au niveau des stratégies de groupes
+# Au niveau des stratégies de groupes :
+---------------------------------------
+
 Computer Configuration > Administrative Templates > System > Device Guard
     Activer la sécurité basée sur la virtualisation -> Activée
         Platform security level : Secure boot et DMA
@@ -44,10 +55,15 @@ Computer Configuration > Administrative Templates > System > Device Guard
         Credential guard : activé avec verouillage UEFI
         lancement sécurisé : activé
         Protection de la pile appliquée par le matériel en mode noyau : activé en mode de mise en conformité
+		
 Computer Configuration > Administrative Templates > System > Kernel DMA protection
     Stratégie d'énumération pour les appareils externes compatibles DMA incompatibles avec le remappage DMA -> Activé : bloquer tout
+	
 Computer Configuration > Administrative Templates > System > Autorité de sécurité locale
     Configurer LSASS pour qu'io s'execute en tant que processus protégé -> Activé : Activé avec verrouillage UEFI
+
+# vérification :
+----------------
 
 => Faire un tour dans msinfo32.exe pour s'assurer de l'application des paramètres :
     secure boot -> activé
@@ -58,7 +74,9 @@ Computer Configuration > Administrative Templates > System > Autorité de sécur
     ajouter la colonne prévention de l'exécution des données pour voir l'application du DEP
     ajouter la colonne protection des piles appliquées par le matériel pour voir l'application du CET
 
-#supplément (STIG + CIS + Microsoft Security Baselines) :
+# supplément (STIG + CIS + Microsoft Security Baselines) :
+----------------------------------------------------------
+
 => Mettre les .admx et pack dans langue dans C:\Windows\PolicyDefinitions
 Structured Exception Handling Overwrite Protection (SEHOP)
     Computer Configuration >> Administrative Templates >> MS Security Guide
@@ -121,16 +139,21 @@ Windows spotlight et à la une :
     Computer Configuration\Policies\Administrative Templates\WindowsComponents\Widgets
         autoriser les widgets -> désactivé
 
-#Mention :
+# Mentions :
+------------
+
 network protection (https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/network-protection?view=o365-worldwide) : protection basé sur la réputation des domaines. Sécurité relatives, dépend de la qualité de base de donnée de microsoft. Même logique pour la réputation des drivers, des PUA et du Smart App Control
 BitLocker Countermeasures (https://learn.microsoft.com/en-us/windows/security/information-protection/bitlocker/bitlocker-countermeasures)
 XFG, une évolution du CFG (control flow guard | protection du flux de controle) -> n'est pas encore dispo mais monitoring deja possible en ajoutant la colonne protection du flux de contrôle dans le gestionnaire des tâches -> détail
 
-#fonctionnalités
+# fonctionnalités :
+-------------------
+
 Virer Windows PowerShell 2.0
 s'assurer que les services TCP/IP simplifié & SMB 1.0 ne sont pas installés
 
-#Logiciel
+# Logiciels :
+-------------
 
 UWP :
 Par le Store ou https://store.rg-adguard.net/ :
@@ -143,15 +166,6 @@ penser à supprimer les dossier inutilisés (après désinstallation)
 application classique :
 par winget
 
-####################
-#### networking ####
-####################
-
-utilisation de dnssec proxy
-
-hardening firefox et edge :
--> voir les fichier
-
 ###################
 #### Conf perso ###
 ###################
@@ -160,6 +174,6 @@ Wsl 2 Arch linux
 Powershell preview
 Termial preview
 Power toys
-Fira code nerd fonts
+IBM plex nerd fonts
 JanDeDobbeleer.OhMyPosh
 theme : oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\wopian.omp.json" | Invoke-Expression
