@@ -1,6 +1,6 @@
 -------------------------------------- infra --------------------------------------
 
- => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20nas/)
+ => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20NAS/)
 
  - NAS Nextcloud sous RAID1 <br />
     . Backup incrémentielles journalières & smartd <br />
@@ -9,12 +9,22 @@
     . HAProxy pour TLS <br />
  - Packet Filtering <br />
 
- => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened/)
+ => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened%20gaming%20station/)
 
  Renforcement de windows :
  - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
  - Un contrôle des fonctionnalités avec les GP
  - Si besoin d'app, préférer les UWP (windows store) qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
+
+ => [QubesOS secure workstation](./Qubes%20OS%20-%20secure%20workstation/QubesOS.txt)
+
+Notes d'install perso de Qubes OS
+- sys-* sous fedora pour selinux
+- qubes perso sous kicksecure
+- FDE avec cryptenroll
+- install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque)
+WIP : attente d'upstream pour sys-audio et sys-gui-gpu
+
 
 -------------------------------------- diverses install --------------------------------------
 
