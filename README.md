@@ -23,6 +23,7 @@ Notes d'install perso de Qubes OS
 - qubes perso sous kicksecure
 - FDE avec cryptenroll
 - install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque) <br />
+
 WIP : attente d'upstream pour sys-audio et sys-gui-gpu
 
 
