@@ -121,14 +121,16 @@ limit outgoing to 192.168.0.0/16
 
 https://forum.qubes-os.org/t/guide-xfce-global-dark-mode-in-qubes-4-0-4-1/10757
 
-# theme : adwaita-dark :
-=> dom0
+# theme (qubes et dom0) : adwaita-dark :
+=> les app dans dom0 sont qt5, faire manip suivante pour appliquer le theme
 sudo qubes-dom0-update adwaita-qt5
 Then add QT_STYLE_OVERRIDE=adwaita-dark to /etc/environment.
 Reboot.
+=> pour qubes installer le theme breeze et qt5ct
+	-> qt5ct pour gérer l'apprence des app (theme, icon polices)
+	-> theme breeze pour les app qui ne supportes pas l'adapation du theme gtk (adwaita)
 
-# icons : tela-icon :
-=> templates
+# icons (qubes et dom0) : tela-icon :
 git clone https://github.com/vinceliuice/Tela-icon-theme
 cd Tela-icon-theme/
 sudo ./install.sh -d /usr/share/icons/
