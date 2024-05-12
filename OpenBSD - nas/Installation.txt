@@ -420,13 +420,19 @@ docker-compose up -d (démarre les conteneurs)
 # prend les latest donc maj
 docker logs 'id conteneur' # logs du conteneur selectionne
 
+alpine :
+apk update
+apk upgrade
+reboot
+
 stockage :
 /var/log/daemon # log de smartd
 bioctl sd3 # etat du RAID
+mail # outpout des cron
 
 openbsd :
-sysupgrade # maj systeme
 pkg_add -iu # maj des paquets
+sysupgrade # maj systeme
 
 restic :
 management des snapshots :
