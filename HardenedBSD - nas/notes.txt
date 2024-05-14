@@ -12,9 +12,9 @@
 3 - RAID ZFS
 	3.1 - dataset
 	3.2 - snapshot zfs
-4 - jail
+4 - CBSD jail
 	4.1 - RAID mounted to jail (nullfs)
-5 - Nextcloud
+5 - Jailed Nextcloud
 	5.1 - ssl
 	5.2 - apache
 	5.3 - httpd
@@ -22,7 +22,7 @@
 	5.5 - redis
 	5.6 - mysql
 	5.7 - CLI installation and configuration of Nextcloud
-6 - bhyve
+6 - CBSD bhyve
 	6.1 - WIP : Custom MicroOS - pb iso et cloud-init 
 	6.2 - Test : default alpine - pb iso
 	6.3 - ubuntu-cloud-init
