@@ -125,7 +125,8 @@ zfSnap -d
 zfs list -t snapshot
 
 # cron job
-vim /etc/crontab
+crontab -e 
+
 0	0	*	*	*	root	/usr/local/sbin/zfSnap -a 30d -r raid/nas
 0	1	*	*	*	root	/usr/local/sbin/zfSnap -d
 
