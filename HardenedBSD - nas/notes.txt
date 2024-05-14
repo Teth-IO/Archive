@@ -1,7 +1,7 @@
 +-------------------------------------------------------------------------+
 |=--------------------------=[ Ultimate NAS  ]=--------------------------=|
 |-------------------------------------------------------------------------|
-|=----------------------=[ Nextcloud, ZFS, jail  ]=----------------------=|
+|=----------------------=[ Nextcloud, ZFS, CBSD ]=------------------------=|
 +-------------------------------------------------------------------------+
 
 --[ Table of contents
@@ -23,12 +23,12 @@
 	5.6 - mysql
 	5.7 - CLI installation and configuration of Nextcloud
 6 - bhyve
-	6.1 - WIP : MicroOS 	- pb iso et cloud-init 
-	6.2 - MOP : cbsd alpine - pb iso
+	6.1 - WIP : Custom MicroOS - pb iso et cloud-init 
+	6.2 - Test : default alpine - pb iso
 	6.3 - ubuntu-cloud-init
 		6.3.1 - docker
 		6.3.2 - docker-compose
-		6.3.1 - haproxy
+		6.3.3 - haproxy
 7 - packet filtering
 
 --[ 0 - Introduction
