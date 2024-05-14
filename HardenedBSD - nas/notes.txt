@@ -127,8 +127,14 @@ zfs list -t snapshot
 # cron job
 crontab -e 
 
+--------------------------------------------------------------------------
+
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 0	0	*	*	*	root	/usr/local/sbin/zfSnap -a 30d -r raid/nas
 0	1	*	*	*	root	/usr/local/sbin/zfSnap -d
+
+--------------------------------------------------------------------------
 
 --[ 4 - jail
 https://docs.freebsd.org/en/books/handbook/jails/
