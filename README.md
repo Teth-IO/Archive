@@ -1,13 +1,13 @@
 -------------------------------------- infra --------------------------------------
+=> [HardenedBSD NAS & hosting platform](./HardenedBSD%20-%20nas/notes.txt)
 
- => [OpenBSD NAS & SearxNG](./OpenBSD%20-%20NAS/)
+HardenedBSD NAS & hosting platform :
+ - NAS sous zfs pour self-healing, RAID (volume manager) et backup (snapshot) automatisées par zfsnap
+ - CBSD pour gestion des jail et vm bhyve
+ - nextcloud (avec clamav) sous jail pour isolation et recovery
+ - vm ubuntu cloud-init sous bhyve pour stack docker SearXNG+gluetun <br />
 
- - NAS Nextcloud sous RAID1 <br />
-    - Backup incrémentielles journalières & smartd <br />
- - SearxNG dans une vm alpine linux <br />
-    - Proxifié dans un tunnel wireguard (tor aurait été mieux mais trop lent et settings de searxng instable) <br />
-    - HAProxy pour TLS <br />
- - Packet Filtering <br />
+WIP : passage d'ubuntu a MicroOS dès que possible. Actuellement les vm ne boot pas depuis un iso et pas de cloud-init de dispo
 
  => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened%20gaming%20station/)
 
@@ -108,3 +108,12 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - Syncthing
  - Zram
 tmpfs par défaut
+
+=> [OpenBSD NAS & SearxNG](./ZZold%20-%20OpenBSD%20-%20nas/)
+
+ - NAS Nextcloud sous RAID1 <br />
+    - Backup incrémentielles journalières & smartd <br />
+ - SearxNG dans une vm alpine linux <br />
+    - Proxifié dans un tunnel wireguard (tor aurait été mieux mais trop lent et settings de searxng instable) <br />
+    - HAProxy pour TLS <br />
+ - Packet Filtering <br />
