@@ -156,7 +156,7 @@ fetch https://mirror.laylo.nl/pub/hardenedbsd/14-stable/amd64/amd64/installer/LA
 	-> current : fetch https://installers.hardenedbsd.org/pub/current/amd64/amd64/installer/LATEST/base.txz
 
 cbsd jconstruct-tui
-	-> cocher l'option baserw sinon impossible de mettre a jour l'os par la suite car system en lecture seule
+	-> cocher l'option baserw sinon impossible de mettre a jour l'os par la suite car sinon base en lecture seule
 	-> network, mapper l'int de l'hote + ip
 
 
