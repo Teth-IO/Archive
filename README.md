@@ -8,7 +8,7 @@ HardenedBSD NAS & hosting platform :
  - nextcloud (avec clamav) sous jail pour isolation et recovery
  - vm ubuntu cloud-init sous bhyve pour stack docker SearXNG+gluetun <br />
 
-WIP : passage d'ubuntu a MicroOS dès que possible. Actuellement les vm ne boot pas depuis un iso et pas de cloud-init de dispo
+WIP : passage d'ubuntu a MicroOS. Actuellement les vm ne boot pas depuis un iso et pas de cloud-init de dispo. Si pas d'évolution aux prochaines release passer de bhyve a xen.
 
  => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened%20gaming%20station/)
 
