@@ -156,7 +156,9 @@ fetch https://mirror.laylo.nl/pub/hardenedbsd/14-stable/amd64/amd64/installer/LA
 	-> current : fetch https://installers.hardenedbsd.org/pub/current/amd64/amd64/installer/LATEST/base.txz
 
 cbsd jconstruct-tui
+	-> cocher l'option baserw sinon impossible de mettre a jour l'os par la suite car system en lecture seule
 	-> network, mapper l'int de l'hote + ip
+
 
 # assuming jailname = jail1
 # list jail
@@ -574,10 +576,9 @@ pfctl -e -> enable pf
 
 --[ 8 - updates
 
-HardenedBSD : https://git.hardenedbsd.org/hardenedbsd/HardenedBSD/-/wikis/home#updating-hardenedbsd
-	-> bioctl avant maj
-	jail : https://git.hardenedbsd.org/hardenedbsd/HardenedBSD/-/wikis/home#updating-hardenedbsd
-	ubutnu : apt
+HardenedBSD : hbsd-update
+	jail : hbsd-update -j jail1
+	ubuntu : apt
 		conteneurs : reconstruire : docker-compose down -v (detruit les conteneur) docker-compose up -d (démarre les conteneurs)
 
 +-[ EOF ]=----------------------------------------------------------------+
