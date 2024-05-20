@@ -487,6 +487,10 @@ apt update
 
 apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 
+# voir les log
+
+docker logs 'id conteneur'
+
 ------[ 6.3.2 - docker-compose
 
 cat << EOF > docker-compose.yml
