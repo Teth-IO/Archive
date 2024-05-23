@@ -415,6 +415,9 @@ sudo -u www php "/usr/local/www/nextcloud/occ" config:app:set activity notify_no
 
 # reste a paramétrer le cronjob (ou laisser l'ajax)
 
+# troobleshooting
+en cas d'internal server error -> sudo -u www php "/usr/local/www/nextcloud/occ" maintenance:repair
+
 --[ 6 - bhyve
 
 ----[ 6.1 - WIP : MicroOS
