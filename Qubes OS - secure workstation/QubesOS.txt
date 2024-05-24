@@ -99,14 +99,22 @@ sudo apt install librewolf -y
 # Rice :
 --------
 
-https://forum.qubes-os.org/t/guide-xfce-global-dark-mode-in-qubes-4-0-4-1/10757
+i3 = font 11 
+	bar en background 000000
+gtk : adwaita dark + tela dark
 
-# theme (qubes et dom0) : adwaita-dark :
-=> les app dans dom0 sont qt5, faire manip suivante pour appliquer le theme
+# theme (qubes et dom0) :
+=> les app dans dom0 sont en gtk et qt5, faire manip suivante pour appliquer le theme
 sudo qubes-dom0-update adwaita-qt5
 Then add QT_STYLE_OVERRIDE=adwaita-dark to /etc/environment.
-Reboot.
-=> pour qubes installer le theme breeze et qt5ct
+mkdir .config/gtk-3.0
+vim .config/gtk-3.0/settings.ini
+
+[Settings]
+gtk-icon-theme-name = Tela-dark
+gtk-theme-name = Adwaita-dark
+
+=> comme les qubes sont sous xfce passer par les settings + installer le theme breeze et qt5ct
 	-> qt5ct pour gérer l'apprence des app (theme, icon polices)
 	-> theme breeze pour les app qui ne supportes pas l'adapation du theme gtk (adwaita)
 
@@ -115,10 +123,8 @@ git clone https://github.com/vinceliuice/Tela-icon-theme
 cd Tela-icon-theme/
 sudo ./install.sh -d /usr/share/icons/
 
-# style fenetres dom0 -> bluebird
-
 # systray icons :
-rien ne marche
+rien ne marche pour les raccorder au theme
 
 # rofi
 sudo qubes-dom0-updates rofi
