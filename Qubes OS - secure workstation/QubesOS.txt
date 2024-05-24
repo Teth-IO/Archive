@@ -120,6 +120,34 @@ sudo ./install.sh -d /usr/share/icons/
 # systray icons :
 rien ne marche
 
+# rofi
+sudo qubes-dom0-updates rofi
+# changement de theme possible depuis rofi theme selector
+	# sidebar 
+# ctrl-tab pour changer de mode
+
+mettre en place un raccourci pour la commande : rofi -modes "windows,drun" - show window
+# i3 config :
+bindsym $mod+space exec "rofi -modes 'windows,drun' -show window"
+
+# i3
+sudo qubes-dom0-update i3 i3-settings-qubes
+
+-> bar on top + dark
+
+bar {
+        position top
+	status_command qubes-i3status
+	colors {
+		background #0000000
+		statusline #ffffff
+
+pour la taille font en 11
+
+=> logout
+
+mod shift e => flingue la session X mais pas les app
+
 # creation qube untrusted :
 ---------------------------
 
