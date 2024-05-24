@@ -20,12 +20,12 @@ WIP : passage d'ubuntu a MicroOS. Actuellement les vm ne boot pas depuis un iso 
  => [QubesOS secure workstation](./Qubes%20OS%20-%20secure%20workstation/QubesOS.txt)
 
 Notes d'install perso de Qubes OS
-- sys-* sous fedora pour selinux
-- qubes perso sous kicksecure
+- qubes perso sous kicksecure (debian morph)
 - FDE avec cryptenroll
 - install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque) <br />
+- i3, rofi, adwaita-dark & icon Tela-dark pour dom0, xfce adwaita-dark & icon Tela-dark pour le reste <br />
 
-WIP : attente d'upstream pour sys-audio et sys-gui-gpu
+WIP : attente d'upstream pour sys-audio
 
 
 -------------------------------------- diverses install --------------------------------------
