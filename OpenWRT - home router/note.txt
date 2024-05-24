@@ -1,0 +1,199 @@
++-------------------------------------------------------------------------+
+|=----------------------=[ Ultimate Home Routeur ]=----------------------=|
+|-------------------------------------------------------------------------|
+|=------------------=[ snort IPS, crowdsec, TOR, WG  ]=------------------=|
++-------------------------------------------------------------------------+
+
+--[ Introduction
+
+Home routeur avec les fonctionnalitées suivantes
+	* WAN & LAN 2.5GBASE-T 	
+	* WLAN 802.11ax (wifi 6)
+	* DHCPv4 & v6
+	* snort en inline (IPS)
+	* crowdsec
+	* tor middlebox
+	* server wireguard
+	* VLAN (notamment pour la TV)
+	* hardware acceleration LAN et WLAN
+	
+Hardware
+	* GL-MT6000
+		* WAN 2.5Gbps
+		* LAN 1 2.5Gbps 4 1Gbps
+
+
+--[ Installation 
+
+https://openwrt.org/toh/gl.inet/gl-mt6000
+flash le routeur avec l'image sysupgrade depuis l'interface web de l'OEM
+
+# la snapshot est lightweight, on install l'interface web et les dependances pour le ssl :
+se co en ssh root@192.168.1.1 and: 
+opkg update && opkg install luci luci-lib-px5g px5g-standalone
+
+# pour upgrader les co en http vers https :
+
+uci set uhttpd.main.redirect_https=1     # 1 to enable redirect, 0 to disable redirect
+uci commit uhttpd
+service uhttpd reload
+
+--[ Hardware Flow Offloading
+
+LuCI :
+Network → Firewall → Software Flow Offloading: enable
+Network → Firewall → Hardware Flow Offloading: enable
+Save and Apply
+
+--[ Wireless Ethernet Dispatch
+
+SSH (pas dans LuCI): 
+
+vim /etc/modules.conf
+# append :
+options mt7915e wed_enable=Y
+	
+Save and Reboot
+
+# verif 
+
+cat /sys/module/mt7915e/parameters/wed_enable
+
+--[ Wifi
+
+Change wifi country code :
+
+In LuCI go to Network → Wireless
+Click “Edit” on the SSID you want to enable
+Click “Advanced Settings” tab
+Select your “Country Code” from the dropdown
+Save and Apply
+
+--[ recup ipv6
+https://openwrt.org/fr/docs/guide-user/network/ipv6/freebox
+https://blog.kulakowski.fr/post/openwrt-derriere-une-freebox-ipv6-dmz-et-bridge
+https://lafibre.info/remplacer-freebox/freebox-delta-pop-mode-bridge-onpsense-freeplayer/
+=> Même si le mode bridge est activé, la freebox reste un routeur IPv6, sur lequel il faudra configurer un NextOP (“le routeur suivant”) depuis son interface. 
+-> cette adresse ipv6 n'est pas la default gateway a utilisé
+
+----[ wan6
+
+sur la freebox mettre en next-hop l'adresse de lien locale de l'interface wan6 d'openwrt (attention ane pas se tomper d'eth)
+sur OpenWRT mettre le prefix routé IPv6 (pas dispo sur l'interface web de base) :
+
+uci delete network.wan6.ip6prefix
+uci add_list network.wan6.ip6prefix='prefix::/64'
+uci commit
+
+l'interface wan6 n'a aucune ipv6 publique et aucune gateway, seule l'IPv6-PD est du coup remplie
+
+----[ lan
+
+Advanced Settingd :
+	IPv6 assignment length : 64
+	IPv6 prefix filter : wan6
+	IPv6 suffix : suffix a donner a l'interace
+DHCP server :
+	Advanced settings :
+		DHCP-Options : 6,1.1.1.1
+	IPv6 settings :
+		RAd-Service : server mode
+		DHCPv6-Service : server mode.
+		Announced IPv6 DNS servers : 2606:4700:4700::1111
+		NDP-Proxy : disabled
+	IPv6 RA Settings :
+		default router : forced
+	
+aussi :
+modifier les dns par defaut de wan pour ne pas rester sur ceux du FAI
+
+----[ Routage static pour ipv6
+
+wan6 -> ::/0 -> adresse de lien locale freebox
+
+=> routage static wan6 vers local link freebox
+
+--[ snort inline - WIP : bloque pas, crash avec les community rules
+
+https://openwrt.org/docs/guide-user/services/snort
+
+opkg update
+opkg install snort3 wget-ssl coreutils-sort
+
+uci set snort.snort.enabled=1
+uci set snort.snort.manual=0
+uci set snort.snort.home_net="any"
+uci set snort.snort.interface="$(uci get network.wan.device)"
+
+# ips mode
+uci set snort.snort.mode="ips"
+uci set snort.snort.action="block"
+(afpacket ?)
+uci commit
+
+# community rules
+snort-rules
+/etc/init.d/snort restart
+
+# testing rules (logging icmp)
+snort-rules --testing
+/etc/init.d/snort restart
+
+=> snort ne block rien en testing
+=> not running avec les community rules, running en testing
+
+--[ crowdsec
+# prend des decision basé sur les logs d'openwrt (syslog, iptables...)
+https://openwrt.org/docs/guide-user/services/crowdsec
+
+opkg install crowdsec
+/etc/init.d/crowdsec reload
+
+# firewall bouncer 
+opkg install crowdsec-firewall-bouncer
+
+# config du bouncer
+vim /etc/config/crowdsec
+# append :
+config bouncer
+	option enabled '1'
+	option ipv4 '1'
+	option ipv6 '1'
+	option api_url 'http://localhost:8080/'
+	option api_key ''
+	option deny_action 'drop'
+	option deny_log '0'
+	option log_prefix 'crowdsec: '
+	option log_level 'info'
+	option filter_input '1'
+	option filter_forward '1'
+	list interface 'eth1'
+
+# ici il n'est encore activer car il doit etre enregistré
+# enregistrer le bouncer
+cscli bouncers add crowdsec-firewall-bouncer
+-> donne une key a mettre dans /etc/config/crowdsec et enabled 1
+
+/etc/init.d/crowdsec-firewall-bouncer reload
+# voir les log /var/log/crowdsec-firewall-bouncer.log 
+# lister les bouncer 
+cscli bouncers list
+
+# hub et collections
+cscli hub list
+cscli hub update
+cscli collections install crowdsecurity/iptables
+
+--[ wireguard
+
+https://openwrt.org/docs/guide-user/services/vpn/wireguard/start
+
+--[ tor middlebox
+
+https://openwrt.org/docs/guide-user/services/tor/client
+
+--[ vlan tv
+
+
++-[ EOF ]=----------------------------------------------------------------+
+
