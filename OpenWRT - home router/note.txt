@@ -269,8 +269,7 @@ restart l'int apres modif
 
 ## collection crowdsec pour wireguard
 
-cscli collections install crowdsecurity/wireguard
-/etc/init.d/snort restart
+-> collection par recommande https://app.crowdsec.net/hub/author/crowdsecurity/collections/wireguard
 
 --[ tor middlebox
 
