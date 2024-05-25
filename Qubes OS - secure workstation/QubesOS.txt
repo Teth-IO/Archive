@@ -150,9 +150,9 @@ bar {
 
 pour la taille font en 11
 
-=> logout
-
-mod shift e => flingue la session X mais pas les app
+# dpi 3k screen
+-> xrandr et .xsession ne n'applique pas les dpi sous i3
+pour les qubes mettre 120 de dpi sous xfce
 
 # creation qube untrusted :
 ---------------------------
