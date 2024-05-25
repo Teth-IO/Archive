@@ -185,8 +185,87 @@ cscli hub update
 cscli collections install crowdsecurity/iptables
 
 --[ wireguard
+https://openwrt.org/docs/guide-user/services/vpn/wireguard/server
 
-https://openwrt.org/docs/guide-user/services/vpn/wireguard/start
+1. Preparation
+
+Install the required packages. Specify configuration parameters for VPN server.
+
+# Install packages
+opkg update
+opkg install wireguard-tools luci-proto-wireguard qrencode
+
+# Configuration parameters
+VPN_IF="vpn"
+VPN_PORT="51820"
+VPN_ADDR="192.168.9.1/24"
+VPN_ADDR6="fd00:9::1/64"
+
+2. Key management
+
+Generate and exchange keys between server and client.
+
+# Generate keys
+umask go=
+wg genkey | tee wgserver.key | wg pubkey > wgserver.pub
+wg genkey | tee wgclient.key | wg pubkey > wgclient.pub
+wg genpsk > wgclient.psk
+
+# Server private key
+VPN_KEY="$(cat wgserver.key)"
+
+# Pre-shared key
+VPN_PSK="$(cat wgclient.psk)"
+
+# Client public key
+VPN_PUB="$(cat wgclient.pub)"
+
+3. Firewall
+
+Consider VPN network as private. Assign VPN interface to LAN zone to minimize firewall setup. Allow access to VPN server from WAN zone.
+
+# Configure firewall
+uci rename firewall.@zone[0]="lan"
+uci rename firewall.@zone[1]="wan"
+uci del_list firewall.lan.network="${VPN_IF}"
+uci add_list firewall.lan.network="${VPN_IF}"
+uci -q delete firewall.wg
+uci set firewall.wg="rule"
+uci set firewall.wg.name="Allow-WireGuard"
+uci set firewall.wg.src="wan"
+uci set firewall.wg.dest_port="${VPN_PORT}"
+uci set firewall.wg.proto="udp"
+uci set firewall.wg.target="ACCEPT"
+uci commit firewall
+service firewall restart
+
+4. Network
+
+Configure VPN interface and peers.
+
+# Configure network
+uci -q delete network.${VPN_IF}
+uci set network.${VPN_IF}="interface"
+uci set network.${VPN_IF}.proto="wireguard"
+uci set network.${VPN_IF}.private_key="${VPN_KEY}"
+uci set network.${VPN_IF}.listen_port="${VPN_PORT}"
+uci add_list network.${VPN_IF}.addresses="${VPN_ADDR}"
+uci add_list network.${VPN_IF}.addresses="${VPN_ADDR6}"
+
+# Add VPN peers
+uci -q delete network.wgclient
+uci set network.wgclient="wireguard_${VPN_IF}"
+uci set network.wgclient.public_key="${VPN_PUB}"
+uci set network.wgclient.preshared_key="${VPN_PSK}"
+uci add_list network.wgclient.allowed_ips="${VPN_ADDR%.*}.2/32"
+uci add_list network.wgclient.allowed_ips="${VPN_ADDR6%:*}:2/128"
+uci commit network
+service network restart
+
+# configuration
+
+ajout des peer depuis l'int vpn
+restart l'int apres modif
 
 --[ tor middlebox
 
