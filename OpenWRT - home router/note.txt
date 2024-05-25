@@ -187,7 +187,7 @@ cscli collections install crowdsecurity/iptables
 --[ wireguard
 https://openwrt.org/docs/guide-user/services/vpn/wireguard/server
 
-1. Preparation
+1## Preparation
 
 Install the required packages. Specify configuration parameters for VPN server.
 
@@ -201,7 +201,7 @@ VPN_PORT="51820"
 VPN_ADDR="192.168.9.1/24"
 VPN_ADDR6="fd00:9::1/64"
 
-2. Key management
+## Key management
 
 Generate and exchange keys between server and client.
 
@@ -220,7 +220,7 @@ VPN_PSK="$(cat wgclient.psk)"
 # Client public key
 VPN_PUB="$(cat wgclient.pub)"
 
-3. Firewall
+## Firewall
 
 Consider VPN network as private. Assign VPN interface to LAN zone to minimize firewall setup. Allow access to VPN server from WAN zone.
 
@@ -239,7 +239,7 @@ uci set firewall.wg.target="ACCEPT"
 uci commit firewall
 service firewall restart
 
-4. Network
+## Network
 
 Configure VPN interface and peers.
 
@@ -266,6 +266,11 @@ service network restart
 
 ajout des peer depuis l'int vpn
 restart l'int apres modif
+
+## collection crowdsec pour wireguard
+
+cscli collections install crowdsecurity/wireguard
+/etc/init.d/snort restart
 
 --[ tor middlebox
 
