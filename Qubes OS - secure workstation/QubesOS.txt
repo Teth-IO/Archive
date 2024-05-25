@@ -29,9 +29,6 @@ sudo dracut -f
 reappliquer le démarrage auto de sys-usb
 => redémarer (prompt le code pin et la presence)
 
-# clone template debian-12-xfce to kicksecure-17
-# supprimer debian apres clonage
-
 # mirage firewall :
 -------------------
 
