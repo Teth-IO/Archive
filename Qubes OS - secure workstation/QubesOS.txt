@@ -151,8 +151,13 @@ bar {
 pour la taille font en 11
 
 # dpi 3k screen
--> xrandr et .xsession ne n'applique pas les dpi sous i3
-pour les qubes mettre 120 de dpi sous xfce
+vim .Xressources
+Xft.dpi: 120
+
+vim .config/i3/config
+exec xrdb -merge ~/.Xressources
+
+-> pour les qubes mettre 120 de dpi sous xfce
 
 # creation qube untrusted :
 ---------------------------
