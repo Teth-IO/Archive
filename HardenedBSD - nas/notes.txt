@@ -417,6 +417,7 @@ sudo -u www php "/usr/local/www/nextcloud/occ" config:app:set activity notify_no
 
 # troobleshooting
 en cas d'internal server error -> sudo -u www php "/usr/local/www/nextcloud/occ" maintenance:repair
+toujours utile : sudo -u www php "/usr/local/www/nextcloud/occ" files:scan --all
 
 --[ 6 - bhyve
 
