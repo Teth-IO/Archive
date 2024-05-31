@@ -145,16 +145,14 @@ bar {
 		background #0000000
 		statusline #ffffff
 
-pour la taille font en 11
-
 # dpi 3k screen
-vim .Xressources
-Xft.dpi: 120
+vim .Xresources
+Xft.dpi: 144
 
 vim .config/i3/config
-exec xrdb -merge ~/.Xressources
+exec xrdb -merge ~/.Xresources
 
--> pour les qubes mettre 120 de dpi sous xfce
+-> pour les qubes mettre 144 de dpi sous xfce
 
 # creation qube untrusted :
 ---------------------------
