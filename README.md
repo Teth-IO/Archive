@@ -1,14 +1,8 @@
 -------------------------------------- infra -------------------------------------- <br />
 
-=> [HardenedBSD NAS & hosting platform](./HardenedBSD%20-%20nas/notes.txt)
+=> WIP
 
-HardenedBSD NAS & hosting platform :
- - NAS sous zfs pour self-healing, RAID (volume manager) et backup (snapshot) automatisées par zfsnap
- - CBSD pour gestion des jail et vm bhyve
- - nextcloud (avec clamav) sous jail pour isolation et recovery
- - vm ubuntu cloud-init sous bhyve pour stack docker SearXNG+gluetun <br />
-
-WIP : passage d'ubuntu a MicroOS. Actuellement les vm ne boot pas depuis un iso et pas de cloud-init de dispo. Si pas d'évolution aux prochaines release passer de bhyve a xen.
+NAS nextcloud-snap sous Ubuntu Core 24 + docker hosting platform
 
  => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened%20gaming%20station/)
 
@@ -16,16 +10,6 @@ Renforcement de windows :
  - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
  - Un contrôle des fonctionnalités avec les GP
  - Si besoin d'app, préférer les UWP (windows store) qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
-
- => [QubesOS secure workstation](./Qubes%20OS%20-%20secure%20workstation/QubesOS.txt)
-
-Notes d'install perso de Qubes OS
-- qubes perso sous kicksecure (debian morph)
-- FDE avec cryptenroll
-- install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque) <br />
-- i3, rofi, adwaita-dark & icon Tela-dark pour dom0, xfce adwaita-dark & icon Tela-dark pour le reste <br />
-
-WIP : attente d'upstream pour sys-audio
 
 => [OpenWRT IPS & home router](./OpenWRT%20-%20home%20router/note.txt)
 
@@ -63,20 +47,6 @@ Sous Oracle Linux :
 
 -------------------------------------- Note --------------------------------------
 
- => [hardened gentoo](./Znote%20-%20Hardened%20gentoo/)
- - Compiler and runtime stack	-> GCC hardened
- - MAC	-> SELinux
- - UKI & Secure boot	-> Dracut & sbsigntools
- - kernel	-> kernel hardened (KSSP)
-
-  => [MicroOS aeon hardened workstation](/Znote%20-%20MicroOS%20aeon%20-%20hardened/) <br />
- Attente upstream : nouvel installeur pour le support de combustion, systemd-cryptenroll
- Renforcement de MicroOS :
- - Hardened memory allocator => ne marche pas avec flatpak
- - KSPP aux kernel command line options et sysctls<br />
- 
- (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, modern solution (wayland, pipewire, systemd-boot))
-
  => [cisco](./Znote%20-%20conf%20switch/)<br />
  => [netdisco](./Znote%20-%20netdisco/)<br />
 
@@ -110,8 +80,10 @@ Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScryp
  - DNScrypt Proxy
  - DoH (pour ECH) + DNSSEC + non-logging et non-blocking
  - IPv6 statique
+ 
+ -------------------------------------- NAS
 
-=> [ROCKPro64 NAS](./ZZold%20-%20ROCKPro64%20NAS/)
+=> [ROCKPro64 NAS](./ZZold%20-%20NAS/)
 
 NAS DIY avec la ROCKPro64 sous Dietpi :
  - RAID 1 par btrfs
@@ -119,7 +91,7 @@ NAS DIY avec la ROCKPro64 sous Dietpi :
  - Zram
 tmpfs par défaut
 
-=> [OpenBSD NAS & SearxNG](./ZZold%20-%20OpenBSD%20-%20nas/)
+=> [OpenBSD NAS & SearxNG](./ZZold%20-%20NAS/)
 
  - NAS Nextcloud sous RAID1 <br />
     - Backup incrémentielles journalières & smartd <br />
@@ -127,3 +99,37 @@ tmpfs par défaut
     - Proxifié dans un tunnel wireguard (tor aurait été mieux mais trop lent et settings de searxng instable) <br />
     - HAProxy pour TLS <br />
  - Packet Filtering <br />
+ 
+ => [HardenedBSD NAS & hosting platform](./ZZold%20-%20NAS/)
+
+HardenedBSD NAS & hosting platform :
+ - NAS sous zfs pour self-healing, RAID (volume manager) et backup (snapshot) automatisées par zfsnap
+ - CBSD pour gestion des jail et vm bhyve
+ - nextcloud (avec clamav) sous jail pour isolation et recovery
+ - vm ubuntu cloud-init sous bhyve pour stack docker SearXNG+gluetun <br />
+ 
+  -------------------------------------- workstation
+ 
+  => [hardened gentoo](./ZZold%20-%20workstation/)
+ - Compiler and runtime stack	-> GCC hardened
+ - MAC	-> SELinux
+ - UKI & Secure boot	-> Dracut & sbsigntools
+ - kernel	-> kernel hardened (KSSP)
+ 
+   => [QubesOS secure workstation](./ZZold%20-%20workstation/)
+
+Notes d'install perso de Qubes OS
+- qubes perso sous kicksecure (debian morph)
+- FDE avec cryptenroll
+- install de mirage firewall (unikernel, moins de RAM, moins de surface d'attaque) <br />
+- i3, rofi, adwaita-dark & icon Tela-dark pour dom0, xfce adwaita-dark & icon Tela-dark pour le reste <br />
+
+  => [MicroOS aeon hardened workstation](./ZZold%20-%20workstation/) <br />
+ Attente upstream : nouvel installeur pour le support de combustion, systemd-cryptenroll
+ Renforcement de MicroOS :
+ - Hardened memory allocator => ne marche pas avec flatpak
+ - KSPP aux kernel command line options et sysctls<br />
+ 
+ (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, et des protocoles modernes (wayland, pipewire, systemd-boot))
+ 
+ 

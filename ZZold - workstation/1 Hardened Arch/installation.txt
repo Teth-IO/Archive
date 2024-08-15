@@ -1,0 +1,324 @@
+#########################################
+#### Installation du système de base ####
+#########################################
+
+-> prérequis = Bios en UEFI
+-> idéalement faire l'installation depuis un ssh
+
+Depuis le média d'installation
+
+#partitionnement des disques :
+
+//On part sur un UEFI/GPT avec chiffrement de la parition principal et LVM
+//shema du partitionnement :
+/dev/sda
+|--> /efi           /dev/sda1 EFI        boot 512 MB fat32     UKI
+|--> LUKS encrypted /dev/sda2 linux fs        100%   encrypted block device chiffré
+     |-->  mapper                        /    100%   XFS
+
+fdisk /dev/sda
+g
+w
+cfdisk
+-> entrer les nouvelles partitions
+-> sda1 512MB de type EFI
+-> sda2 le reste en gardant le type par defaut (linux filesystems)
+write
+
+#formatage, chiffrement création du LVM:
+!!!le mot de passe doit être saissie comme si on utilisait un clavier qwerty
+
+mkfs.fat -F 32 /dev/sda1
+cryptsetup luksFormat --type luks2 --use-random -S 1 -s 512 -h sha512 -i 5000 /dev/sda2
+cryptsetup open /dev/sda2 crypt
+pvcreate /dev/mapper/crypt
+mkfs.xfs /dev/mapper/crypt
+
+#montage:
+mount /dev/mapper/crypt /mnt
+mount --mkdir /dev/sda1 /mnt/efi
+
+#selection des mirroirs du gestionnaire de paquets
+reflector --country France --age 12 --sort rate --protocol https --save /etc/pacman.d/mirrorlist
+!!! ignorer les erreurs 403
+
+#installation du système de base
+pacstrap /mnt base linux-hardened linux-firmware mkinitcpio lvm2 vim dhcpcd reflector openssh
+
+#montage automatique des partitions
+genfstab -U /mnt >> /mnt/etc/fstab
+vim /mnt/etc/fstab
+-> remplacer les "rw, relatime" par "noatime"
+-> pour /efi on peut rajouter aussi les options noexec,nodev,nosuid
+-> vérifier que la colonne pass est à 1 pour / (la racine du disque) et à 2 pour les autres
+-> ajouter une entré dans la RAM pour /tmp comme suit : tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0
+
+#entrer dans le nouveau système
+arch-chroot /mnt
+
+#swapfile (le zswap est configurer par défaut sous arch linux, créer un swapfile ici permettra d'obtenir un résultat similaire a du zram)
+-> taille du swap = racine carré de la RAM (en GB)
+dd if=/dev/zero of=/swapfile bs=1M count=(valeur en MiB e.g. 4096 pour 4G) status=progress
+chmod 0600 /swapfile
+mkswap -U clear /swapfile
+swapon /swapfile
+vim /etc/fstab
+-> ajouter le swapfile comme suit : /swapfile none swap sw 0 0
+
+#fuseau horaire
+ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+hwclock --systohc
+
+#locales
+vim /etc/locale.gen
+-> dé-commenter : fr_FR UTF-8
+locale-gen
+
+cat << EOF > /etc/locale.conf
+LANG=fr_FR.UTF-8
+EOF
+
+cat << EOF > /etc/vconsole.conf
+KEYMAP=fr-latin9
+EOF
+
+#nom de la machine
+cat << EOF > /etc/hostname
+*nom*
+EOF
+
+#maj du microcode automatique
+pacman -S intel-ucode
+-> amd-ucode pour AMD
+
+#initramfs
+vim /etc/mkinitcpio.conf
+-> modifier comme suit : HOOKS=(systemd autodetect modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
+
+#installer le zsh
+pacman -S zsh
+
+#ajouter un utilisateurs
+useradd -m -G wheel -s /bin/zsh *nom*
+-> le groupe wheel permet l'utilisation de su. On peut aussi configurer sudo pour permettre à se groupe d'obtenir tout les privilèges
+
+#mot de passe
+passwd *nom du compte créer*
+passwd
+
+#outils de base nécessaire à diverses installations
+pacman -S --needed base-devel
+
+#networkmanager (car nmtui pour le wifi, sinon un dhcpd suffit)
+pacman -S networkmanager man
+systemctl enable NetworkManager
+
+#######################
+##### Hardening #######
+#######################
+
+#penser à vérifier les vulnérabilités du CPU
+grep . /sys/devices/system/cpu/vulnerabilities/*
+-> doit être en mitigated, unknown ou not affected sinon inclure les mitigations correspondantes dans les paramètres du kernel (/etc/cmdline.d/security.conf)
+-> a noter que la mitigation pour SMT n'est pas renforcé par défaut car cela à un impact massif sur les performances
+
+#renforcement complémentaire des paramètres du kernel, notre kernel-hardened en inclus par défaut
+#demarre le kernel en lockdown (modification impossible depuis le userspace lors de son fonctionnemment)
+#Active apparmor
+mkdir /etc/cmdline.d
+cat << EOF > /etc/cmdline.d/security.conf
+# renforcement des paramètres de démarrages + apparmor
+lsm=landlock,lockdown,yama,integrity,apparmor,bpf randomize_kstack_offset=on lockdown=integrity
+EOF
+
+#AppArmor
+pacman -S apparmor
+systemctl enable apparmor
+
+#profiles d'AppArmor en plus
+pacman -S git
+git clone https://aur.archlinux.org/krathalans-apparmor-profiles-git.git
+cd krathalans-apparmor-profiles-git
+gpg --recv-keys C0F9AEE56E47D174
+makepkg -si
+!!!en cas de pb sur une application désactiver le profiles correspondant pour débugage
+=> sudo ln -s /etc/apparmor.d/{profile.name-here} /etc/apparmor.d/disable/
+=> sudo apparmor_parser -R /etc/apparmor.d/{profile.name-name-here}
+
+#firewalld
+pacman -S firewalld
+systemctl enable firewalld
+
+#Dossier hardening : blacklisting de module :
+git clone https://github.com/Teth-IO/dotfiles
+mettre blacklist.conf dans /etc/modprobe.d/blacklist.conf
+
+#Dossier hardening : hardening complementaire
+	#kernel
+mettre 51-kernel.conf dans /etc/sysctl.d/51-kernel.conf
+	#réseau
+mettre 51-network.conf dans /etc/sysctl.d/51-network.conf
+	#userspace
+mettre 51-userspace dans /etc/sysctl.d/51-userspace.conf
+
+#pour la gestion des dépots (installation, maj...) AUR on peut utiliser yay
+git clone https://aur.archlinux.org/yay.git
+cd
+makepkg -si
+
+#hardened malloc
+yay -S hardened-malloc-git
+vim /etc/ld.so.preload
+-> mettre : /usr/lib/libhardened_malloc.so
+vim /etc/sysctl.d/hardened_malloc.conf
+-> mettre : vm.max_map_count = 1048576
+
+#indique a l'initrams de dechiffrer le parition LUKS
+cat << EOF > /etc/cmdline.d/root.conf
+rd.luks.name=*UUID de /dev/sda2*=root root=/dev/mapper/root
+EOF
+
+#config Unified kernel image -mkinitcpio
+cat << EOF > /etc/mkinitcpio.d/linux-hardened.preset
+ALL_kver="/boot/vmlinuz-linux-hardened"
+ALL_microcode="/boot/intel-ucode.img"
+
+PRESETS=('default')
+
+default_uki="/efi/EFI/Linux/arch-linux-hardened.efi"
+default_options="--splash=/usr/share/systemd/bootctl/splash-arch.bmp"
+EOF
+
+#generation
+mkdir -p /efi/EFI/Linux
+mkinitcpio -p linux-hardened
+
+#creer la boot entry
+pacman -S efibootmgr
+efibootmgr --create --disk /dev/sda --part 1 --label "ArchLinux-Hardened" --loader 'EFI\Linux\arch-linux-hardened.efi'
+
+#secure boot 
+voir la https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Putting_firmware_in_%22Setup_Mode%22
+
+#maj UKI apres maj kernel ou microcode
+https://wiki.archlinux.org/title/Unified_kernel_image#pacman_hook
+
+reboot
+
+#démarrer sur l'os nouvellement installé
+
+##################################################
+#### Installation du rice et des utilitaires #####
+##################################################
+
+#activer le ssh
+systemctl start sshd
+
+#première partie du shell
+pacman -S sway waybar mako kitty git xorg-xwayland wofi qt5-wayland light wl-copy
+
+#FiraCode Nerd Font
+su *user*
+git clone  https://aur.archlinux.org/nerd-fonts-fira-code.git
+cd nerd-fonts-fira-code
+makepkg -si
+
+#prezto
+git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+/en une commande
+setopt EXTENDED_GLOB
+for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
+  ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile:t}"
+done
+/ignorer les erreurs de fichier existant, on remplace a la fin les liens symbolique dans ~ par les deux .zsh du dépôt
+
+#starship
+pacman -S starship
+zsh
+//et profiter de la beauté du nouveau shell
+
+#theme powerlevel10k :
+-> ajouter à ~/.zpreztorc (partie prompt) : zstyle ':prezto:module:prompt' theme 'powerlevel10k'
+
+#utilitaires
+pacman -S ripgrep imv fzf less ranger htop neofetch python-pip grim libreoffice-fresh
+pip install pillow
+pacman -S zathura zathura-cb zathura-djvu zathura-pdf-mupdf zathura-ps
+
+#Navigateur
+pacman -S firefox
+
+#daemon de fond d'ecran: wpaperd
+git clone https://aur.archlinux.org/wpaperd.git
+cd wpaperd
+makepkg -si
+-> modifier le fichier output.conf avec les bons paramètres
+
+#son
+pacman -S pipewire-pulse alsa-utils
+-> alsamixer pour gérer le son (speaker et pcm au max, master pour gérer le volume)
+
+#chiffrement des requêtes DNS
+sudo pacman -S dnscrypt-proxy bind
+=> modifier /etc/dnscrypt-proxy/dnscrypt-proxy.toml en fonction de ses besoins
+(pour moi juste autoriser les serveurs sous ipv6 en imposer le DNSSEC)
+=> ajouter un fichier /etc/NetworkManager/conf.d/dns.conf qui contient:
+[main]
+dns=none
+=> modifer /etc/resolv.conf comme suit:
+nameserver ::1
+nameserver 127.0.0.1
+//l'activer au démarrage
+sudo systemctl enable dnscrypt-proxy
+//et l'activer maintenant sinon plus de dns
+sudo systemctl start dnscrypt-proxy
+
+#outils pour vérifier la santé du disque dur
+sudo pacman -S smartmontools
+=> voir https://wiki.archlinux.org/title/S.M.A.R.T._(Fran%C3%A7ais) pour les test
+
+#installation du lock screen
+git clone https://aur.archlinux.org/swaylock-effects-git.git
+cd swaylock-effects
+makepkg -si
+
+Fira Code Nerd Fonts compatible -> faire p10k configure depuis kitty
+  -> tout les icones doivent apparaitres
+  -> 1 lean -> 1 unicode -> 1 256 coleurs -> 2 24h -> 2 two ligne -> dotted -> no frame -> light? -> compact -> many icons -> concise -> transient -> verbose? -> yes
+(modifier .p10k.zsh comme ci-dessous ou utiliser le fichier du dépôt)
+vim .p10k.zsh
+-> left prompt elements :
+	-> line 1 :
+	os-icon
+
+-> right prompt elements :
+	-> line 1 :
+	Commenté : command_execution_time
+	load
+	ram
+	-> line 2 :
+	battery
+
+!!!en cas d'erreur dans les fichier .zshenv et/ou .zshrc au démarrage les supprimer et les recréer en copiant le contenu avec éditeur de texte
+!!!en cas d'erreur de sway au démarrage (permsision denied) installer polkit -> sudo pacman -S polkit
+
+#pour ne pas dépendre de RTC du BIOS : NTS
+
+#editeur astronvim
+git clone https://aur.archlinux.org/astronvim.git
+cd astronvim
+makepkg -si
+
+#pour pc portable
+sudo pacman -S tlp
+sudo systemctl enable tlp
+sudo systemctl start tlp
+//pour les thinkpad la commande tlp-stat -b indique les modules de kernel a ajouté
+//pacman -S 'le module kernel indiqué'
+
+#bluetooth
+pacman -S bluez bluez-utils
+yay -S bluetuith
+-> pour se connecter à un périphérique :
+systemctl start bluetooth.service
+bluetuith

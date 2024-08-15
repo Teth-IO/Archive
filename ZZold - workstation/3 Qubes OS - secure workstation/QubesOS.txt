@@ -1,0 +1,266 @@
+# kernel latest :
+-----------------
+
+choix à l'installation
+
+# maj template :
+----------------
+
+verif si les sys-* sont bien sous la derniere template fedora
+virer les apps user de la template
+
+# FDE fido 2 :
+--------------
+
+dehide les usb pour dom0  https://www.qubes-os.org/doc/usb-qubes/#how-to-hide-usb-controllers-from-dom0
+	/etc/default/grub
+	remove rd.qubes.hide_all_usb
+	grub2-mkconfig -o /boot/efi/EFI/qubes/grub.cfg
+
+virer le démarrage auto de sys-usb
+
+=> redémarer
+
+echo "add_dracutmodules+=\" fido2 \"" | sudo tee /etc/dracut.conf.d/fido2.conf
+sudo systemd-cryptenroll --fido2-device auto /dev/sda3 (option pour no pin ou no presence dispo mais dependent du harware (pas possible chez nous))
+sed -i '/luks/ s/$/,fido2-device=auto/' /etc/crypttab
+sudo dracut -f
+
+reappliquer le démarrage auto de sys-usb
+=> redémarer (prompt le code pin et la presence)
+
+# mirage firewall :
+-------------------
+
+https://github.com/mirage/qubes-mirage-firewall
+download and unpack
+mkdir -p /var/lib/qubes/vm-kernels/mirage-firewall/
+cd /var/lib/qubes/vm-kernels/mirage-firewall/
+sudo qvm-run --pass-io untrusted 'cat /home/user/Downloads/mirage-firewall/vmlinuz' > /var/lib/qubes/vm-kernels/mirage-firewall/vmlinuz
+qvm-run 'cat mirage-firewall/vmlinuz' > vmlinuz
+gzip -n9 < /dev/null > initramfs
+qvm-create \
+	--property kernel=mirage-firewall \
+	--property kernelopts='' \
+	--property memory=32 \
+	--property maxmem=32 \
+	--property netvm=sys-net \
+	--property provides_network=True \
+	--property vcpus=1 \
+	--property virt_mode=pvh \
+	--label=green \
+	--class StandaloneVM \
+	mirage-firewall
+qvm-features mirage-firewall qubes-firewall 1
+qvm-features mirage-firewall no-default-kernelopts 1
+
+# virer le demarrage auto de sys-firewall, l'eteindre et tout faire passer sous mirage firewall
+# modifier dans global config 'default net qube'
+
+# Template kicksecure 17 :
+--------------------------
+
+https://www.kicksecure.com/wiki/Qubes
+# clone et morph debian template :
+sudo apt install extrepo
+sudo http_proxy=http://127.0.0.1:8082 https_proxy=http://127.0.0.1:8082 extrepo enable kicksecure
+sudo apt update
+sudo apt full-upgrade
+sudo apt install kicksecure-qubes-gui	
+	
+# change for kicksecure repo :
+enable -> https://www.kicksecure.com/wiki/Project-APT-Repository#Kicksecure_for_Qubes
+sudo extrepo disable kicksecure
+sudo rm /etc/apt/sources.list
+sudo touch /etc/apt/sources.list
+
+virer firefox-esr thunderbird exfalso parole xsane xfburn atril electrum lximage-qt pcmanfm-qt
+
+# Librewolf :
+sudo apt update && sudo apt install -y wget gnupg lsb-release apt-transport-https ca-certificates
+distro=$(if echo " una bookworm vanessa focal jammy bullseye vera uma " | grep -q " $(lsb_release -sc) "; then lsb_release -sc; else echo focal; fi)
+wget -O- https://deb.librewolf.net/keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/librewolf.gpg
+sudo tee /etc/apt/sources.list.d/librewolf.sources << EOF > /dev/null
+Types: deb
+URIs: https://deb.librewolf.net
+Suites: $distro
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/librewolf.gpg
+EOF
+sudo apt update
+sudo apt install librewolf -y
+
+# install nextcloud-desktop gocryptfs
+
+# Rice :
+--------
+
+i3 = font 11 
+	bar en background 000000
+gtk : adwaita dark + tela dark
+
+# theme (qubes et dom0) :
+=> les app dans dom0 sont en gtk et qt5, faire manip suivante pour appliquer le theme
+sudo qubes-dom0-update adwaita-qt5
+Then add QT_STYLE_OVERRIDE=adwaita-dark to /etc/environment.
+mkdir .config/gtk-3.0
+vim .config/gtk-3.0/settings.ini
+
+[Settings]
+gtk-icon-theme-name = Tela-dark
+gtk-theme-name = Adwaita-dark
+
+=> comme les qubes sont sous xfce passer par les settings + installer le theme breeze et qt5ct
+	-> qt5ct pour gérer l'apprence des app (theme, icon polices)
+	-> theme breeze pour les app qui ne supportes pas l'adapation du theme gtk (adwaita)
+
+# icons (qubes et dom0) : tela-icon :
+git clone https://github.com/vinceliuice/Tela-icon-theme
+cd Tela-icon-theme/
+sudo ./install.sh -d /usr/share/icons/
+
+# systray icons :
+rien ne marche pour les raccorder au theme
+
+# rofi
+sudo qubes-dom0-updates rofi
+# changement de theme possible depuis rofi theme selector
+	# sidebar 
+# ctrl-tab pour changer de mode
+
+mettre en place un raccourci pour la commande : rofi -modes "windows,drun" - show window
+# i3 config :
+bindsym $mod+space exec "rofi -modes 'windows,drun' -show window"
+
+# i3
+sudo qubes-dom0-update i3 i3-settings-qubes
+
+-> bar on top + dark
+
+bar {
+        position top
+	status_command qubes-i3status
+	colors {
+		background #0000000
+		statusline #ffffff
+
+# dpi 3k screen
+vim .Xresources
+Xft.dpi: 144
+
+vim .config/i3/config
+exec xrdb -merge ~/.Xresources
+
+-> pour les qubes mettre 144 de dpi sous xfce
+
+# creation qube untrusted :
+---------------------------
+
+# cutomization librewolf https://github.com/Teth-IO/dotfiles/tree/main/librewolf
+sidebery enable dark
+librewolf enable dark
+
+# installation des themes et icons
+# une fois tous installer on peut le cloner :
+-> qube trusted pour website avec account
+-> qube personnal pour data (limit outgoing to 192.168.0.0/16)
+	
+------------------------------ WAITING ------------------------------
+	
+# sys-audio :
+-------------
+https://forum.qubes-os.org/t/audio-qube/20685
+=> obligé pour blueooth audio 
+	=> pas d'attache peripherique blueooth usb a dom0
+	=> sys-bluetooth ? https://github.com/QubesOS/qubes-issues/issues/8994
+
+# créer une audio template depuis fedora
+# y mettre :
+sudo dnf install -y pipewire-qubes qubes-audio-daemon pavucontrol qubes-core-admin-client qubes-usb-proxy alsa-utils
+sudo dnf install -y blueman cairo-dock
+sudo dnf install -y pasystray
+
+# créer qubes sys-audio (hvm, pas de memory balancing)
+# faire passer le pci audio
+# ici bluetooth usb -> sys-usb
+# attacher le peripherique usb a la vm audio
+# pas d'attache permanente, l'adresse peut changer
+
+# ajouter un custom service ‘audiovm’ a sys-audio using QubesManager 
+
+# enfin créer une stratégie pour permettre la communication entre sys-audio et les qubes
+# créer le fichier /etc/qubes/policy.d/50-sys-audio.policy dans dom0
+admin.Events          *   sys-audio     @adminvm                allow   target=dom0
+admin.Events          +domain-stopped    sys-audio     @tag:audiovm-sys-audio                allow   target=dom0
+admin.Events          +domain-shutdown   sys-audio     @tag:audiovm-sys-audio                allow   target=dom0
+admin.Events          +domain-start	 sys-audio     @tag:audiovm-sys-audio                allow   target=dom0
+admin.Events          +connection-established      sys-audio     @tag:audiovm-sys-audio                allow   target=dom0
+
+admin.vm.CurrentState *   sys-audio     @adminvm                allow   target=dom0
+admin.vm.CurrentState *   sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.List         *   sys-audio     @adminvm                allow   target=dom0
+admin.vm.List         *   sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+
+admin.vm.property.Get               +audiovm      sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.property.Get               +xid          sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.feature.CheckWithTemplate  +audio        sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.feature.CheckWithTemplate  +audio-model  sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.feature.CheckWithTemplate  +supported-service.pipewire  sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.feature.CheckWithTemplate  +audio-low-latency  sys-audio     @tag:audiovm-sys-audio  allow   target=dom0
+admin.vm.property.Get               +stubdom_xid  sys-audio	@tag:audiovm-sys-audio	allow	target=dom0
+
+# patcher /usr/lib/python3.12/site-packages/qubesadmin/tools/qvm_start_daemon.py dans l'audio template
+# avec : https://github.com/QubesOS/qubes-core-admin-client/compare/main...neowutran:qubes-core-admin-client:fix-8109-and-further3
+
+# configurer l'audiovm par défaut
+qubes-prefs default_audiovm sys-audio
+
+=> script présent en upstream mais pas fonctionnel atm
+https://github.com/QubesOS/qubes-issues/issues/8093
+=> les vm comprennent bien le serveur de son mais n'apparait dans pavucontrol
+
+=> attente d'upstream
+	
+# sys-gui-gpu :
+---------------
+
+sudo qubesctl top.enable qvm.sys-gui-gpu
+sudo qubesctl top.enable qvm.sys-gui-gpu pillar=True
+sudo qubesctl --all state.highstate
+-> vient pull une template fedora-38-xfce
+
+sudo qubesctl top.disable qvm.sys-gui-gpu
+
+# attaching the cpu (Intel graphics card only, a faire manuellement sinon) :
+
+sudo qubesctl state.sls qvm.sys-gui-gpu-attach-gpu
+=> resultat ok
+
+reboot
+	pas de sys-gui-gpu
+	pas d'autostart ?
+	=> le pc reboot lorsque le gpu est passé a la vm 
+	
+		si problème :
+		For the case of sys-gui-gpu, you need to prevent Qubes OS autostart of any qube to reach dom0. 
+		For that, you need to boot Qubes OS with qubes.skip_autostart GRUB parameter.
+		
+		
+		blacklisting du driver
+		https://github.com/QubesOS/qubes-issues/issues/8657
+			lspci -k | grep -EA3 'VGA|3D|Display' on dom0 and look for your iGPU. Kernel driver in use/Kernel modules will tell you the name
+			/etc/default/grub
+			i915.blacklist=1 rd.driver.blacklist=i915
+			grub2-mkconfig -o /boot/efi/EFI/qubes/grub.cfg
+			
+			=> souris visible sur écran noir
+			gpu non supporter
+					=> attente de maj upstream
+
+# AEM (Anti Evil Maid) :
+------------------------
+https://github.com/QubesOS/qubes-antievilmaid
+
+ne fonctionne que sous TPM 1.2 et BIOS CSM
+=> attente maj TPM 2.0 & UEFI

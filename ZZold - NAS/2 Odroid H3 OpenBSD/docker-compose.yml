@@ -1,0 +1,23 @@
+services:
+  gluetun:
+   image: qmcgaw/gluetun
+   container_name: gluetun
+   cap_add:
+    - NET_ADMIN
+   ports:
+    - 127.0.0.1:80:8080/tcp # searxng
+   environment:
+    - VPN_SERVICE_PROVIDER=custom
+    - VPN_TYPE=wireguard
+    - VPN_ENDPOINT_IP=***
+    - VPN_ENDPOINT_PORT=***
+    - WIREGUARD_PUBLIC_KEY=***
+    - WIREGUARD_PRIVATE_KEY=***
+    - WIREGUARD_ADDRESSES=***
+   restart: always
+
+  searxng:
+   image: searxng/searxng
+   network_mode: "service:gluetun"
+   container_name: searxng
+   restart: always
