@@ -16,6 +16,7 @@ Home routeur avec les fonctionnalitées suivantes
 	* server wireguard
 	* VLAN (notamment pour la TV)
 	* hardware acceleration LAN et WLAN
+	* irqbalance
 	
 Hardware
 	* GL-MT6000
@@ -38,7 +39,21 @@ uci set uhttpd.main.redirect_https=1     # 1 to enable redirect, 0 to disable re
 uci commit uhttpd
 service uhttpd reload
 
+----[ update
+
+depuis LuCI on peut upload les fichier sysupdate
+passage sous custom build https://github.com/pesa1234/MT6000_cust_build/tree/main
+-> enable irqbalance
+-> disable adblock
+-> ignore PBR et Network shares
+
+--[ irqbalance
+
+deja installer par l'image custom
+a activer sous LuCI
+
 --[ Hardware Flow Offloading
+(attention : le flow offloading n'est pas compatible avec le Smart Queue Management (SQM) pour contrer les bufferbloat)
 
 LuCI :
 Network → Firewall → Software Flow Offloading: enable
@@ -54,6 +69,8 @@ vim /etc/modules.conf
 options mt7915e wed_enable=Y
 	
 Save and Reboot
+
+=> apparait sans LuCI avec l'image custom sous Network → Firewall → Routing/NAT Offloading
 
 # verif 
 
@@ -78,7 +95,7 @@ https://lafibre.info/remplacer-freebox/freebox-delta-pop-mode-bridge-onpsense-fr
 
 ----[ wan6
 
-sur la freebox mettre en next-hop l'adresse de lien locale de l'interface wan6 d'openwrt (attention ane pas se tomper d'eth)
+sur la freebox mettre en next-hop l'adresse de lien locale de l'interface wan6 d'openwrt (attention a ne pas se tomper d'eth)
 sur OpenWRT mettre le prefix routé IPv6 (pas dispo sur l'interface web de base) :
 
 uci delete network.wan6.ip6prefix
@@ -113,81 +130,10 @@ wan6 -> ::/0 -> adresse de lien locale freebox
 
 => routage static wan6 vers local link freebox
 
---[ snort inline - WIP : bloque pas, crash avec les community rules
-
-https://openwrt.org/docs/guide-user/services/snort
-
-opkg update
-opkg install snort3 wget-ssl coreutils-sort
-
-uci set snort.snort.enabled=1
-uci set snort.snort.manual=0
-uci set snort.snort.home_net="any"
-uci set snort.snort.interface="$(uci get network.wan.device)"
-
-# ips mode
-uci set snort.snort.mode="ips"
-uci set snort.snort.action="block"
-(afpacket ?)
-uci commit
-
-# community rules
-snort-rules
-/etc/init.d/snort restart
-
-# testing rules (logging icmp)
-snort-rules --testing
-/etc/init.d/snort restart
-
-=> snort ne block rien en testing
-=> not running avec les community rules, running en testing
-
---[ crowdsec
-# prend des decision basé sur les logs d'openwrt (syslog, iptables...)
-https://openwrt.org/docs/guide-user/services/crowdsec
-
-opkg install crowdsec
-/etc/init.d/crowdsec reload
-
-# firewall bouncer 
-opkg install crowdsec-firewall-bouncer
-
-# config du bouncer
-vim /etc/config/crowdsec
-# append :
-config bouncer
-	option enabled '1'
-	option ipv4 '1'
-	option ipv6 '1'
-	option api_url 'http://localhost:8080/'
-	option api_key ''
-	option deny_action 'drop'
-	option deny_log '0'
-	option log_prefix 'crowdsec: '
-	option log_level 'info'
-	option filter_input '1'
-	option filter_forward '1'
-	list interface 'eth1'
-
-# ici il n'est encore activer car il doit etre enregistré
-# enregistrer le bouncer
-cscli bouncers add crowdsec-firewall-bouncer
--> donne une key a mettre dans /etc/config/crowdsec et enabled 1
-
-/etc/init.d/crowdsec-firewall-bouncer reload
-# voir les log /var/log/crowdsec-firewall-bouncer.log 
-# lister les bouncer 
-cscli bouncers list
-
-# hub et collections
-cscli hub list
-cscli hub update
-cscli collections install crowdsecurity/iptables
-
 --[ wireguard
 https://openwrt.org/docs/guide-user/services/vpn/wireguard/server
 
-1## Preparation
+## Preparation
 
 Install the required packages. Specify configuration parameters for VPN server.
 
@@ -276,6 +222,79 @@ restart l'int apres modif
 https://openwrt.org/docs/guide-user/services/tor/client
 
 --[ vlan tv
+
+----------------------------- WIP -----------------------------
+
+--[ snort inline - WIP : bloque pas, crash avec les community rules
+
+https://openwrt.org/docs/guide-user/services/snort
+
+opkg update
+opkg install snort3 wget-ssl coreutils-sort
+
+uci set snort.snort.enabled=1
+uci set snort.snort.manual=0
+uci set snort.snort.home_net="any"
+uci set snort.snort.interface="$(uci get network.wan.device)"
+
+# ips mode
+uci set snort.snort.mode="ips"
+uci set snort.snort.action="block"
+(afpacket ?)
+uci commit
+
+# community rules
+snort-rules
+/etc/init.d/snort restart
+
+# testing rules (logging icmp)
+snort-rules --testing
+/etc/init.d/snort restart
+
+=> snort ne block rien en testing
+=> not running avec les community rules, running en testing
+
+--[ crowdsec
+# prend des decision basé sur les logs d'openwrt (syslog, iptables...)
+https://openwrt.org/docs/guide-user/services/crowdsec
+
+opkg install crowdsec
+/etc/init.d/crowdsec reload
+
+# firewall bouncer 
+opkg install crowdsec-firewall-bouncer
+
+# config du bouncer
+vim /etc/config/crowdsec
+# append :
+config bouncer
+	option enabled '1'
+	option ipv4 '1'
+	option ipv6 '1'
+	option api_url 'http://localhost:8080/'
+	option api_key ''
+	option deny_action 'drop'
+	option deny_log '0'
+	option log_prefix 'crowdsec: '
+	option log_level 'info'
+	option filter_input '1'
+	option filter_forward '1'
+	list interface 'eth1'
+
+# ici il n'est encore activer car il doit etre enregistré
+# enregistrer le bouncer
+cscli bouncers add crowdsec-firewall-bouncer
+-> donne une key a mettre dans /etc/config/crowdsec et enabled 1
+
+/etc/init.d/crowdsec-firewall-bouncer reload
+# voir les log /var/log/crowdsec-firewall-bouncer.log 
+# lister les bouncer 
+cscli bouncers list
+
+# hub et collections
+cscli hub list
+cscli hub update
+cscli collections install crowdsecurity/iptables
 
 
 +-[ EOF ]=----------------------------------------------------------------+
