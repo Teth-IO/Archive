@@ -4,9 +4,26 @@
 |=------------------=[ snort IPS, crowdsec, TOR, WG  ]=------------------=|
 +-------------------------------------------------------------------------+
 
---[ Introduction
+--[ Table of contents
 
-Home routeur avec les fonctionnalitées suivantes
+0 - introduction
+1 - installation
+2 - irqbalance
+3 - Hardware Flow Offloading
+4 - Wireless Ethernet Dispatch
+5 - Wifi
+6 - recup ipv6
+	6.1 - wan6
+	6.2 - lan
+	6.3 - Routage statique pour ipv6
+7 - wireguard
+8 - vlan tv - TBA
+9 - snort inline - WIP
+10 - crowdsec - deprecated
+
+--[ 0 - Introduction
+
+Home routeur avec les fonctionnalités suivantes
 	* WAN & LAN 2.5GBASE-T 	
 	* WLAN 802.11ax (wifi 6)
 	* DHCPv4 & v6
@@ -24,35 +41,28 @@ Hardware
 		* LAN 1 2.5Gbps 4 1Gbps
 
 
---[ Installation 
+--[ 1 - Installation 
 
 https://openwrt.org/toh/gl.inet/gl-mt6000
+custom build utilise ici https://github.com/pesa1234/MT6000_cust_build/tree/main
 flash le routeur avec l'image sysupgrade depuis l'interface web de l'OEM
 
-# la snapshot est lightweight, on install l'interface web et les dependances pour le ssl :
+pour l'install standard (pas le build cutsom) pas d'interface web, l'installer avec :
 se co en ssh root@192.168.1.1 and: 
 opkg update && opkg install luci luci-lib-px5g px5g-standalone
 
-# pour upgrader les co en http vers https :
+puis pour upgrader les co en http vers https :
 
 uci set uhttpd.main.redirect_https=1     # 1 to enable redirect, 0 to disable redirect
 uci commit uhttpd
 service uhttpd reload
 
-----[ update
+--[ 2 - irqbalance
 
-depuis LuCI on peut upload les fichier sysupdate
-passage sous custom build https://github.com/pesa1234/MT6000_cust_build/tree/main
--> enable irqbalance
--> disable adblock
--> ignore PBR et Network shares
-
---[ irqbalance
-
-deja installer par l'image custom
+déjà installer par l'image custom
 a activer sous LuCI
 
---[ Hardware Flow Offloading
+--[ 3 - Hardware Flow Offloading
 (attention : le flow offloading n'est pas compatible avec le Smart Queue Management (SQM) pour contrer les bufferbloat)
 
 LuCI :
@@ -60,9 +70,9 @@ Network → Firewall → Software Flow Offloading: enable
 Network → Firewall → Hardware Flow Offloading: enable
 Save and Apply
 
---[ Wireless Ethernet Dispatch
+--[ 4 - Wireless Ethernet Dispatch
 
-SSH (pas dans LuCI): 
+par SSH pour l'image standard (pas dans LuCI): 
 
 vim /etc/modules.conf
 # append :
@@ -70,13 +80,13 @@ options mt7915e wed_enable=Y
 	
 Save and Reboot
 
-=> apparait sans LuCI avec l'image custom sous Network → Firewall → Routing/NAT Offloading
+apparaît sous LuCI avec l'image custom sous Network → Firewall → Routing/NAT Offloading
 
-# verif 
+# vérification
 
 cat /sys/module/mt7915e/parameters/wed_enable
 
---[ Wifi
+--[ 5 - Wifi
 
 Change wifi country code :
 
@@ -86,14 +96,14 @@ Click “Advanced Settings” tab
 Select your “Country Code” from the dropdown
 Save and Apply
 
---[ recup ipv6
+--[ 6 - recup ipv6
 https://openwrt.org/fr/docs/guide-user/network/ipv6/freebox
 https://blog.kulakowski.fr/post/openwrt-derriere-une-freebox-ipv6-dmz-et-bridge
 https://lafibre.info/remplacer-freebox/freebox-delta-pop-mode-bridge-onpsense-freeplayer/
 => Même si le mode bridge est activé, la freebox reste un routeur IPv6, sur lequel il faudra configurer un NextOP (“le routeur suivant”) depuis son interface. 
 -> cette adresse ipv6 n'est pas la default gateway a utilisé
 
-----[ wan6
+----[ 6.1 - wan6
 
 sur la freebox mettre en next-hop l'adresse de lien locale de l'interface wan6 d'openwrt (attention a ne pas se tomper d'eth)
 sur OpenWRT mettre le prefix routé IPv6 (pas dispo sur l'interface web de base) :
@@ -104,7 +114,7 @@ uci commit
 
 l'interface wan6 n'a aucune ipv6 publique et aucune gateway, seule l'IPv6-PD est du coup remplie
 
-----[ lan
+----[ 6.2 - lan
 
 Advanced Settingd :
 	IPv6 assignment length : 64
@@ -122,17 +132,18 @@ DHCP server :
 		default router : forced
 	
 aussi :
-modifier les dns par defaut de wan pour ne pas rester sur ceux du FAI
+modifier les dns par défaut de wan pour ne pas rester sur ceux du FAI
 
-----[ Routage static pour ipv6
+----[ 6.3 - Routage statique pour ipv6
 
 wan6 -> ::/0 -> adresse de lien locale freebox
 
 => routage static wan6 vers local link freebox
 
---[ wireguard
+--[ 7 - wireguard
 https://openwrt.org/docs/guide-user/services/vpn/wireguard/server
 
+# pour l'image standard
 ## Preparation
 
 Install the required packages. Specify configuration parameters for VPN server.
@@ -210,22 +221,18 @@ service network restart
 
 # configuration
 
-ajout des peer depuis l'int vpn
+ajout des peer depuis l'int vpn sous LuCI (export de la config pour le client + qrcode dispo)
 restart l'int apres modif
 
-## collection crowdsec pour wireguard
-
--> collection par recommande https://app.crowdsec.net/hub/author/crowdsecurity/collections/wireguard
-
---[ tor middlebox
-
-https://openwrt.org/docs/guide-user/services/tor/client
-
---[ vlan tv
+=> le custom build semble comprendre tout cela par defaut 
 
 ----------------------------- WIP -----------------------------
 
---[ snort inline - WIP : bloque pas, crash avec les community rules
+--[ 8 - vlan tv
+
+a faire
+
+--[ 9 - snort inline - WIP : bloque pas, crash avec les community rules
 
 https://openwrt.org/docs/guide-user/services/snort
 
@@ -254,7 +261,7 @@ snort-rules --testing
 => snort ne block rien en testing
 => not running avec les community rules, running en testing
 
---[ crowdsec
+--[ 10 - crowdsec
 # prend des decision basé sur les logs d'openwrt (syslog, iptables...)
 https://openwrt.org/docs/guide-user/services/crowdsec
 

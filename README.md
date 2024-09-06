@@ -2,24 +2,15 @@
 
 => WIP
 
-NAS nextcloud-snap sous fedora coreos uCore + docker hosting platform
-
- => [Windows 11 hardened gaming station](./Windows%2011%20-%20hardened%20gaming%20station/)
-
-Renforcement de windows :
- - Au niveau de l'OS avec la sécurité windows (HVCI, DEP, CET, ASLR, sandboxing de defender... )
- - Un contrôle des fonctionnalités avec les GP
- - Si besoin d'app, préférer les UWP (windows store) qui bénéficient, entre autre, d'un sandboxing (AppContainer) et ne dépendent plus de l'api win32
+NAS nextcloud-snap sous fedora coreos uCore + docker hosting platform with macvlan
 
 => [OpenWRT IPS & home router](./OpenWRT%20-%20home%20router/note.txt)
 
 Config d'OpenWRT en home router et IPS :
 - Recup de la delegation de prefixe IPv6
-- acceleration materielle 
-- crowdsec
+- acceleration materielle (HFO + WED)
+- snort inline (IPS)
 - wireguard
-
-WIP : snort en IPS (inline) ne bloque pas en auto config
 
 -------------------------------------- diverses install --------------------------------------
 
