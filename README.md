@@ -1,8 +1,13 @@
 -------------------------------------- infra -------------------------------------- <br />
 
-=> WIP
+=> [uCore NAS % hosting platform](./uCore%20-%20NAS/NAS.txt)
 
-NAS nextcloud-snap sous fedora coreos uCore + docker hosting platform with macvlan
+Fedora CoreOS (FCOS) rebase en uCore :
+- Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
+- uCore-ZFS avec module signé et batteries included (docker, sanoid, firewalld, ...)
+- home drive avec owncloud infini scale (version cloud native)
+- data sous un RAID ZFS avec sbapshot journalière
+- hosting de searxng sous macvlan
 
 => [OpenWRT IPS & home router](./OpenWRT%20-%20home%20router/note.txt)
 
