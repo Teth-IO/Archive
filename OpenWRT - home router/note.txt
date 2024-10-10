@@ -17,9 +17,8 @@
 	6.2 - lan
 	6.3 - Routage statique pour ipv6
 7 - wireguard
-8 - vlan tv - TBA
-9 - snort inline - WIP
-10 - crowdsec - deprecated
+8 - dnscrypt-proxy
+8 - snort inline - WIP
 
 --[ 0 - Introduction
 
@@ -226,11 +225,14 @@ restart l'int apres modif
 
 => le custom build semble comprendre tout cela par defaut 
 
+--[ 8 - DNScrypt-proxy
+
+https://github.com/DNSCrypt/dnscrypt-proxy/wiki/Installation-on-OpenWrt
++ redirection
+
+test ech
+
 ----------------------------- WIP -----------------------------
-
---[ 8 - vlan tv
-
-a faire
 
 --[ 9 - snort inline - WIP : bloque pas, crash avec les community rules
 
@@ -260,48 +262,6 @@ snort-rules --testing
 
 => snort ne block rien en testing
 => not running avec les community rules, running en testing
-
---[ 10 - crowdsec
-# prend des decision basé sur les logs d'openwrt (syslog, iptables...)
-https://openwrt.org/docs/guide-user/services/crowdsec
-
-opkg install crowdsec
-/etc/init.d/crowdsec reload
-
-# firewall bouncer 
-opkg install crowdsec-firewall-bouncer
-
-# config du bouncer
-vim /etc/config/crowdsec
-# append :
-config bouncer
-	option enabled '1'
-	option ipv4 '1'
-	option ipv6 '1'
-	option api_url 'http://localhost:8080/'
-	option api_key ''
-	option deny_action 'drop'
-	option deny_log '0'
-	option log_prefix 'crowdsec: '
-	option log_level 'info'
-	option filter_input '1'
-	option filter_forward '1'
-	list interface 'eth1'
-
-# ici il n'est encore activer car il doit etre enregistré
-# enregistrer le bouncer
-cscli bouncers add crowdsec-firewall-bouncer
--> donne une key a mettre dans /etc/config/crowdsec et enabled 1
-
-/etc/init.d/crowdsec-firewall-bouncer reload
-# voir les log /var/log/crowdsec-firewall-bouncer.log 
-# lister les bouncer 
-cscli bouncers list
-
-# hub et collections
-cscli hub list
-cscli hub update
-cscli collections install crowdsecurity/iptables
 
 
 +-[ EOF ]=----------------------------------------------------------------+
