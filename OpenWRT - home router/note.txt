@@ -121,11 +121,11 @@ Advanced Settingd :
 	IPv6 suffix : suffix a donner a l'interace
 DHCP server :
 	Advanced settings :
-		DHCP-Options : 6,1.1.1.1
+		DHCP-Options : 6,192.168.1.1 -> dnscrypt-proxy
 	IPv6 settings :
 		RAd-Service : server mode
 		DHCPv6-Service : server mode.
-		Announced IPv6 DNS servers : 2606:4700:4700::1111
+		Announced IPv6 DNS servers : vide -> se présente lui-même -> dnscrypt-proxy
 		NDP-Proxy : disabled
 	IPv6 RA Settings :
 		default router : forced
@@ -228,9 +228,47 @@ restart l'int apres modif
 --[ 8 - DNScrypt-proxy
 
 https://github.com/DNSCrypt/dnscrypt-proxy/wiki/Installation-on-OpenWrt
-+ redirection
 
-test ech
+# install
+opkg update
+opkg install dnscrypt-proxy2
+uci add_list dhcp.@dnsmasq[0].server='127.0.0.53'
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+
+# config
+# edit /etc/dnscrypt-proxy2/dnscrypt-proxy.toml
+------
+...
+listen_address = ['[::]:53']
+...
+ipv6_servers = true
+doh_servers = false
+require_dnssec = true
+...
+------
+
+# edit /etc/config/dhcp
+config dnsmasq
+    # Ignore ISP's DNS by not reading upstream servers from /etc/resolv.conf
+    option noresolv '1'
+    # Ensures that /etc/resolv.conf directs local system processes to use dnsmasq and hence dnscrypt-proxy
+    option localuse '1'
+    # Disable dnsmasq cache because we don't want to cache twice and the dnscrypt-proxy cache is superior
+    option cachesize '0'
+
+# verif /etc/config/network interface wan a option peerdns '0'
+
+# Force LAN clients to dnscrypt-proxy
+
+# add to /etc/config/firewall
+config redirect
+    option name 'Divert-DNS, port 53'
+    option src 'lan'
+    option dest 'lan'
+    option src_dport '53'
+    option dest_port '53'
+    option target 'DNAT'
 
 ----------------------------- WIP -----------------------------
 
