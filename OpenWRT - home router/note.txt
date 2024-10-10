@@ -236,7 +236,7 @@ uci add_list dhcp.@dnsmasq[0].server='127.0.0.53'
 uci commit dhcp
 /etc/init.d/dnsmasq restart
 
-# config
+# config, que doh pour l'ECH (ne marche pas sous odoh)
 # edit /etc/dnscrypt-proxy2/dnscrypt-proxy.toml
 ------
 ...
@@ -245,7 +245,7 @@ listen_address = ['127.0.0.53:53']
 ipv6_servers = true
 dnscrypt_servers = false
 doh_servers = true
-odoh_servers = true
+odoh_servers = false
 require_dnssec = true
 ... nolog, nofilter
 ------
@@ -261,8 +261,7 @@ config dnsmasq
 
 # verif /etc/config/network interface wan a option peerdns '0'
 
-# Force LAN clients to dnscrypt-proxy
-
+# redirection de port pour forcer tout le traffic dns vers dnscrypt-proxy
 # add to /etc/config/firewall
 config redirect
     option name 'Divert-DNS, port 53'
