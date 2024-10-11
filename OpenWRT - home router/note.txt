@@ -36,6 +36,8 @@ Hardware
 	* GL-MT6000
 		* WAN 2.5Gbps
 		* LAN 1 2.5Gbps 4 1Gbps
+		* dual-band 4×4 WiFi 6
+		* 1GB DDR4 RAM
 
 
 --[ 1 - Installation 
