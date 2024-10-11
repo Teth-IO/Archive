@@ -27,12 +27,10 @@ Home routeur avec les fonctionnalités suivantes
 	* WLAN 802.11ax (wifi 6)
 	* DHCPv4 & v6
 	* snort en inline (IPS)
-	* crowdsec
-	* tor middlebox
 	* server wireguard
-	* VLAN (notamment pour la TV)
 	* hardware acceleration LAN et WLAN
 	* irqbalance
+	* dnscrypt-proxy avec redirection de port le forcer
 	
 Hardware
 	* GL-MT6000
