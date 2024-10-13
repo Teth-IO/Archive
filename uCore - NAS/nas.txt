@@ -337,7 +337,6 @@ background:
   image: https://images3.alphacoders.com/132/1324687.jpg
   brightness: 50
   saturate: 50
-  opacity: 90
 color: slate
 layout:
   stats-firewall:
