@@ -24,8 +24,12 @@
 	4.1 - Infinite Scale Setup
 	4.2 - Infinite Scale deploiement
 5 - homepage
-	5.1 - config
-	5.2 - docker
+	5.1 - settings
+	5.2 - bookmarks
+	5.3 - services
+	5.4 - widgets
+	5.5 - docker.yaml
+	5.6 - docker run
 	
 --[ 0 - Introduction
 
@@ -316,7 +320,16 @@ ocis --help
 
 # Pour afficher les stats et services de l'intranet
 
-----[ 5.1 - config
+mkdir -p /mnt/raid/nas/homepage/icon
+cd /mnt/raid/nas/homepage/icon
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/openwrt.svg
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/owncloud.svg
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/searxng.svg
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/gluetun.svg
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/haproxy.svg
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
+
+----[ 5.1 - settings
 
 cat << EOF > /mnt/raid/nas/homepage/settings.yaml
 ---
@@ -336,48 +349,76 @@ layout:
 showStats: true
 EOF
 
+----[ 5.2 - bookmarks
+
+cat << EOF > /mnt/raid/nas/homepage/bookmarks.yaml
+---
+- Intranet:
+    - ownCloud:
+        - abbr: OCIS
+          href: https://192.168.1.200:9200
+    - OpenWRT:
+        - abbr: WRT
+          href: https://192.168.1.1
+    - SearXNG:
+        - abbr: SearX
+          href: https://192.168.1.201
+EOF
+
+----[ 5.3 - services
+
 services.yaml
 cat << EOF > /mnt/raid/nas/homepage/services.yaml
-- stats-firewall:
+---
+- OpenWRT:
     - Upstream:
+        icon: openwrt.svg
         widget:
           type: openwrt
           url: https://192.168.1.1
           username: homepage
-          password: 
+          password: starwars
           interfaceName: eth1
-    - info:
+    - Info:
+        icon: openwrt.svg
         widget:
           type: openwrt
           url: https://192.168.1.1
           username: homepage
-          password: 
+          password: starwars
 
 - Docker:
     - HAProxy:
+        icon: haproxy.svg
         description: reverse-proxy pour tls
         server: my-docker
         container: haproxy
     - SearXNG:
+        icon: searxng.svg
         description: meta-moteur de recherche
         href: "https://192.168.1.201"
         server: my-docker
         container: searxng
     - Gluetun:
+        icon: gluetun.svg
         description: proxy wireguard pour container
         server: my-docker
         container: gluetun
     - OCIS:
+        icon: owncloud.svg
         description: partage de fichier
         href: "https://192.168.1.200:9200"
         server: my-docker
         container: ocis_runtime
     - homepage:
+        icon: homepage.png
         description: intranet
         href: "http:192.168.1.200"
         server: my-docker
         container: homepage
 EOF
+
+----[ 5.4 - widgets
 
 cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
 ---
@@ -391,13 +432,15 @@ cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
     refresh: 3000 # optional, in ms
 EOF
 
+----[ 5.5 - docker yaml
+
 cat << EOF > /mnt/raid/nas/homepage/docker.yaml
 ---
 my-docker:
   socket: /var/run/docker.sock
 EOF
 
-----[ 5.2 - docker
+----[ 5.6 - docker run
 
 sudo docker run -d \
 	--name homepage \
@@ -405,6 +448,7 @@ sudo docker run -d \
 	--security-opt label=disable \
 	-v /mnt/raid/nas/homepage:/app/config:Z \
 	-v /var/run/docker.sock:/var/run/docker.sock:Z \
+	-v /mnt/raid/nas/homepage/icon:/app/public/icons:Z \
 	--restart always \
 	ghcr.io/gethomepage/homepage:latest
 
