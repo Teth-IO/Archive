@@ -326,6 +326,14 @@ background:
   saturate: 50
   opacity: 50
 color: slate
+layout:
+  stats-firewall:
+    style: row
+    columns: 2
+  Docker:
+    style: row
+    columns: 3
+showStats: true
 EOF
 
 services.yaml
@@ -344,6 +352,31 @@ cat << EOF > /mnt/raid/nas/homepage/services.yaml
           url: https://192.168.1.1
           username: homepage
           password: 
+
+- Docker:
+    - HAProxy:
+        description: reverse-proxy pour tls
+        server: my-docker
+        container: haproxy
+    - SearXNG:
+        description: meta-moteur de recherche
+        href: "https://192.168.1.201"
+        server: my-docker
+        container: searxng
+    - Gluetun:
+        description: proxy wireguard pour container
+        server: my-docker
+        container: gluetun
+    - OCIS:
+        description: partage de fichier
+        href: "https://192.168.1.200:9200"
+        server: my-docker
+        container: ocis_runtime
+    - homepage:
+        description: intranet
+        href: "http:192.168.1.200"
+        server: my-docker
+        container: homepage
 EOF
 
 cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
@@ -358,10 +391,18 @@ cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
     refresh: 3000 # optional, in ms
 EOF
 
+cat << EOF > /mnt/raid/nas/homepage/docker.yaml
+---
+my-docker:
+  socket: /var/run/docker.sock
+EOF
+
 ----[ 5.2 - docker
 
 sudo docker run -d \
+	--name homepage \
 	-p 80:3000 \
+	--security-opt label=disable \
 	-v /mnt/raid/nas/homepage:/app/config:Z \
 	-v /var/run/docker.sock:/var/run/docker.sock:Z \
 	--restart always \
