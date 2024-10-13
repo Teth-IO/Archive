@@ -146,6 +146,7 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable sanoid.timer
+sudo systemctl start sanoid.timer
 
 # pour lister les timers 
 systemctl list-timers
@@ -159,31 +160,34 @@ zfs list -t snapshot
 # frontend haproxy (macvlan)
 
 sudo usermod -aG docker core
+sudo chown -R core /mnt/raid
+sudo systemctl enable docker
+sudo systemctl start docker
 
 ----[ 3.1 - SSL
 
-mkdir /mnt/nas/ssl
-mkdir /mnt/nas/ssl/private
-sudo openssl genrsa -out /mnt/nas/ssl/private/server.key 4096
-sudo openssl req -new -key /mnt/nas/ssl/private/server.key \
-  -out /mnt/nas/ssl/private/server.csr
-sudo openssl x509 -sha256 -req -days 365 \
-  -in /mnt/nas/ssl/private/server.csr \
-  -signkey /mnt/nas/ssl/private/server.key \
-  -out /mnt/nas/ssl/server.crt
+mkdir /mnt/raid/nas/ssl
+mkdir /mnt/raid/nas/ssl/private
+openssl genrsa -out /mnt/raid/nas/ssl/private/searxng.key 4096
+openssl req -new -key /mnt/raid/nas/ssl/private/searxng.key \
+  -out /mnt/raid/nas/ssl/private/searxng.csr
+openssl x509 -sha256 -req -days 365 \
+  -in /mnt/raid/nas/ssl/private/searxng.csr \
+  -signkey /mnt/raid/nas/ssl/private/searxng.key \
+  -out /mnt/raid/nas/ssl/searxng.crt
   
 # creer un PEM pour haproxy :
-cat /mnt/nas/ssl/server.crt /mnt/nas/ssl/private/server.key > /mnt/nas/ssl/private/haproxy.pem
+cat /mnt/raid/nas/ssl/searxng.crt /mnt/raid/nas/ssl/private/searxng.key > /mnt/raid/nas/ssl/private/searxng.pem
 
 # pour l'installer les cert coté client sous android, creer un PEM au format pkcs12 :
 openssl pkcs12 -export -in server.crt -inkey server.key -out android.p12
 
 ----[ 3.2 - conf haproxy
 
-mkdir /mnt/nas/haproxy
-cat << EOF > /mnt/nas/haproxy/haproxy.cfg
+mkdir /mnt/raid/nas/haproxy
+cat << EOF > /mnt/raid/nas/haproxy/haproxy.cfg
 frontend www
-  bind :443 ssl crt /etc/ssl/private/haproxy.pem
+  bind :443 ssl crt /etc/ssl/private/searxng.pem
   default_backend searxng
 
 backend searxng
@@ -245,13 +249,13 @@ services:
    container_name: haproxy
    networks:
     macvlan: #frontend
-     ipv4_address: 
+     ipv4_address: 192.168.1.201
 	default: #backend
    ports:
     - 443:443
    volumes:
-      - /mnt/nas/haproxy:/usr/local/etc/haproxy:Z # Z pour selinux sinon fini bloque
-	  - /mnt/nas/ssl:/etc/ssl/private:Z
+      - /mnt/raid/nas/haproxy:/usr/local/etc/haproxy:Z # Z pour selinux sinon fini bloque
+	  - /mnt/raid/nas/ssl/private:/etc/ssl/private:Z
    restart: always
 
 networks:
@@ -260,6 +264,10 @@ networks:
 EOF
 
 docker-compose up -d 
+
+# maj du docker compose
+
+docker-compose pull && docker-compose up -d
  
 --[ 4 - owncloud infini scale (oCIS)
 
@@ -270,14 +278,14 @@ https://doc.owncloud.com/ocis/next/deployment/container/container-setup.html
 
 docker pull owncloud/ocis
 
-mkdir -p /mnt/nas/ocis/ocis-config
-mkdir -p /mnt/nas/ocis/ocis-data
-sudo chown -Rfv 1000:1000 /mnt/nas/ocis/
+mkdir -p /mnt/raid/nas/ocis/ocis-config
+mkdir -p /mnt/raid/nas/ocis/ocis-data
+sudo chown -Rfv 1000:1000 /mnt/raid/nas/ocis/
 
 # la doc utilise mount mais ce bind mount be supporte pas les labels selinux -> utiliser les volumes
 
-docker run --rm -it \
-    --volume /mnt/nas/nas/ocis/ocis-config:/etc/ocis:Z \
+sudo docker run --rm -it \
+    --volume /mnt/raid/nas/ocis/ocis-config:/etc/ocis:Z \
     owncloud/ocis init
 
 ----[ 4.2 - Infinite Scale deploiement
@@ -285,14 +293,14 @@ docker run --rm -it \
 # OCIS_INSECURE=true -> automatically generated and self-signed certificates
 # laisser les port en 9200 sinon pb de dialogues entre services
 
-docker run -d \
+sudo docker run -d \
    --name ocis_runtime \
    -p 9200:9200 \
-   --volume /mnt/nas/nas/ocis/ocis-config:/etc/ocis:Z \
-   --volume /mnt/nas/nas/ocis/ocis-data:/var/lib/ocis:Z \
+   --volume /mnt/raid/nas/ocis/ocis-config:/etc/ocis:Z \
+   --volume /mnt/raid/nas/ocis/ocis-data:/var/lib/ocis:Z \
    -e OCIS_INSECURE=true \
    -e PROXY_HTTP_ADDR=0.0.0.0:9200 \
-   -e OCIS_URL=https://ip:9200 \
+   -e OCIS_URL=https://192.168.1.200:9200 \
    --restart always \
    owncloud/ocis
    
