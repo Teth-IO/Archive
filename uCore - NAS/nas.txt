@@ -23,6 +23,9 @@
 4 - owncloud infini scale (oCIS)
 	4.1 - Infinite Scale Setup
 	4.2 - Infinite Scale deploiement
+5 - homepage
+	5.1 - config
+	5.2 - docker
 	
 --[ 0 - Introduction
 
@@ -308,5 +311,60 @@ pour exécuter les commandes d'admin :
 
 docker exec -it <container-id> sh
 ocis --help
+
+--[ 5 - homepage
+
+# Pour afficher les stats et services de l'intranet
+
+----[ 5.1 - config
+
+cat << EOF > /mnt/raid/nas/homepage/settings.yaml
+---
+background:
+  image: https://images3.alphacoders.com/132/1324687.jpg
+  brightness: 50
+  saturate: 50
+  opacity: 50
+color: slate
+EOF
+
+services.yaml
+cat << EOF > /mnt/raid/nas/homepage/services.yaml
+- stats-firewall:
+    - Upstream:
+        widget:
+          type: openwrt
+          url: https://192.168.1.1
+          username: homepage
+          password: 
+          interfaceName: eth1
+    - info:
+        widget:
+          type: openwrt
+          url: https://192.168.1.1
+          username: homepage
+          password: 
+EOF
+
+cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
+---
+- resources:
+    cpu: true
+    memory: true
+    cputemp: true
+    tempmin: 0 # optional, minimum cpu temp
+    tempmax: 100 # optional, maximum cpu temp
+    uptime: true
+    refresh: 3000 # optional, in ms
+EOF
+
+----[ 5.2 - docker
+
+sudo docker run -d \
+	-p 80:3000 \
+	-v /mnt/raid/nas/homepage:/app/config:Z \
+	-v /var/run/docker.sock:/var/run/docker.sock:Z \
+	--restart always \
+	ghcr.io/gethomepage/homepage:latest
 
 +-[ EOF ]=----------------------------------------------------------------+
