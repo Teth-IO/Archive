@@ -18,7 +18,8 @@
 	6.3 - Routage statique pour ipv6
 7 - wireguard
 8 - dnscrypt-proxy
-8 - snort inline - WIP
+9 - config RPC pour homepage
+10 - snort inline - WIP
 
 --[ 0 - Introduction
 
@@ -275,9 +276,36 @@ config redirect
 https://defo.ie/ech-check.php
 https://tls-ech.dev/
 
+--[ config RPG pour homepage
+
+cat << EOF > /usr/share/rpcd/acl.d/homepage.json
+{
+  "homepage": {
+    "description": "Homepage widget",
+    "read": {
+      "ubus": {
+        "network.interface.wan": ["status"],
+        "network.interface.lan": ["status"],
+        "network.device": ["status"],
+        "system": ["info"]
+      }
+    }
+  }
+}
+EOF
+
+# hash du mdp utlisé par homepage
+uhttpd -m "<somepassphrase>"
+
+# à ajouter dans /etc/config/rpcd
+config login
+        option username 'homepage'
+        option password '<hashedpassword>'
+        list read homepage
+
 ----------------------------- WIP -----------------------------
 
---[ 9 - snort inline - WIP : bloque pas, crash avec les community rules
+--[ 10 - snort inline - WIP : bloque pas, crash avec les community rules
 
 https://openwrt.org/docs/guide-user/services/snort
 
