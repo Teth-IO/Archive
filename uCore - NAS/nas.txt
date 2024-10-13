@@ -337,7 +337,7 @@ background:
   image: https://images3.alphacoders.com/132/1324687.jpg
   brightness: 50
   saturate: 50
-  opacity: 50
+  opacity: 90
 color: slate
 layout:
   stats-firewall:
@@ -355,13 +355,13 @@ cat << EOF > /mnt/raid/nas/homepage/bookmarks.yaml
 ---
 - Intranet:
     - ownCloud:
-        - abbr: OCIS
+        - icon: owncloud.svg
           href: https://192.168.1.200:9200
     - OpenWRT:
-        - abbr: WRT
+        - icon: openwrt.svg
           href: https://192.168.1.1
     - SearXNG:
-        - abbr: SearX
+        - icon: searxng.svg
           href: https://192.168.1.201
 EOF
 
