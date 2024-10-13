@@ -278,6 +278,8 @@ https://tls-ech.dev/
 
 --[ config RPG pour homepage
 
+opkg update
+opkg install uhttpd-mod-ubus
 cat << EOF > /usr/share/rpcd/acl.d/homepage.json
 {
   "homepage": {
