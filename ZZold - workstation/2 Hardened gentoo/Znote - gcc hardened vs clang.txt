@@ -24,13 +24,13 @@ structure layout randomization -> par un plugin
 	# GCC hardened a en built-in : (vérifier avec gcc -Q --help=common)
 CFLAGS/CXXFLAGS				LDFLAGS				function
 
--D_FORTIFY_SOURCE=3								run-time buffer overflow detection
+-D_FORTIFY_SOURCE=3							run-time buffer overflow detection
 -D_GLIBCXX_ASSERTIONS							run-time bounds checking for C++ strings and containers
 -fstack-protector-strong						stack smashing protector (SSP) - best stack canary coverage - en all rsque de tout casser
 -fstack-clash-protection						increased reliability of stack overflow detection
 -fcf-protection=full							control flow integrity protection
-							-Wl,-z,defs			detect and reject underlinking
-							-Wl,-z,now			disable lazy binding
-							-Wl,-z,relro		read-only segments after relocation
--fpie						-Wl,-pie			full ASLR for executables
--fpic -shared									no text relocations for shared libraries
+					-Wl,-z,defs			detect and reject underlinking
+					-Wl,-z,now			disable lazy binding
+					-Wl,-z,relro			read-only segments after relocation
+-fpie					-Wl,-pie			full ASLR for executables
+-fpic -shared								no text relocations for shared libraries
