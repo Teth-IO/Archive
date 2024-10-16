@@ -329,6 +329,7 @@ curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/searxng.svg
 curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/gluetun.svg
 curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/haproxy.svg
 curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/navidrome.svg
 
 ----[ 5.1 - settings
 
@@ -363,6 +364,9 @@ cat << EOF > /mnt/raid/nas/homepage/bookmarks.yaml
     - SearXNG:
         - icon: searxng.svg
           href: https://192.168.1.201
+    - Navidrone:
+        - icon: navidrome.svg
+          href: http://192.168.1.200:4533
 EOF
 
 ----[ 5.3 - services
@@ -416,6 +420,12 @@ cat << EOF > /mnt/raid/nas/homepage/services.yaml
         href: "http:192.168.1.200"
         server: my-docker
         container: homepage
+    - navidrome:
+        icon: navidrome.svg
+        description: serveur de musique
+        href: "http:192.168.1.200:4533"
+        server: my-docker
+        container: navidrome
 EOF
 
 ----[ 5.4 - widgets
