@@ -30,6 +30,7 @@
 	5.4 - widgets
 	5.5 - docker.yaml
 	5.6 - docker run
+6 - navidrome
 	
 --[ 0 - Introduction
 
@@ -450,5 +451,20 @@ sudo docker run -d \
 	-v /mnt/raid/nas/homepage/icon:/app/public/icons:Z \
 	--restart always \
 	ghcr.io/gethomepage/homepage:latest
+
+--[ 6 - navidrome
+
+mkdir /mnt/raid/nas/music/music-data
+mkdir /mnt/raid/nas/music/music-navidrome
+
+docker run -d \
+   --name navidrome \
+   --restart=always \
+   --user $(id -u):$(id -g) \
+   -v /mnt/raid/nas/music/music-data:/music:Z \
+   -v /mnt/raid/nas/music/music-navidrome:/data:Z \
+   -p 4533:4533 \
+   -e ND_LOGLEVEL=info \
+   deluan/navidrome:latest
 
 +-[ EOF ]=----------------------------------------------------------------+
