@@ -477,4 +477,9 @@ docker run -d \
    -e ND_LOGLEVEL=info \
    deluan/navidrome:latest
 
+# pour gérer les flag pour les fichiers flac on peut installer le paquets flag dans un container distrobox 
+# pour indiquer les musiques font parties d;une compilation :
+
+metaflac --set-tag=COMPILATION=1 *.flac
+
 +-[ EOF ]=----------------------------------------------------------------+
