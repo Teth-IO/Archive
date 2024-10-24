@@ -7,7 +7,9 @@
 --[ Table of contents
 
 0 - Introduction
-1 - Installation/rebase
+1 - Installation
+	1.1 - rebase ucore
+	1.2 - maj auto
 2 - RAID ZFS
 	2.1 - SecureBoot avec kmod ZFS
 	2.2 - pool mirroir
@@ -41,7 +43,9 @@
 # data sous un RAID ZFS avec sbapshot journalière
 # hosting de searxng sous macvlan
 
---[ 1 - install + rebase ucore
+--[ 1 - installation
+
+----[ 1.1 - rebase ucore
 
 # créer un fichier butane qui comprend =  clef ssh, conf réseaux, maj et reboot auto + rebase uCore en stable-zfs
 -> https://github.com/ublue-os/ucore?tab=readme-ov-file#auto-rebase-install + https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/
@@ -54,6 +58,41 @@ cp /mnt/truc.ign ~/truc.ign
 sudo umount /mnt
 
 sudo coreos-installer install /dev/sda  --ignition-file /truc.ign
+
+----[ 1.2 - maj auto
+
+sudo systemctl edit --force --full rpm-ostreed-upgrade-reboot.service
+
+'
+# workaround for missing reboot policy
+# https://github.com/coreos/rpm-ostree/issues/2843
+[Unit]
+Description=rpm-ostree upgrade and reboot
+ConditionPathExists=/run/ostree-booted
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rpm-ostree upgrade --reboot
+#StandardOutput=null
+'
+
+sudo bash -c 'cat << EOF > /etc/systemd/system/rpm-ostreed-upgrade-reboot.timer
+[Unit]
+Description=rpm-ostree upgrade and reboot trigger
+ConditionPathExists=/run/ostree-booted
+
+[Timer]
+OnBootSec=1h
+OnUnitInactiveSec=1d
+
+[Install]
+WantedBy=timers.target
+EOF
+'
+
+sudo systemctl daemon-reload
+sudo systemctl enable rpm-ostreed-upgrade-reboot.timer
+sudo systemctl start rpm-ostreed-upgrade-reboot.timer
 
 --[ 2 - RAID ZFS
 
