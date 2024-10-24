@@ -25,11 +25,6 @@ storage:
           addr-gen-mode=eui64
           dns-search=
           method=disabled
-    - path: /etc/zincati/config.d/55-updates-strategy.toml
-      contents:
-        inline: |
-          [updates]
-          strategy = "immediate"
   directories:
     - path: /etc/ucore-autorebase
       mode: 0754
