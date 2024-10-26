@@ -325,7 +325,7 @@ docker run -d \
 --restart always \
 --env WATCHTOWER_POLL_INTERVAL=3600 \
 -v /var/run/docker.sock:/var/run/docker.sock:Z \
-containrrr/watchtower --include-stopped --include-restarting --cleanup --run-once 
+containrrr/watchtower --include-stopped --include-restarting --cleanup
 
 --[ 5 - navidrome
 
