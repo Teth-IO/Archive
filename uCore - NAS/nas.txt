@@ -497,7 +497,7 @@ cat << EOF > /mnt/raid/nas/homepage/services.yaml
         href: "http:192.168.1.200:4533"
         server: my-docker
         container: navidrome
-    - watchower:
+    - watchtower:
         icon: watchtower.svg
         description: maj auto des containers
         server: my-docker
