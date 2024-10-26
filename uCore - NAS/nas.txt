@@ -22,17 +22,18 @@
 	3.3 - macvlan
 	3.4 - firewalld
 	3.5 - docker-compose
-4 - owncloud infini scale (oCIS)
-	4.1 - Infinite Scale Setup
-	4.2 - Infinite Scale deploiement
-5 - homepage
-	5.1 - settings
-	5.2 - bookmarks
-	5.3 - services
-	5.4 - widgets
-	5.5 - docker.yaml
-	5.6 - docker run
-6 - navidrome
+4 - watchtower
+5 - navidrome
+6 - owncloud infini scale (oCIS)
+	6.1 - Infinite Scale Setup
+	6.2 - Infinite Scale deploiement
+7 - homepage
+	7.1 - settings
+	7.2 - bookmarks
+	7.3 - services
+	7.4 - widgets
+	7.5 - docker.yaml
+	7.6 - docker run
 	
 --[ 0 - Introduction
 
@@ -315,13 +316,43 @@ docker-compose up -d
 # maj du docker compose
 
 docker-compose pull && docker-compose up -d
+
+--[ 4 - watchtower
+
+docker run -d \
+--name watchtower \
+--security-opt label=disable \
+--restart always \
+--env WATCHTOWER_POLL_INTERVAL=3600 \
+-v /var/run/docker.sock:/var/run/docker.sock:Z \
+containrrr/watchtower --include-stopped --include-restarting --cleanup --run-once 
+
+--[ 5 - navidrome
+
+mkdir /mnt/raid/nas/music/music-data
+mkdir /mnt/raid/nas/music/music-navidrome
+
+docker run -d \
+   --name navidrome \
+   --restart=always \
+   --user $(id -u):$(id -g) \
+   -v /mnt/raid/nas/music/music-data:/music:Z \
+   -v /mnt/raid/nas/music/music-navidrome:/data:Z \
+   -p 4533:4533 \
+   -e ND_LOGLEVEL=info \
+   deluan/navidrome:latest
+
+# pour gérer les flag pour les fichiers flac on peut installer le paquets flag dans un container distrobox 
+# pour indiquer les musiques font parties d;une compilation :
+
+metaflac --set-tag=COMPILATION=1 *.flac
  
---[ 4 - owncloud infini scale (oCIS)
+--[ 6 - owncloud infini scale (oCIS)
 
 # owncloud version cloud-native sous micro-services (plus de php, sql...)
 https://doc.owncloud.com/ocis/next/deployment/container/container-setup.html
 
-----[ 4.1 - Infinite Scale setup
+----[ 6.1 - Infinite Scale setup
 
 docker pull owncloud/ocis
 
@@ -335,7 +366,7 @@ sudo docker run --rm -it \
     --volume /mnt/raid/nas/ocis/ocis-config:/etc/ocis:Z \
     owncloud/ocis init
 
-----[ 4.2 - Infinite Scale deploiement
+----[ 6.2 - Infinite Scale deploiement
 
 # OCIS_INSECURE=true -> automatically generated and self-signed certificates
 # laisser les port en 9200 sinon pb de dialogues entre services
@@ -356,7 +387,7 @@ pour exécuter les commandes d'admin :
 docker exec -it <container-id> sh
 ocis --help
 
---[ 5 - homepage
+--[ 7 - homepage
 
 # Pour afficher les stats et services de l'intranet
 
@@ -369,8 +400,9 @@ curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/gluetun.svg
 curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/haproxy.svg
 curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
 curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/navidrome.svg
+curl -O https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/watchtower.svg
 
-----[ 5.1 - settings
+----[ 7.1 - settings
 
 cat << EOF > /mnt/raid/nas/homepage/settings.yaml
 ---
@@ -389,7 +421,7 @@ layout:
 showStats: true
 EOF
 
-----[ 5.2 - bookmarks
+----[ 7.2 - bookmarks
 
 cat << EOF > /mnt/raid/nas/homepage/bookmarks.yaml
 ---
@@ -408,7 +440,7 @@ cat << EOF > /mnt/raid/nas/homepage/bookmarks.yaml
           href: http://192.168.1.200:4533
 EOF
 
-----[ 5.3 - services
+----[ 7.3 - services
 
 services.yaml
 cat << EOF > /mnt/raid/nas/homepage/services.yaml
@@ -465,9 +497,14 @@ cat << EOF > /mnt/raid/nas/homepage/services.yaml
         href: "http:192.168.1.200:4533"
         server: my-docker
         container: navidrome
+    - watchower:
+        icon: watchtower.svg
+        description: maj auto des containers
+        server: my-docker
+        container: watchtower
 EOF
 
-----[ 5.4 - widgets
+----[ 7.4 - widgets
 
 cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
 ---
@@ -481,7 +518,7 @@ cat << EOF > /mnt/raid/nas/homepage/widgets.yaml
     refresh: 3000 # optional, in ms
 EOF
 
-----[ 5.5 - docker yaml
+----[ 7.5 - docker yaml
 
 cat << EOF > /mnt/raid/nas/homepage/docker.yaml
 ---
@@ -489,7 +526,7 @@ my-docker:
   socket: /var/run/docker.sock
 EOF
 
-----[ 5.6 - docker run
+----[ 7.6 - docker run
 
 sudo docker run -d \
 	--name homepage \
@@ -500,25 +537,5 @@ sudo docker run -d \
 	-v /mnt/raid/nas/homepage/icon:/app/public/icons:Z \
 	--restart always \
 	ghcr.io/gethomepage/homepage:latest
-
---[ 6 - navidrome
-
-mkdir /mnt/raid/nas/music/music-data
-mkdir /mnt/raid/nas/music/music-navidrome
-
-docker run -d \
-   --name navidrome \
-   --restart=always \
-   --user $(id -u):$(id -g) \
-   -v /mnt/raid/nas/music/music-data:/music:Z \
-   -v /mnt/raid/nas/music/music-navidrome:/data:Z \
-   -p 4533:4533 \
-   -e ND_LOGLEVEL=info \
-   deluan/navidrome:latest
-
-# pour gérer les flag pour les fichiers flac on peut installer le paquets flag dans un container distrobox 
-# pour indiquer les musiques font parties d;une compilation :
-
-metaflac --set-tag=COMPILATION=1 *.flac
 
 +-[ EOF ]=----------------------------------------------------------------+
