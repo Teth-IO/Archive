@@ -75,6 +75,8 @@ ConditionPathExists=/run/ostree-booted
 Type=simple
 ExecStart=/usr/bin/rpm-ostree upgrade --reboot
 #StandardOutput=null
+Restart=always
+RestartSec=60s
 '
 
 sudo bash -c 'cat << EOF > /etc/systemd/system/rpm-ostreed-upgrade-reboot.timer
