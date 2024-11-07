@@ -568,12 +568,8 @@ systemctl --user start homepage
 # créer la key
 openssl genrsa -out lan.key 4096
 # creér le root certificate (le common name indique le domaine sous lequel on signe, ici lan)
-openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
-
 # le root certificate est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
-# pour distribuer le distribuer coté client le format pkcs12 est demandé (firefox, android, windows, ...) :
-# android demandera un mot de passe (ne pas laissé vide)
-openssl pkcs12 -export -in lan.pem -inkey lan.key -out lan.p12
+openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
 
 ------[ 8.1.2 - certificates
 
