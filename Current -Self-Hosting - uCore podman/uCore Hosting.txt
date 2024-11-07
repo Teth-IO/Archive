@@ -17,10 +17,10 @@
 	2.4 - snapshot journalière sanoid
 	2.5 - systemd timers
 3 - Podman
-    3.1 - port commun en rootless
-    3.2 - podman socket activation
-    3.3 - firewalld
-    3.4 - Network
+  	3.1 - port commun en rootless
+	3.2 - podman socket activation
+	3.3 - firewalld
+	3.4 - Network
 3 - Searxng
 5 - owncloud infini scale (oCIS)
 	6.1 - Infinite Scale Setup
@@ -34,9 +34,9 @@
 	7.5 - docker.yaml
 	7.6 - docker run
 8 - traefik
-    8.1 - SSl
-	8.1.1 - CA
-	8.1.2 - Certificates
+   	8.1 - SSl
+		8.1.1 - CA
+		8.1.2 - Certificates
     8.2 - config
     8.3 - quadlet
 
