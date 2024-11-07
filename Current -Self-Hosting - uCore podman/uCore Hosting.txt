@@ -35,6 +35,8 @@
 	7.6 - docker run
 8 - traefik
     8.1 - SSl
+	8.1.1 - CA
+	8.1.2 - Certificates
     8.2 - config
     8.3 - quadlet
 
@@ -218,6 +220,9 @@ sudo systemctl start podman
 
 # attention au nom canonique de l'image (searxng vs searxng/searxng)
 # bien se référer à la doc
+
+# commes les containers seront sous des systemd unit en user il faut autoriser le lingering de celui-ci sinon les services tomberont avec la déco du compte
+loginctl enable-linger core
 
 ----[ 3.1 - port commun en rootless
 
@@ -558,17 +563,83 @@ systemctl --user start homepage
 
 ----[ 8.1 - SSl
 
-mkdir -p /mnt/raid/nas/ssl
+------[ 8.1.1 - CA
 
-openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout searxng.lan.key -out searxng.lan.crt -subj "/CN=searxng.lan"
-openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout homepage.lan.key -out homepage.lan.crt -subj "/CN=homepage.lan"
-openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout owncloud.lan.key -out owncloud.lan.crt -subj "/CN=owncloud.lan"
-openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout mytube.lan.key -out mytube.lan.crt -subj "/CN=mytube.lan"
+# créer la key
+openssl genrsa -out lan.key 4096
+# creér le root certificate (le common name indique le domaine sous lequel on signe, ici lan)
+openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
 
-# pour l'installer les cert coté client sous android, creer un PEM au format pkcs12 :
-openssl pkcs12 -export -in server.crt -inkey server.key -out android.p12
+# le root certificate est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
+# pour distribuer le distribuer coté client le format pkcs12 est demandé (firefox, android, windows, ...) :
+# android demandera un mot de passe (ne pas laissé vide)
+openssl pkcs12 -export -in lan.pem -inkey lan.key -out lan.p12
 
-=> à faire pour tout les services
+------[ 8.1.2 - certificates
+
+## homepage
+# créer la clef privé du website
+openssl genrsa -out homepage.lan.key 4096
+# créer le csr (common name = server hostname = homepage.lan)
+openssl req -new -key homepage.lan.key -out homepage.lan.csr -subj "/CN=homepage.lan"
+# extension X509 V3
+cat << EOF > homepage.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = homepage.lan
+EOF
+# le certificat final
+openssl x509 -req -in homepage.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out homepage.lan.crt -days 3650 -sha256 -extfile homepage.lan.ext
+
+## owncloud
+openssl genrsa -out owncloud.lan.key 4096
+openssl req -new -key owncloud.lan.key -out owncloud.lan.csr  -subj "/CN=owncloud.lan"
+cat << EOF > owncloud.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = owncloud.lan
+EOF
+openssl x509 -req -in owncloud.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out owncloud.lan.crt -days 3650 -sha256 -extfile owncloud.lan.ext
+
+## navidrome
+openssl genrsa -out mytube.lan.key 4096
+openssl req -new -key mytube.lan.key -out mytube.lan.csr  -subj "/CN=mytube.lan"
+cat << EOF > mytube.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = mytube.lan
+EOF
+openssl x509 -req -in mytube.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out mytube.lan.crt -days 3650 -sha256 -extfile mytube.lan.ext
+
+## searxng
+openssl genrsa -out searxng.lan.key 4096
+openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
+cat << EOF > searxng.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = searxng.lan
+EOF
+openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
 
 ----[ 8.2 - config 
 
