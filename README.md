@@ -10,7 +10,7 @@ Fedora CoreOS (FCOS) rebase en uCore :
 - services accessible par traefik avec routage par domaine + tls
 - services : searxng, owncloud ocis, navidrome, homepage
 
-=> [OpenWRT IPS & home router](./Current%20-%20Self-Network%20-%20OpenWRT%20home%20router/note.txt
+=> [OpenWRT IPS & home router](./Current%20-%20Self-Network%20-%20OpenWRT%20home%20router/note.txt)
 
 Config d'OpenWRT en home router et IPS :
 - Recup de la delegation de prefixe IPv6
@@ -20,32 +20,10 @@ Config d'OpenWRT en home router et IPS :
 
 -------------------------------------- diverses install --------------------------------------
 
-<details>
-<summary><b> [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/) </b></summary>
-
-Bastion pour centraliser l'administration des serveurs.
-2 version :
-- Version OpenBSD (par les dépôts)
-- Version Docker-compose
-</details>
-<details>
-<summary><b> [Suricata IPS avec ELK](./Zprojet%20-%20Suricata%20layer%202%20with%20ELK%20stack/) </b></summary>
-
-Sous Oracle Linux :
-- Suricata en mode IPS en couche 2 (AF_PACKET)
-- Stack ELK pour la partie SIEM
-</details>
-<details>
-<summary><b> [MAAS/JUJU - OpenStack](./Zprojet%20-%20MAAS%20JUJU%20-%20OpenStack/) </b></summary>
- 
-Déploiment d'openstack minimal distribué par MAAS (server provisionning) et JUJU (orchestration d'application)
-</details>
-<details>
-<summary><b> [MAAS/JUJU - Kubernetes](./Zprojet%20-%20MAAS%20JUJU%20-%20kubernetes/) </b></summary>
-
-Déploiment de kubernetes minimal par MAAS (server provisionning) et JUJU (orchestration d'application)
-WIP changement de runtime avec kata-container pour unsafe workload
-</details>
+=> [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/)
+=> [Suricata IPS layer 2 avec ELK](./Zprojet%20-%20Suricata%20layer%202%20with%20ELK%20stack/)
+=> [MAAS/JUJU - OpenStack](./Zprojet%20-%20MAAS%20JUJU%20-%20OpenStack/) 
+=> [MAAS/JUJU - Kubernetes](./Zprojet%20-%20MAAS%20JUJU%20-%20kubernetes/)
 => [cisco](./Znote%20-%20conf%20switch/)<br />
 => [netdisco](./Znote%20-%20netdisco/)<br />
 
