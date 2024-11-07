@@ -1,5 +1,5 @@
 +-------------------------------------------------------------------------+
-|=----------------=[ Immutable NAS & hosting platform ]=-----------------=|
+|=-------------------=[ Immutable hosting platform ]=--------------------=|
 |-------------------------------------------------------------------------|
 |=---------------------=[ uCore, docker, RAID ZFS ]=---------------------=|
 +-------------------------------------------------------------------------+
@@ -454,16 +454,16 @@ cat << EOF > /mnt/raid/nas/homepage/services.yaml
         widget:
           type: openwrt
           url: https://192.168.1.1
-          username: homepage
-          password: starwars
+          username: redacted
+          password: redacted
           interfaceName: eth1
     - Info:
         icon: openwrt.svg
         widget:
           type: openwrt
           url: https://192.168.1.1
-          username: homepage
-          password: starwars
+          username: redacted
+          password: redacted
 
 - Docker:
     - HAProxy:
