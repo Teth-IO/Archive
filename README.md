@@ -20,12 +20,12 @@ Config d'OpenWRT en home router et IPS :
 
 -------------------------------------- diverses install --------------------------------------
 
-=> [Bation guacamole](./Zprojet%20-%20Bastion%20guacamole/)<br />
-=> [Suricata IPS layer 2 avec ELK](./Zprojet%20-%20Suricata%20layer%202%20with%20ELK%20stack/)<br />
-=> [MAAS/JUJU - OpenStack](./Zprojet%20-%20MAAS%20JUJU%20-%20OpenStack/)<br />
-=> [MAAS/JUJU - Kubernetes](./Zprojet%20-%20MAAS%20JUJU%20-%20kubernetes/)<br />
-=> [cisco](./Znote%20-%20conf%20switch/)<br />
-=> [netdisco](./Znote%20-%20netdisco/)<br />
+=> [Bation guacamole](./ZZold%20-%20Projets/)<br />
+=> [Suricata IPS layer 2 avec ELK](./ZZold%20-%20Projets/)<br />
+=> [MAAS/JUJU - OpenStack](./ZZold%20-%20Projets/)<br />
+=> [MAAS/JUJU - Kubernetes](./ZZold%20-%20Projets/)<br />
+=> [cisco](./ZZold%20-%20Projets/)<br />
+=> [netdisco](./ZZold%20-%20Projets/)<br />
 
 -------------------------------------- OBSOLÈTE --------------------------------------
 
