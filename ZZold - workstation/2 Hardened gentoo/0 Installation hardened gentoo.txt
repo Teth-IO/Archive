@@ -1,9 +1,9 @@
 Compiler and runtime stack		GCC hardened
-MAC								SElinux
-boot entry						efibootmgr vers UKI
-Secure boot						signing by Dracut
-kernel							kernel hardened (KSSP)
-Init							openrc
+MAC					SElinux
+boot entry				efibootmgr vers UKI
+Secure boot				signing by Dracut
+kernel					kernel hardened (KSSP)
+Init					openrc
 
 rc-service sshd start
 
