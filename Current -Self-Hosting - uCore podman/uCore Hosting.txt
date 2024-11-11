@@ -21,6 +21,7 @@
 	3.2 - podman socket activation
 	3.3 - firewalld
 	3.4 - Network
+	3.5 - démarrage auto en rootless
 3 - Searxng
 5 - owncloud infini scale (oCIS)
 	6.1 - Infinite Scale Setup
@@ -248,6 +249,30 @@ sudo firewall-cmd --reload
 https://github.com/containers/podman/blob/main/docs/tutorials/basic_networking.md#basic-network-setups
 
 podman network create backend
+
+----[ 3.5 - démarrage auto en rootless
+
+# les quadlet arrivait à redémarrer automatiquement après un redémarrage mais pas sous bare-metal ?
+# créer un service dégeu qui fixe ça :
+
+cat << EOF > ~/.config/systemd/user/podman-restart.service
+[Unit]
+Description=Podman Start All Containers With Restart Policy Set To Always
+Documentation=man:podman-start(1)
+StartLimitIntervalSec=0
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+Environment=LOGGING="--log-level=info"
+ExecStart=/usr/bin/podman $LOGGING start --all --filter restart-policy=always
+ExecStop=/bin/sh -c '/usr/bin/podman $LOGGING stop $(/usr/bin/podman container ls --filter restart-policy=always -q)'
+
+[Install]
+WantedBy=default.target
+EOF
 
 --[ 4 - searxng
 
