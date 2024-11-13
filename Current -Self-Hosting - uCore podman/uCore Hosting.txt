@@ -215,9 +215,9 @@ zfs list -t snapshot
 --[ 3 - podman 
 
 # maj auto des container avec AutoUpdate=registry dans les quadlet
+systemctl --user enable --now podman-auto-update
 
-sudo systemctl enable podman 
-sudo systemctl start podman
+sudo systemctl enable -now podman 
 
 # attention au nom canonique de l'image (searxng vs searxng/searxng)
 # bien se référer à la doc
