@@ -33,7 +33,7 @@
 	7.3 - services
 	7.4 - widgets
 	7.5 - docker.yaml
-	7.6 - docker run
+	7.6 - quadlet
 8 - traefik
    	8.1 - SSl
 		8.1.1 - CA
