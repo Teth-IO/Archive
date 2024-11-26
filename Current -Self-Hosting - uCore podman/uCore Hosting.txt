@@ -381,7 +381,7 @@ systemctl --user start ocis
 
 pour exécuter les commandes d'admin :
 
-docker exec -it <container-id> sh
+podman exec -it systemd-ocis sh
 ocis --help
 
 --[ 6 - navidrome
