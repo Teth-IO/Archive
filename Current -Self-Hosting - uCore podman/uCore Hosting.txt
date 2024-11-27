@@ -40,6 +40,7 @@
 		8.1.2 - Certificates
     	8.2 - config
     	8.3 - quadlet
+9 - maj auto des containers
 
 --[ 0 - Introduction
 
@@ -214,9 +215,6 @@ zfs list -t snapshot
 
 --[ 3 - podman 
 
-# maj auto des container avec AutoUpdate=registry dans les quadlet
-systemctl --user enable --now podman-auto-update
-
 sudo systemctl enable -now podman 
 
 # attention au nom canonique de l'image (searxng vs searxng/searxng)
@@ -252,8 +250,7 @@ podman network create backend
 
 ----[ 3.5 - démarrage auto en rootless
 
-# les quadlet arrivait à redémarrer automatiquement après un redémarrage mais pas sous bare-metal ?
-# créer un service dégeu qui fixe ça :
+# allez savoir pourquoi il n'y a pas de démarrage auto par défaut pour les unit user...
 
 cat << EOF > ~/.config/systemd/user/podman-restart.service
 [Unit]
@@ -719,4 +716,44 @@ EOF
 systemctl --user daemon-reload
 systemctl --user start traefik
 
+--[ 9 - maj auto des containers
+
+# la comande podman auto update marche normalement de base mais le service démarre trop top pour mettre à jour les container
+# il faut donc mettre en place un timer
+# en outre le service crash car des containers comme gluetun ne peuvent pas s'éteindre si searxng est actif
+# besoin donc de faire un script pour mettre les actions dans l'ordre
+
+cat << EOF > ~/.config/systemd/user/podman-update.service
+[Unit]
+Description=maj des conteneurs avec dependences
+ConditionFileNotEmpty=/var/home/core/update.sh
+
+[Service]
+Environment=TZ=UTC
+Type=oneshot
+ExecStart=/var/home/core/update.sh
+EOF
+
+cat << EOF > ~/.config/systemd/user/podman-update.timer
+[Unit]
+Description=maj des conteneurs avec dependences
+
+[Timer]
+OnCalendar=*-*-* 5:00:00
+
+[Install]
+WantedBy=timers.target
+EOF
+
+cat << EOF > update.sh
+#!/bin/bash
+systemctl --user stop searxng
+systemctl --user start podman-auto-update
+systemctl --user start searxng
+systemctl --user start podman-auto-update
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable podman-update.timer
+systemctl --user start podman-update.timer
 +-[ EOF ]=----------------------------------------------------------------+
