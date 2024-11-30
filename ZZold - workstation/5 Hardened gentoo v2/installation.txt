@@ -1,0 +1,561 @@
+objectif :
+immutable os for server and workstation
+
+	Audio stack                 PipeWire		
+	graphic backend	            wayland						
+	chiffement                  FDE (tpm unlocked)
+    boot                        systemd-boot avec measured boot
+	hardening du kernel 	
+	release	                    rolling						
+	MAC                         SElinux enforcing
+	secure boot
+	firewall                    firewalld
+    rollback                    snapshot btrfs bootable
+	Optimized Binaries
+	btrfs compression           speed et moins d'usure
+	zram
+	trim
+    tmpfs
+
+résoud les pb de fedora atomic 
+-> pas d'opti x86_64_v3
+-> pas de rolling release
+-> pas systemd-boot (measured boot et BLS)
+
+lien utile :
+https://www.setphaserstostun.org/posts/secure-boot-on-gentoo-with-shim-grub/
+https://wiki.gentoo.org/wiki/SELinux
+https://en.opensuse.org/Portal:MicroOS/FDE
+https://news.opensuse.org/2023/12/20/systemd-fde/
+https://en.opensuse.org/Systemd-fde
+
+maj wiki gentoo :
+https://wiki.gentoo.org/wiki/Trusted_Platform_Module/LUKS => méthode systemd-cryptenroll en plus de clevis
+
+A faire :
+    revoir les paramètre de montage btrfs, acutellement explicité sous fstab mais moyen de les mettre par défaut
+    créer le scritp pour backup le kernel et initrd acutel + créer une entry de backup avec bon rootfs
+
+pb :
+fde avec measured boot nécessite d'avoir le module dracut de pcr pour remplir les prédiction pcr attendues par le tpm pour chaque entrée de boot
+=> trop chiant et module dracut pas upstream
+
+selinux trop de pb sous kernel_t 
+
+############################ 1 hardened/selinux/systemd ############################
+
+rc-service sshd start
+passwd
+
+=> go ssh
+
+# formater le disque
+fdisk /dev/sda
+g
+w
+cfdisk
+
+# partitions
+cfdisk
+-> entrer les nouvelles partitions
+-> sda1 2G de type EFI -> kernel et efi
+-> sda2 le reste en gardant le type (Linux root (x86-64)) -> sinon /dev/gpt-auto-root plante et le système passe en recovery
+write
+=> revoir si le type (Linux root (x86-64)) correct sous mapper
+
+# fs & fde
+mkfs.fat -F 32 /dev/sda1
+cryptsetup luksFormat --type luks2 --use-random -S 1 -s 512 -h sha512 -i 5000 /dev/sda2
+cryptsetup open /dev/sda2 cryptroot
+mkfs.btrfs /dev/mapper/cryptroot
+
+# btrfs subvolumes
+mount /dev/mapper/cryptroot /mnt
+btrfs subvol create /mnt@
+btrfs subvol create /mnt@/home
+btrfs subvol create /mnt@/root
+umount -R /mnt
+=> auto création subvol @.snapshots par snapper
+=> quid de /usr /srv /opt /var ?
+
+# montage
+mount -o rw,noatime,lazytime,compress-force=zstd:1,ssd,discard=async,space_cache=v2,commit=120,subvol=@ /dev/mapper/cryptroot /mnt
+cd /mnt
+mkdir home efi root
+mount -o rw,noatime,nodev,lazytime,compress-force=zstd:1,ssd,discard=async,space_cache=v2,commit=120,subvol=@/home /dev/mapper/cryptroot /mnt/home
+mount -o rw,noatime,nodev,lazytime,compress-force=zstd:1,ssd,discard=async,space_cache=v2,commit=120,subvol=@/root /dev/mapper/cryptroot /mnt/root
+mount /dev/sda1 /mnt/efi
+=> revoir les options de montage par défaut du btrfs, normalement pas besoin de les expliciter
+
+# pas d'autre subvolume car /etc /var /usr /lib /bin, etc. sont gérer par le package manager et risque de pb en cas de rollback de maj
+
+# installation file
+wget https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-hardened-systemd/stage3-amd64-hardened-systemd-20241110T170333Z.tar.xz
+
+# unpacking
+tar xpf stage3-* --xattrs-include='*.*' --numeric-owner
+rm stage3-*
+
+# make.conf
+nano /mnt/etc/portage/make.conf
+COMMON_FLAGS="-march=native -O3 -pipe"
+# makeopts = le nombre correspond aux GB de RAM divisé par 2 (chaque job de compilation utilise environ 2G de RAM)
+echo 'MAKEOPTS="-j6"' >> /mnt/etc/portage/make.conf
+
+selection du mirroir
+--------------------
+# en https
+mirrorselect -i -o >> /mnt/etc/portage/make.conf
+mkdir --parents /mnt/etc/portage/repos.conf
+cp /mnt/usr/share/portage/config/repos.conf /mnt/etc/portage/repos.conf/gentoo.conf
+
+DNS
+---
+cp --dereference /etc/resolv.conf /mnt/etc/
+
+chroot
+------
+arch-chroot /mnt
+
+installation du ebuild repository
+---------------------------------
+emerge-webrsync
+
+choix du profil
+---------------
+# hardened/selinux/systemd
+eselect profile list | grep /hardened/selinux/systemd
+eselect profile set 44
+
+CPU_FLAGS_*
+-----------
+# This is used to configure the build to compile in specific assembly code or other intrinsics, usually hand-written or otherwise extra
+# is not the same as asking the compiler to output optimized code for a certain CPU feature (e.g. -march=).
+emerge --ask app-portage/cpuid2cpuflags
+cpuid2cpuflags
+echo "*/* $(cpuid2cpuflags)" > /etc/portage/package.use/00cpu-flags
+
+gentoolkit
+----------
+emerge --ask app-portage/gentoolkit
+
+USE flags
+---------
+# flag system wide
+euse -E tpm secureboot modules-sign initramfs dist-kernel dracut dbus nftables cryptsetup boot iwd bluetooth systemd-boot wayland
+
+secureboot
+----------
+# la clef désigné sera automatiquement utilisé pour signer le kernel et le bootloader
+# besoin aussi de signer les modules de kernel
+# création des clefs
+mkdir /etc/secureboot
+emerge --ask app-crypt/efitools  app-crypt/sbsigntools
+openssl req -new -nodes -utf8 -sha256 -x509 -outform PEM \
+    -out /etc/secureboot/MOK.pem -keyout /etc/secureboot/MOK.pem \
+    -subj "/CN=teth/"
+openssl x509 -in /etc/secureboot/MOK.pem -outform DER -out /etc/secureboot/MOK.cer
+
+# pour auto signature par portage
+## kernel
+echo 'SECUREBOOT_SIGN_KEY="/etc/secureboot/MOK.pem"' >> /etc/portage/make.conf
+echo 'SECUREBOOT_SIGN_CERT="/etc/secureboot/MOK.pem"' >> /etc/portage/make.conf
+# modules
+echo 'MODULES_SIGN_KEY="/etc/secureboot/MOK.pem"' >> /etc/portage/make.conf
+echo 'MODULES_SIGN_CERT="/etc/secureboot/MOK.pem"' >> /etc/portage/make.conf
+
+maj du @world et recompilation
+------------------------------
+# pour recompiler les binaires de la stage 3 avec l'optimisation
+emerge -eavuDN @world
+
+gestion des fichiés de conf
+---------------------------
+emerge --ask app-portage/cfg-update
+
+zram
+----
+emerge --ask sys-apps/zram-generator
+echo '[zram0]' > /etc/systemd/zram-generator.conf
+
+VIDEO_CARDS
+-----------
+https://wiki.gentoo.org/wiki/Handbook:AMD64/Full/Installation#VIDEO_CARDS
+=> pas utile pour une install console
+
+Timezone
+-------
+echo "Europe/Paris" > /etc/timezone
+emerge --config sys-libs/timezone-data
+
+Locales 
+-------
+echo 'fr_FR.UTF-8 UTF-8' >> /etc/locale.gen
+locale-gen
+cat << EOF > /etc/vconsole.conf
+KEYMAP=fr-latin9
+EOF
+=> voir pour switch de locales : localectl 
+
+firmware, microcode & kernel
+----------------------------
+# acceptation des licences
+cat << EOF > /etc/portage/package.license
+*/*  *
+EOF
+
+# SOF firmware
+emerge --ask sys-firmware/sof-firmware
+
+# distribution kernel
+
+# USE flag :
+secureboot modules-sign initramfs dist-kernel dracut systemd-boot
+# conf custom possible avec les snippets https://wiki.gentoo.org/wiki/Project:Distribution_Kernel#Using_.2Fetc.2Fkernel.2Fconfig.d
+-> latest masqué 
+cat << EOF > /etc/portage/package.accept_keywords/edge
+sys-kernel/gentoo-kernel ~amd64
+virtual/dist-kernel ~amd64
+EOF
+
+# module dracut pour unlock fde par tpm
+emerge -av app-crypt/tpm2-tools
+echo 'add_dracutmodules+=" tpm2-tss crypt dm rootfs-block "' >> /etc/dracut.conf
+
+# cpu firmware
+=> push aussi l'install du kernel
+emerge --ask sys-kernel/linux-firmware
+
+fstab
+-----
+cat << EOF > /etc/fstab
+/dev/sda1   /efi        vfat    defaults,noatime,noexec,nodev,nosuid,fmask=0137,dmask=0027,umask=0077,shortname=winnt 0 2
+UUID=/dev/mapper/cryptroot   /           btrfs   noatime,lazytime,ssd,commit=120,discard=async,compress-force=zstd:1,space_cache=v2,x-systemd.device-timeout=0 0 0
+UUID=/dev/mapper/cryptroot   /home       btrfs   subvol=/@/home,noatime,lazytime,ssd,commit=120,discard=async,compress-force=zstd:1,space_cache=v2,x-systemd.device-timeout=0 0 0
+UUID=/dev/mapper/cryptroot   /root       btrfs   subvol=/@/root,noatime,lazytime,ssd,commit=120,discard=async,compress-force=zstd:1,space_cache=v2,x-systemd.device-timeout=0 0 0
+EOF
+
+=> pas de subvol pour root car sera changé dynamiquement par les rootflag pour pointer vers les bonnes snapshots
+=> normalement /dev/mapper/cryptroot, pas besoin des UUID mais se fait renamned
+=> revoir les options de montage par défaut du btrfs, normalement pas besoin de les expliciter
+
+systemd-boot
+------------
+# USE flag 
+boot
+# install
+bootctl install --no-variables
+# secureboot
+emerge -av sys-boot/shim sys-boot/mokutil
+cp /usr/share/shim/BOOTX64.EFI /efi/EFI/systemd/shimx64.efi
+cp /usr/share/shim/mmx64.efi /efi/EFI/systemd/mmx64.efi
+openssl x509 -in /etc/secureboot/MOK.pem -outform DER -out /etc/secureboot/MOK.cer
+mokutil --import /etc/secureboot/MOK.cer
+efibootmgr --create --disk /dev/sda1 --loader '\EFI\systemd\shimx64.efi' --label 'Systemd-boot via Shim' --unicode '\EFI\systemd\systemd-bootx64.efi'
+
+# pour regen l'install (initramfs, uki,...)
+emerge --config sys-kernel/gentoo-kernel
+
+# du coup argument de kernel en /etc/kernel/cmdline ou modif de l'entry systemd-boot
+options root=UUID=/dev/mapper/cryptroot rootfstype=btrfs rootflags=subvol=/@ security=selinux selinux=1
+=> mettre l'uuid comme le dev se fait renamned
+
+sshd
+----
+echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+systemctl enable sshd
+
+network
+-------
+# USE flag :
+dbus bluetooth iwd
+# insatll
+emerge -av net-misc/networkmanager
+systemctl enable NetworkManager
+
+trim
+----
+systemctl enable fstrim.timer
+
+tmpfs
+-----
+-> pas défaut apparement
+
+Login
+-----
+# mdp root
+passwd
+# créer un user
+useradd -m -G wheel -s /bin/bash teth
+passwd teth
+# élevation de privilège
+emerge -av app-admin/sudo
+=> voir sous selinux pour la conf
+
+NTP
+---
+
+
+########################## 1rstboot ###############################
+
+enregistrement de la MOK
+cryptenroll
+start des services
+snapshot
+selinux
+
+localectl
+---------
+localectl set-locale fr_FR.UTF-8
+
+cryptenroll
+-----------
+# USE flag :
+cryptsetup
+# enrolement du tpm
+systemd-cryptenroll --tpm2-device=auto /dev/sda2
+
+services
+--------
+systemctl start dev-zram0.swap
+
+check microcode et vulnrabilité
+-------------------------------
+# verif du microcode :
+grep microcode /proc/cpuinfo
+	&
+dmesg | grep microcode
+
+# voir les mitigations
+grep . /sys/devices/system/cpu/vulnerabilities/*
+
+snapshots
+---------
+emerge -av app-backup/snapper sys-apps/arch-chroot
+snapper --config root create-config /
+=> config à modifier, par défaut 1 snapshot par heure
+
+# modifier fstab pour mapper le volume des snapshots 
+echo 'UUID=/dev/mapper/cryptroot   /.snapshots btrfs   subvol=/@/.snapshots 0 0' >> /etc/fstab
+
+# prendre la snapshot
+snapper create -c number -d desc
+=> revoir si cleanup auto des number
+
+Containers
+----------
+USE flag :
+nftables (requit pour iptables)
+emerge -av app-containers/podman app-containers/distrobox
+
+selinux
+-------
+policy type
+-----------
+par défaut le profile selinux charge le policy stype strict
+
+relabel
+-------
+mkdir /mnt/gentoo
+mount -o bind / /mnt/gentoo
+# set files context
+setfiles -r /mnt/gentoo /etc/selinux/strict/contexts/files/file_contexts /mnt/gentoo/{dev,efi,proc,run,sys,tmp}
+umount /mnt/gentoo
+pb sshd -> besoin de patch sshd-session
+semanage fcontext --add --seuser system_u --type sshd_exec_t --ftype f "/usr/lib/misc/sshd-session"
+-> sshd-session n'existe pas dans /usr/lib mais equivalency rule entre /usr/lib et /usr/lib64
+-> marche pour semanage mais pas restorecon
+restorecon /usr/lib64/misc/sshd-session
+=> pb ssh selinux
+-> relabel the entire file system
+rlpkg -a -r
+
+en inspectant les montpoint on vois bien seclabel dans les options
+
+selinux user
+------------
+semanage login -a -s staff_u teth
+restorecon -R -F /home/teth
+# roles root
+semanage user -m -R "sysadm_r system_r" root
+# roles user
+semanage user -m -R "staff_r sysadm_r system_r" staff_u
+=> pourvoir le mappage user selinux et role selinux
+semanage user -l
+=> pour une transition élévation de privilège + role selinux
+mkdir /etc/sudoers.d
+cat << EOF > /etc/sudoers.d/wheel
+%wheel ALL=(ALL) TYPE=sysadm_t ROLE=sysadm_r NOPASSWD: ALL
+EOF
+
+attention !!!!!
+=> lorsqu'un user a plusieurs rôles il boot automatiquement dans le role le moins priviligié
+=> su fait passer en staff_u:staff_r:staff_t 
+    su ne change donc pas de selinux user
+    l'intéret de la conf sudo si dessus d'automatiser le newrole
+
+pb :
+    login :
+peut pas se log avec root qu'importe le role
+peut pas se log en staff_u en l'absence du rôle staff_r (e.g. si semanage user -m -R "sysadm_r system_r" staff_u)
+
+setbool
+-------
+=> contre les règles nerverallow ?
+# autoriser le ssh vers user en sysadm_r (seul moyen d'accéder au user selinux root du coup)
+setsebool -P ssh_sysadm_login 1
+
+audit
+-----
+même en targeted beaucoup de process vont être refusé dans leur coportement normal
+besoin d'auditer ces log
+systemctl enable auditd
+# pour auditer les logs
+nano /var/log/audit/audit.log
+audit2allow -w -a
+audit2allow -a
+
+créer ses propres policy
+------------------------
+# audit2allow -a permet de d'avoir un apercu des policy a créer pour autoriser tout les denied des logs
+# créer une template :
+audit2allow -a -M localpolicycli 
+-> vient créer une policy autorisant tous les denied
+# compiler le fichier te
+make -f /usr/share/selinux/strict/include/Makefile localpolicycli.pp
+# le charger 
+semodule -i localpolicycli.pp
+
+Pour chaque paquets installer par portage on voit la ligne :
+=> Setting SELinux security labels
+
+########################## DE ###############################
+
+hyprland
+--------
+# use
+euse -E wayland
+cat << EOF > /etc/portage/package.use/fuckingX
+media-libs/libglvnd X
+EOF
+# ermeg
+emerge -av app-gui/hyprland
+
+sddm
+----
+
+
+flatpak
+https://www.reddit.com/r/unixporn/comments/1dbuqjb/hyprland_made_this_cute_rice_for_myself_my/
+=> juste revoir waybar
+wayland
+hypr
+    hyprland
+    hyprlock -> screenlock
+    hyprpaper -> wallpaper
+kde 
+    sddm
+    dolphin
+pipewire
+bluetooth
+flatpack -> quel app pour y accéder
+Wofi -> app launcher (avoir un menu)
+cb -> clipboard
+swaync -> notification
+powermenu -> menu ?
+Waybar
+Multiple display -> a voir
+    https://wiki.gentoo.org/wiki/List_of_software_for_Wayland
+
+travailler avec les touch gesture
+
+
+--------------- notes
+
+# update :
+emerge --ask --verbose --update --deep --newuse @world
+# clening des orphelins :
+emerge --ask --depclean
+# désinstaller :
+emerge --ask --verbose --depclean package
+# en cas de slot conflict :
+emerge -pev @world --backtrack=0
+# liste des use flag hors make.conf et package.use :
+portageq envvar USE | xargs -n 1
+# maj des conf (genre autoumask) :
+cfg-update -l
+# voir les denied par selinux
+audit2allow -w -a
+audit2allow -a
+# loc des log
+/var/log/audit/audit.log
+# list les bool
+getsebool -a
+# pour intéragir avec les modules selinux
+semodule
+
+query la config du kernel :
+cat /proc/config.gz | gunzip > running.config
+cat running.config | grep QUERY
+
+procédure de backup :
+    avant maj de kernel :
+faire une snap # snapper create -c number --description test 
+faire la backup du kernel # cp -r /efi/(machine-id)/(kernel acutelle) /efi/backup/(kernel actuel)
+ajouter une entry pour la backup avec le rootflags poitant vers la snapshot #
+cat << EOF > /efi/loader/entries/backup-(num de la snap).conf
+# Boot Loader Specification type#1 entry
+# entry de la backup
+title      Gentoo Linux
+version    6.11.8-gentoo-dist-hardened
+machine-id 124023005e0da699d5018a24673805ba
+sort-key   gentoo
+options    root=UUID=021165d1-78ae-4b90-b32a-1d9d2dc19e1b rootfstype=btrfs rootflags=subvol=/@/.snapshots/(num de la snap)/snapshot security=selinux selinux=1 systemd.machine_id=124023005e0da699d5018a24673805ba
+linux      /backup/(6.11.8-gentoo-dist-hardened)/linux
+initrd     /backup/(6.11.8-gentoo-dist-hardened)/initrd
+    après la maj du kernel :
+# modifier loader.conf pour mettre le nouveau kernel en boot par défaut
+e.g. : default 124023005e0da699d5018a24673805ba-6.11.8-gentoo-dist-hardened.conf
+
+
+=> on peut boot dans la snap, pour modifier le base system :
+mount -o rw,noatime,lazytime,compress-force=zstd:1,ssd,discard=async,space_cache=v2,commit=120,subvol=@ /dev/mapper/luks-d59ba3f6-f28d-4a70-9fdf-fa24a140da83 /mnt
+mount /dev/sda1 /mnt/efi
+arch-chroot /mnt
+pb : pas possible de snap /@ depuis la snapshot ou depuis un chroot
+
+
+### KSPP pour info
+le kernel hardened du profil est pas full KSPP
+manque en config:
+    CONFIG_SECURITY_SELINUX_...
+        -> emepche de débeurgé les policies ce qui n'est pas comaptible avec l'état de selinux pour gentoo
+    CONFIG_SECURITY_LOCKDOWN
+    CONFIG_LOCK_DOWN_KERNEL_FORCE_CONFIDENTIALITY
+        -> block l'accès a root à l'image l'image kernel en fonctionnement
+    CONFIG_REFCOUNT_FULL : Perform extensive checks on reference counting
+    CONFIG_EFI_DISABLE_PCI_DMA : Disable DMA between EFI hand-off and the kernel's IOMMU setup.
+    CONFIG_IOMMU_DEFAULT_DMA_STRICT : Force IOMMU TLB invalidation
+    CONFIG_RANDOM_TRUST_BOOTLOADER=y
+    CONFIG_RANDOM_TRUST_CPU=y
+        -> Get as much entropy as possible from external sources
+    CONFIG_RANDSTRUCT_FULL : Randomize the layout of system structures. This may have dramatic performance impact
+    CONFIG_ZERO_CALL_USED_REGS : Wipe all caller-used registers on exit from the function
+    CONFIG_RESET_ATTACK_MITIGATION : Wipe RAM at reboot via EFI
+    CONFIG_STATIC_USERMODEHELPER : go full userspace
+    CONFIG_KEXEC not set : permet le remplacement du kernel en fonctionnement
+manque en GCC plugins :
+    CONFIG_GCC_PLUGIN_STRUCTLEAK=y
+    CONFIG_GCC_PLUGIN_STRUCTLEAK_BYREF_ALL=y
+
+--------------- pb
+
+# microcode chargé mais pas de mitigation pour le Register File Data Sampling (RFDS)
+-> correction des paquets, regénération de l'initramfs
+--> ne change rien
+-> test boot parameter mitigations=auto
+--> ne change rien
+
+
+
+

@@ -143,4 +143,11 @@ Renforcement de MicroOS :
  
 (par défaut MicroOS assure : rolling release cycle, SELinux en enforcing, fs en readonly (immutable), snpashot BTRFS, auto update, secure boot, et des protocoles modernes (wayland, pipewire, systemd-boot))
 </details>
- 
+
+<details>
+<summary><b> 5 hardened gentoo v2 </b></summary>
+
+Gentoo moderne :
+- secure boot, selinux, btrfs, binaires opti, zram ... etc
+
+</details>
