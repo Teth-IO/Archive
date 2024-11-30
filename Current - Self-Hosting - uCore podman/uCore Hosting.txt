@@ -68,7 +68,7 @@ sudo umount /mnt
 
 sudo coreos-installer install /dev/sda --ignition-file /truc.ign
 # ou
-sudo coreos-installer install /dev/sda  --ignition-url https://raw.githubusercontent.com/Teth-IO/infra/refs/heads/main/uCore%20-%20NAS/truc.ign
+sudo coreos-installer install /dev/sda  --ignition-url https://raw.githubusercontent.com/Teth-IO/infra/refs/heads/main/Current%20-%20Self-Hosting%20-%20uCore%20podman/dep.ign
 
 ----[ 1.2 - maj auto
 
