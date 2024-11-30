@@ -1,6 +1,6 @@
 -------------------------------------- current infra -------------------------------------- <br />
 
-=> [uCore hosting platform](./Current%20-Self-Hosting%20-%20uCore%20podman/uCore%20Hosting.txt)
+=> [uCore hosting platform](./Current%20-%20Self-Hosting%20-%20uCore%20podman/uCore%20Hosting.txt)
 
 Fedora CoreOS (FCOS) rebase en uCore :
 - Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
