@@ -4,18 +4,18 @@ immutable os for server and workstation
 	Audio stack                 PipeWire		
 	graphic backend	            wayland						
 	chiffement                  FDE (tpm unlocked)
-    boot                        systemd-boot avec measured boot
+    	boot                        systemd-boot avec measured boot
 	hardening du kernel 	
 	release	                    rolling						
 	MAC                         SElinux enforcing
 	secure boot
 	firewall                    firewalld
-    rollback                    snapshot btrfs bootable
+    	rollback                    snapshot btrfs bootable
 	Optimized Binaries
 	btrfs compression           speed et moins d'usure
 	zram
 	trim
-    tmpfs
+    	tmpfs
 
 résoud les pb de fedora atomic 
 -> pas d'opti x86_64_v3
@@ -36,7 +36,7 @@ A faire :
     revoir les paramètre de montage btrfs, acutellement explicité sous fstab mais moyen de les mettre par défaut
     créer le scritp pour backup le kernel et initrd acutel + créer une entry de backup avec bon rootfs
 
-pb :
+pb trsuted computing :
 fde avec measured boot nécessite d'avoir le module dracut de pcr pour remplir les prédiction pcr attendues par le tpm pour chaque entrée de boot
 => trop chiant et module dracut pas upstream
 
