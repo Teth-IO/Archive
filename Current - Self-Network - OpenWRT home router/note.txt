@@ -163,6 +163,8 @@ VPN_ADDR6="fd00:9::1/64"
 Generate and exchange keys between server and client.
 
 # Generate keys
+mkdir /etc/wireguard
+cd /etc/wireguard
 umask go=
 wg genkey | tee wgserver.key | wg pubkey > wgserver.pub
 wg genkey | tee wgclient.key | wg pubkey > wgclient.pub
