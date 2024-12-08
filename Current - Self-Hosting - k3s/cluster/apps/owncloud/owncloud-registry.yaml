@@ -1,0 +1,9 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: owncloud
+  namespace: flux-system
+spec:
+  image: docker.io/owncloud/ocis
+  interval: 1h0m0s

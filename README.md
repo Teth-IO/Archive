@@ -1,16 +1,14 @@
 -------------------------------------- current infra -------------------------------------- <br />
 
-=> [uCore hosting platform](./Current%20-%20Self-Hosting%20-%20uCore%20podman/uCore%20Hosting.txt)
+=> [slef-hosting sous k3s](./Current%20-%20Self-Hosting%k3s/iac%k3s.txt)
 
-Fedora CoreOS (FCOS) rebase en uCore :
-- Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
-- uCore-ZFS avec module signé et batteries included (podman, docker, sanoid, firewalld, cockpit ...)
-- data sous un RAID ZFS avec sbapshot journalière
-- hosting de diférent container sous podman quadlet en rootless
-- services accessible par traefik avec routage par domaine + tls
-- services : searxng, owncloud ocis, navidrome, homepage
+cluster k3s :
+- OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
+- stockage : WIP
+- hosting sous cluster k3S maintenu en GitOps avec fluc CD
+- maj auto du cluster : WIP
 
-=> [OpenWRT IPS & home router](./Current%20-%20Self-Network%20-%20OpenWRT%20home%20router/note.txt)
+=> [OpenWRT IPS & home router](./Current%20-%20Self-Networking%20-%20OpenWRT%20home%20router/note.txt)
 
 Config d'OpenWRT en home router et IPS :
 - Recup de la delegation de prefixe IPv6
@@ -29,7 +27,7 @@ Config d'OpenWRT en home router et IPS :
 
 -------------------------------------- OBSOLÈTE --------------------------------------
 
-=> [Self-Network](./ZZold%20-%20Self-Network/)
+=> [Self-Network](./ZZold%20-%20Self-Networking/)
 
 <details>
 <summary><b> OpenWrt no box </b></summary>
@@ -97,6 +95,18 @@ HardenedBSD hosting platform :
 - CBSD pour gestion des jail et vm bhyve
 - nextcloud (avec clamav) sous jail pour isolation et recovery
 - vm ubuntu cloud-init sous bhyve pour stack docker SearXNG+gluetun <br />
+</details>
+
+<details>
+<summary><b> 4 et 5 uCore hosting platform] </b></summary>
+Fedora CoreOS (FCOS) rebase en uCore :
+
+    Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
+    uCore-ZFS avec module signé et batteries included (podman, docker, sanoid, firewalld, cockpit ...)
+    data sous un RAID ZFS avec sbapshot journalière
+    hosting de diférent container sous podman quadlet en rootless
+    services accessible par traefik avec routage par domaine + tls
+    services : searxng, owncloud ocis, navidrome, homepage
 </details>
  
 => [workstation](./ZZold%20-%20Workstation/)

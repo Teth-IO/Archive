@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: owncloud
+  namespace: default
+  labels:
+    app: owncloud
+spec:
+  selector:
+    matchLabels:
+      app: owncloud
+  template:
+    metadata:
+      labels:
+        app: owncloud
+    spec:
+      containers:
+        - name: owncloud
+          image: docker.io/owncloud/ocis:5.0.9 # {"$imagepolicy": "flux-system:owncloud"}
+          ports:
+            - containerPort: 9200
+          env:
+            - name: OCIS_INSECURE
+              value: "true"
+            - name: PROXY_TLS
+              value: "false"
+            - name: OCIS_URL
+              value: "https://owncloud.lan"
+          volumeMounts:
+            - name: config-ocis
+              mountPath: /etc/ocis
+            - name: data-ocis
+              mountPath: /var/lib/ocis
+      volumes:
+        - name: config-ocis
+          hostPath:
+            path: /mnt/raid/nas/ocis/ocis-config
+        - name: data-ocis
+          hostPath:
+            path: /mnt/raid/nas/ocis/ocis-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: owncloud
+  labels:
+    service: owncloud
+spec:
+  selector:
+    app: owncloud
+  ports:
+    - port: 9200
+      targetPort: 9200
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  namespace: default
+  name: owncloud
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - kind: Rule
+    match: Host(`owncloud.lan`)
+    services:
+      - kind: Service
+        name: owncloud
+        port: 9200
+  tls:
+    secretName: owncloud-secret

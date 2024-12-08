@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: navidrome
+  namespace: default
+  labels:
+    app: navidrome
+spec:
+  selector:
+    matchLabels:
+      app: navidrome
+  template:
+    metadata:
+      labels:
+        app: navidrome
+    spec:
+      containers:
+        - name: navidrome
+          image: docker.io/deluan/navidrome:0.53.3 # {"$imagepolicy": "flux-system:navidrome"}
+          ports:
+            - containerPort: 4533
+          volumeMounts:
+            - name: config-navidrome
+              mountPath: /data
+            - name: data-navidrome
+              mountPath: /music
+      volumes:
+        - name: config-navidrome
+          hostPath:
+            path: /mnt/raid/nas/music/conf
+        - name: data-navidrome
+          hostPath:
+            path: /mnt/raid/nas/music/albums
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: navidrome
+  namespace: default
+  labels:
+    service: navidrome
+spec:
+  selector:
+    app: navidrome
+  ports:
+    - port: 4533
+      targetPort: 4533
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: navidrome
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - kind: Rule
+    match: Host(`mytube.lan`)
+    services:
+      - kind: Service
+        name: navidrome
+        port: 4533
+  tls:
+    secretName: navidrome-secret

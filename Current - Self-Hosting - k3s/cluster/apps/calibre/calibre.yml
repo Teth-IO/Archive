@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre
+  namespace: default
+  labels:
+    app: calibre
+spec:
+  selector:
+    matchLabels:
+      app: calibre
+  template:
+    metadata:
+      labels:
+        app: calibre
+    spec:
+      containers:
+        - name: calibre
+          image: docker.io/crocodilestick/calibre-web-automated:latest
+          ports:
+            - containerPort: 8083
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: ingest
+              mountPath: /cwa-book-ingest
+            - name: librairie
+              mountPath: /calibre-library
+          env:
+            - name: DOCKER_MODS
+              value: "lscr.io/linuxserver/mods:universal-calibre-v7.16.0"
+      volumes:
+        - name: config
+          hostPath:
+            path: /mnt/raid/nas/calibre/config
+        - name: ingest
+          hostPath:
+            path: /mnt/raid/nas/calibre/ingest
+        - name: librairie
+          hostPath:
+            path: /mnt/raid/nas/calibre/librairie
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calibre
+  namespace: default
+  labels:
+    service: calibre
+spec:
+  selector:
+    app: calibre
+  ports:
+    - port: 8083
+      targetPort: 8083
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: calibre
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`calibre.lan`)
+      services:
+        - kind: Service
+          name: calibre
+          port: 8083
+  tls:
+    secretName: calibre-secret
