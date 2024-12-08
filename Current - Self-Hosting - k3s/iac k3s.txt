@@ -1,0 +1,325 @@
++-------------------------------------------------------------------------+
+|=-------------------=[ Immutable hosting platform ]=--------------------=|
+|-------------------------------------------------------------------------|
+|=----------=[ uCore, Podman Quadlet rootless unit, RAID ZFS ]=----------=|
++-------------------------------------------------------------------------+
+
+--[ Table of contents
+
+0 - Introduction
+1 - Installation
+2 - stockage
+3 - k3s
+    3.1 - firewalld
+    3.2 - Certificat Authority
+    3.3 - FLuc CD
+    3.4 - CloudNativePG
+    3.6 - maintenance
+        3.6.1 - image par GitOps
+        3.6.2 - du cluster
+4 - apps
+    4.1 - Searxng
+    4.2 - owncloud infini scale (oCIS)
+    4.3 - navidrome
+    4.4 - homepage
+    4.5 - paperless-ngx
+    4.6 - calibre-web
+    4.7 - jellyfin
+
+--[ 0 - Introduction
+
+--[ 1 - installation
+
+WIP 
+test flatcar
+
+--[ 2 - stockage
+
+WIP
+test rook pour data sur fs et backup db sur block storage
+
+--[ 3 - k3s 
+
+--[ 3 - k3s
+
+curl -sfL https://get.k3s.io | sh -
+
+# marche directe
+# intègre traefik pour l'ingress
+# traefik peut utiliser une custom resource definition (CRD), l'ingressroute
+
+----[ 3.1 - firewalld
+
+sudo firewall-cmd --permanent --add-port=6443/tcp #apiserver
+sudo firewall-cmd --permanent --zone=trusted --add-source=10.42.0.0/16 #pods
+sudo firewall-cmd --permanent --zone=trusted --add-source=10.43.0.0/16 #services
+sudo firewall-cmd --reload
+
+----[ 3.2 - Certificat Authority
+
+# créer la key
+openssl genrsa -out lan.key 4096
+# creér le root certificate (le common name indique le domaine sous lequel on signe, ici lan)
+# le root certificate est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
+openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
+
+----[ 3.3 - FluxCD
+
+# heberge les manifest sous git
+# flux reconcilie le cluster avec l'état attendu sous git
+# monitoring des repository avec maj auto
+
+curl -s https://fluxcd.io/install.sh | sudo bash
+. <(flux completion bash)
+cp  /etc/rancher/k3s/k3s.yaml ~/.kube/config
+flux check --pre
+
+# bootstrap GitHub Personal Account avec les components pour l'automation
+export GITHUB_TOKEN=<your-token>
+export GITHUB_USER=<your-username>
+flux bootstrap github \
+  --components-extra=image-reflector-controller,image-automation-controller \
+  --owner=$GITHUB_USER \
+  --repository=k3s \
+  --branch=main \
+  --path=clusters/my-cluster \
+  --read-write-key \
+  --personal
+
+cloner le repo
+mettre les manifest dans /clusters/my-cluster
+  attention : les manifests doivent spécifier le namespace à utiliser sinon timeout
+push :
+git add -A && \
+git commit -m "add apps" && \
+git push origin main
+
+maj auto, possible de pull manuellement :
+# flux reconcile kustomization flux-system --with-source
+
+----[ 3.4 - CloudNativePG
+
+# les apps vont demander des bdd lorsqu'elles ne sont intégrées directmenent dans celles-ci
+# pour éviter une architecure monolithique un operateur sera utile pour centralisera leur déploiement et maintenance
+# installation avec l'helm chart officielle par flux
+# storage dans /var/lib/rancher/k3s/storage/
+
+----[ 3.5 - redis
+
+# dragonfly de dispo en remplacement de redis mais ne marche pas.
+# pb de hardware ?
+# à l'inverse de postgres ici en monolithique comme dragonfly ne traite aucune donnée critique
+# operateur de dispo mais osef du HA
+
+----[ 3.6 - maintenance
+
+------[ 3.6.1 - des pods avec flux
+
+pour chaque image on peut créer un job de scan, exemple :
+flux create image repository postgres-kc \
+--image=docker.io/postgres \
+--interval=60m \
+--export > postgres-kc-registry.yaml
+
+# on désigne ensuite la stratégie à utiliser pour filtrer ces tags (que les patch, ques les versions mineurs, inclure les pre-release...)
+flux create image policy postgres-kc \
+--image-ref=postgres-kc \
+--select-semver='>=1.0.0' \
+--export > postgres-kc-policy.yaml
+
+# on créer ensuite imageupdateautomation pour mettre à jour les manifest lors de la detection des nouvelles images
+flux create image update flux-system \
+--interval=60m \
+--git-repo-ref=flux-system \
+--git-repo-path="./clusters/my-cluster" \
+--checkout-branch=main \
+--push-branch=main \
+--author-name=fluxcdbot \
+--author-email=fluxcdbot@users.noreply.github.com \
+--commit-template="{{range .Changed.Changes}}{{print .OldValue}} -> {{println .NewValue}}{{end}}" \
+--export > ./flux-system-automation.yaml
+
+=> test renovate en raplecement car pb sur certain semver
+
+------[ 3.6.2 - du cluster
+
+https://docs.k3s.io/upgrades
+# k3s intègre une custom resource definition (CRD), les plans
+# apparemment monitor et maj auto
+prendre les plans server et agents
+remplacer version par le channel field
+mettre en latest
+
+=> test renovate, apprement peut le maintenir à jour
+
+--[ 4 - apps
+
+----[ 4.1 - searxng
+
+openssl genrsa -out searxng.lan.key 4096
+openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
+cat << EOF > searxng.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = searxng.lan
+EOF
+openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
+
+secret :
+sudo kubectl create secret tls searxng-secret \
+  --cert=./searxng.lan.crt \
+  --key=./searxng.lan.key
+
+----[ 4.2 - ocis
+
+# pour nouveau déploiement voir installation officielle avec helm
+
+openssl genrsa -out owncloud.lan.key 4096
+openssl req -new -key owncloud.lan.key -out owncloud.lan.csr  -subj "/CN=owncloud.lan"
+cat << EOF > owncloud.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = owncloud.lan
+EOF
+openssl x509 -req -in owncloud.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out owncloud.lan.crt -days 3650 -sha256 -extfile owncloud.lan.ext
+
+secret :
+sudo kubectl create secret tls owncloud-secret \
+  --cert=./owncloud.lan.crt \
+  --key=./owncloud.lan.key
+
+----[ 4.3 - navidrome
+
+# pas d'oidc a cause de l'api subsonic
+https://github.com/navidrome/navidrome/issues/858
+
+openssl genrsa -out mytube.lan.key 4096
+openssl req -new -key mytube.lan.key -out mytube.lan.csr  -subj "/CN=mytube.lan"
+cat << EOF > mytube.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = mytube.lan
+EOF
+openssl x509 -req -in mytube.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out mytube.lan.crt -days 3650 -sha256 -extfile mytube.lan.ext
+
+secret :
+sudo kubectl create secret tls navidrome-secret \
+  --cert=./mytube.lan.crt \
+  --key=./mytube.lan.key
+
+----[ 4.4 - homepage
+
+# créer la clef privé du website
+openssl genrsa -out homepage.lan.key 4096
+# créer le csr (common name = server hostname = homepage.lan)
+openssl req -new -key homepage.lan.key -out homepage.lan.csr -subj "/CN=homepage.lan"
+# extension X509 V3
+cat << EOF > homepage.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = homepage.lan
+EOF
+# le certificat final
+openssl x509 -req -in homepage.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out homepage.lan.crt -days 3650 -sha256 -extfile homepage.lan.ext
+
+secret :
+sudo kubectl create secret tls homepage-secret \
+  --cert=./homepage.lan.crt \
+  --key=./homepage.lan.key
+
+----[ 4.5 - paperless-ngx
+
+# créer la clef privé du website
+openssl genrsa -out paperless.lan.key 4096
+# créer le csr (common name = server hostname = paperless.lan)
+openssl req -new -key paperless.lan.key -out paperless.lan.csr -subj "/CN=paperless.lan"
+# extension X509 V3
+cat << EOF > paperless.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = paperless.lan
+EOF
+# le certificat final
+openssl x509 -req -in paperless.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out paperless.lan.crt -days 3650 -sha256 -extfile paperless.lan.ext
+
+secret :
+sudo kubectl create secret tls paperless-secret \
+  --cert=./paperless.lan.crt \
+  --key=./paperless.lan.key
+
+# créer le compte admin
+python3 manage.py createsuperuser
+=> une fois connecter au compte admin le connecter au compte social keycloak
+
+----[ 4.6 - calibre-web-automated
+
+# créer la clef privé du website
+openssl genrsa -out calibre.lan.key 4096
+# créer le csr (common name = server hostname = calibre.lan)
+openssl req -new -key calibre.lan.key -out calibre.lan.csr -subj "/CN=calibre.lan"
+# extension X509 V3
+cat << EOF > calibre.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = calibre.lan
+EOF
+# le certificat final
+openssl x509 -req -in calibre.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out calibre.lan.crt -days 3650 -sha256 -extfile calibre.lan.ext
+
+secret :
+sudo kubectl create secret tls calibre-secret \
+  --cert=./calibre.lan.crt \
+  --key=./calibre.lan.key
+
+----{ 4.7 - jellyfin
+
+=> consomme max cpu
+
+openssl genrsa -out jellyfin.lan.key 4096
+openssl req -new -key jellyfin.lan.key -out jellyfin.lan.csr  -subj "/CN=jellyfin.lan"
+cat << EOF > jellyfin.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = jellyfin.lan
+EOF
+openssl x509 -req -in jellyfin.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out jellyfin.lan.crt -days 3650 -sha256 -extfile jellyfin.lan.ext
+
+secret :
+sudo kubectl create secret tls jellyfin-secret \
+  --cert=./jellyfin.lan.crt \
+  --key=./jellyfin.lan.key
