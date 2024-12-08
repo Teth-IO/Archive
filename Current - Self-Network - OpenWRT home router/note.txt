@@ -299,12 +299,12 @@ cat << EOF > /usr/share/rpcd/acl.d/homepage.json
 EOF
 
 # hash du mdp utlisé par homepage
-uhttpd -m "<somepassphrase>"
+uhttpd -m "password"
 
 # à ajouter dans /etc/config/rpcd
 config login
         option username 'homepage'
-        option password '<hashedpassword>'
+        option password 'hashdupassword'
         list read homepage
 
 ----------------------------- WIP -----------------------------
