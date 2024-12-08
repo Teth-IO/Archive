@@ -49,7 +49,7 @@ flash le routeur avec l'image sysupgrade depuis l'interface web de l'OEM
 
 pour l'install standard (pas le build cutsom) pas d'interface web, l'installer avec :
 se co en ssh root@192.168.1.1 and: 
-opkg update && opkg install luci luci-lib-px5g px5g-standalone
+apk update && apk install luci luci-lib-px5g px5g-standalone
 
 puis pour upgrader les co en http vers https :
 
@@ -148,8 +148,8 @@ https://openwrt.org/docs/guide-user/services/vpn/wireguard/server
 Install the required packages. Specify configuration parameters for VPN server.
 
 # Install packages
-opkg update
-opkg install wireguard-tools luci-proto-wireguard qrencode
+apk update
+apk install wireguard-tools luci-proto-wireguard qrencode
 
 # Configuration parameters
 VPN_IF="vpn"
@@ -232,8 +232,8 @@ restart l'int apres modif
 https://github.com/DNSCrypt/dnscrypt-proxy/wiki/Installation-on-OpenWrt
 
 # install
-opkg update
-opkg install dnscrypt-proxy2
+apk update
+apk install dnscrypt-proxy2
 uci add_list dhcp.@dnsmasq[0].server='127.0.0.53'
 uci commit dhcp
 /etc/init.d/dnsmasq restart
@@ -279,8 +279,8 @@ https://tls-ech.dev/
 
 --[ config RPG pour homepage
 
-opkg update
-opkg install uhttpd-mod-ubus
+apk update
+apk install uhttpd-mod-ubus
 cat << EOF > /usr/share/rpcd/acl.d/homepage.json
 {
   "homepage": {
@@ -312,8 +312,8 @@ config login
 
 https://openwrt.org/docs/guide-user/services/snort
 
-opkg update
-opkg install snort3 wget-ssl coreutils-sort
+apk update
+apk install snort3 wget-ssl coreutils-sort
 
 uci set snort.snort.enabled=1
 uci set snort.snort.manual=0
