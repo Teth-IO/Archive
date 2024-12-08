@@ -66,8 +66,7 @@ a activer sous LuCI
 (attention : le flow offloading n'est pas compatible avec le Smart Queue Management (SQM) pour contrer les bufferbloat)
 
 LuCI :
-Network → Firewall → Software Flow Offloading: enable
-Network → Firewall → Hardware Flow Offloading: enable
+Network → Firewall → Routing/NAT Offloading -> Flow offloading type
 Save and Apply
 
 --[ 4 - Wireless Ethernet Dispatch
@@ -80,7 +79,7 @@ options mt7915e wed_enable=Y
 	
 Save and Reboot
 
-apparaît sous LuCI avec l'image custom sous Network → Firewall → Routing/NAT Offloading
+apparaît sous LuCI avec l'image custom sous Network → Firewall → Routing/NAT Offloading -> Enable WEB
 
 # vérification
 
