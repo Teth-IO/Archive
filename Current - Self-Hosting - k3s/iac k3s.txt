@@ -13,6 +13,10 @@
     1.3 - Flux CD
     1.4 - Helm
     1.5 - stockage
+        1.5.1 - pool mirroir
+        1.5.2 - dataset
+        1.5.3 - snapshot 
+        1.5.4 - timers
     1.6 - renovate
     1.7 - CloudNativePG
     1.8 - redis
@@ -97,12 +101,111 @@ chmod 700 get_helm.sh
 ----[ 1.5 - stockage
 
 longhorn et rook sont du stockage distribuer sous hyperconvergeance
-=> besoin de plusieurs, répartissent les données d'eux mêmes, pas la main sur leur positions
+=> besoin de plusieurs noeuds, répartissent les données d'eux mêmes, pas la main sur leur positions
 n'agira pas comme un remplaçant pour le raid
 
 => zfs toujours dispo, inclus dans les extansions de flatcar
 sanoid et syncoid sont des scripts à skip donc toujours dispo
 migration entre machine facilité avec syncoid
+
+=> voir activation du sysext pour le ZFS
+=> voir ce qu'il en est du future secure boot de flatcar avec le module de kernel
+
+------[ 1.5.1 - pool mirroir
+
+https://jrs-s.net/2018/08/17/zfs-tuning-cheat-sheet/
+
+sudo zpool create -o ashift=12 -O xattr=sa -O compression=lz4 -O atime=off -O recordsize=1M -m /mnt/raid raid mirror /dev/sdb /dev/sdc
+
+# ashift = Ashift tells ZFS what the underlying physical block size your disks use is
+## ashift=12 means 4K sectors (used by most modern hard drives), and ashift=13 means 8K sectors (used by some modern SSDs).
+
+# xattr = Sets Linux eXtended ATTRibutes directly in the inodes, rather than as tiny little files in special hidden folders.
+## This can have a significant performance impact on datasets with lots of files in them, particularly if SELinux is in play.
+
+# compression = Compression defaults to off
+## lz4 plus rapide, zstd compresse davantage
+
+# atime = If atime is on – which it is by default – your system has to update the “Accessed” attribute of every file every time you look at it. 
+## This can easily double the IOPS load on a system all by itself. Ici osef
+
+# recordsize = you want to match the recordsize to the size of the reads or writes you’re going to be digging out of / cramming into those large files.
+## 1M for reading and writing in fairly large chunks (jpeg, movies...)
+=> ne pause pas de pb pour les bdd en terme de cow comme le recodsize du fs est bien supérieurà celui qu'elles utilises
+
+------[ 1.5.2 - dataset
+
+# un pool est volume, afin bénéficier des capacités du fs (cow, checksum, snap...) il faut créer un dataset dans ce pool
+
+sudo zfs create raid/nas
+
+# zfs get all raid/nas pour voir les attribues du pool/dataset
+## sauf indication contraire le dataset hérite des attribues du pool
+
+## dossier accessible sous /mnt/raid/nas
+
+------[ 1.5.3 - snapshot
+
+sudo bash -c 'cat << EOF > /etc/sanoid/sanoid.conf
+[raid/nas]
+	use_template = production
+
+#############################
+# templates below this line #
+#############################
+
+[template_production]
+        frequently = 0
+        hourly = 0
+        daily = 30
+        monthly = 0
+        yearly = 0
+        autosnap = yes
+        autoprune = yes
+EOF
+'
+
+------[ 1.5.4 - timers
+
+# pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
+https://wiki.archlinux.org/title/Systemd/Timers
+
+sudo bash -c 'cat << EOF > /etc/systemd/system/sanoid.service
+[Unit]
+Description=Snapshot ZFS Pool
+Requires=zfs.target
+After=zfs.target
+ConditionFileNotEmpty=/etc/sanoid/sanoid.conf
+
+[Service]
+Environment=TZ=UTC
+Type=oneshot
+ExecStart=/usr/sbin/sanoid
+EOF
+'
+
+sudo bash -c 'cat << EOF > /etc/systemd/system/sanoid.timer
+[Unit]
+Description=Run Sanoid Every 15 Minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+'
+
+sudo systemctl daemon-reload
+sudo systemctl enable sanoid.timer
+sudo systemctl start sanoid.timer
+
+# pour lister les timers 
+systemctl list-timers
+
+# pour lister les snapshot
+zfs list -t snapshot
 
 ----[ 1.6 - renovate
 
