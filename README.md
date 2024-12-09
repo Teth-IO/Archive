@@ -2,9 +2,9 @@
 
 => [slef-hosting sous k3s](./Current%20-%20Self-Hosting%k3s/iac%k3s.txt)
 
-cluster k3s :
+One node cluster k3s :
 - OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
-- stockage : WIP
+- stockage : RAID ZFS
 - hosting sous cluster k3S maintenu en GitOps avec fluc CD
 - maj auto du cluster : WIP
 
