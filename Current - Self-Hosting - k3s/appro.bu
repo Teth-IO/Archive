@@ -15,3 +15,10 @@ storage:
           LOCKSMITHD_REBOOT_WINDOW_START=04:00
           LOCKSMITHD_REBOOT_WINDOW_LENGTH=1h     
       mode: 0420
+  links:
+    - path: /etc/extensions/docker-flatcar.raw
+      target: /dev/null
+      overwrite: true
+    - path: /etc/extensions/containerd-flatcar.raw
+      target: /dev/null
+      overwrite: true

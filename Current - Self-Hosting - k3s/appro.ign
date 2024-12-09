@@ -23,6 +23,18 @@
         },
         "mode": 272
       }
+    ],
+    "links": [
+      {
+        "overwrite": true,
+        "path": "/etc/extensions/docker-flatcar.raw",
+        "target": "/dev/null"
+      },
+      {
+        "overwrite": true,
+        "path": "/etc/extensions/containerd-flatcar.raw",
+        "target": "/dev/null"
+      }
     ]
   }
 }
