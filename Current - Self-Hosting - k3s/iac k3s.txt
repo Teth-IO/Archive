@@ -21,15 +21,15 @@
     1.7 - CloudNativePG
     1.8 - redis
     1.9 - maintenance
-4 - apps
-    4.0 - CA
-    4.1 - Searxng
-    4.2 - owncloud infini scale (oCIS)
-    4.3 - navidrome
-    4.4 - homepage
-    4.5 - paperless-ngx
-    4.6 - calibre-web
-    4.7 - jellyfin
+2 - apps
+    2.0 - CA
+    2.1 - Searxng
+    2.2 - owncloud infini scale (oCIS)
+    2.3 - navidrome
+    2.4 - homepage
+    2.5 - paperless-ngx
+    2.6 - calibre-web
+    2.7 - jellyfin
 
 --[ 0 - Introduction
 
