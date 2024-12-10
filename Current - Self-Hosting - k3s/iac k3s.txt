@@ -234,14 +234,14 @@ a faire
 pour chaque image on peut créer un job de scan, exemple :
 flux create image repository podinfo \
 --image=ghcr.io/stefanprodan/podinfo \
---interval=5m \
---export > ./clusters/my-cluster/podinfo-registry.yaml
+--interval=60m \
+--export > ./podinfo-registry.yaml
 
 # on désigne ensuite la stratégie à utiliser pour filtrer ces tags (que les patch, ques les versions mineurs, inclure les pre-release...)
 flux create image policy podinfo \
 --image-ref=podinfo \
---select-semver=5.0.x \
---export > ./clusters/my-cluster/podinfo-policy.yaml
+--select-semver='>=1.0.0' \
+--export > ./podinfo-policy.yaml
 
 # on créer ensuite imageupdateautomation pour mettre à jour les manifest lors de la detection des nouvelles images
 flux create image update flux-system \
