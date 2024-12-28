@@ -47,6 +47,11 @@ systemctl enable --now fstrim.timer
 
 reboot
 
+!! bien mettre un hostname à la machine
+!! les noeuds sous k8S sont identifier par nom de domaine
+!! si ignoré la machine se l'attribut par dns
+!! risque de récupérer le nom d'un service hebergé, risque de changement de nom de domaine par la suite ce qui entrainer une fausse addition de noeud et une migration des pods
+
 ----[ 1.2 - k3s 
 
 curl -sfL https://get.k3s.io | sh -
