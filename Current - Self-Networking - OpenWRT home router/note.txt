@@ -213,6 +213,8 @@ uci set network.${VPN_IF}.private_key="${VPN_KEY}"
 uci set network.${VPN_IF}.listen_port="${VPN_PORT}"
 uci add_list network.${VPN_IF}.addresses="${VPN_ADDR}"
 uci add_list network.${VPN_IF}.addresses="${VPN_ADDR6}"
+uci commit network
+service network restart
 
 # configuration
 
