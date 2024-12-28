@@ -62,14 +62,15 @@ service uhttpd reload
 déjà installer par l'image custom
 a activer sous LuCI
 
---[ 3 - Hardware Flow Offloading
+sinon 
+apk add irqbalance luci-app-irqbalance
+
+--[ 3 - Hardware Flow Offloading & Wireless Ethernet Dispatch
 (attention : le flow offloading n'est pas compatible avec le Smart Queue Management (SQM) pour contrer les bufferbloat)
 
 LuCI :
 Network → Firewall → Routing/NAT Offloading -> Flow offloading type
 Save and Apply
-
---[ 4 - Wireless Ethernet Dispatch
 
 par SSH pour l'image standard (pas dans LuCI): 
 
@@ -79,21 +80,26 @@ options mt7915e wed_enable=Y
 	
 Save and Reboot
 
-apparaît sous LuCI avec l'image custom sous Network → Firewall → Routing/NAT Offloading -> Enable WEB
-
 # vérification
 
 cat /sys/module/mt7915e/parameters/wed_enable
 
+# reinstall : Luci ne veut pas le valider
+
 --[ 5 - Wifi
 
-Change wifi country code :
-
 In LuCI go to Network → Wireless
-Click “Edit” on the SSID you want to enable
-Click “Advanced Settings” tab
+# Device general setup
+mode AX channel auto width max
+enable iBF
 Select your “Country Code” from the dropdown
-Save and Apply
+
+# Inerface general setup
+ESSID & network
+disable WMM
+
+# wireless security
+wpa3-sae semble ok
 
 --[ 6 - recup ipv6
 https://openwrt.org/fr/docs/guide-user/network/ipv6/freebox
@@ -107,9 +113,13 @@ https://lafibre.info/remplacer-freebox/freebox-delta-pop-mode-bridge-onpsense-fr
 sur la freebox mettre en next-hop l'adresse de lien locale de l'interface wan6 d'openwrt (attention a ne pas se tomper d'eth)
 sur OpenWRT mettre le prefix routé IPv6 (pas dispo sur l'interface web de base) :
 
-uci delete network.wan6.ip6prefix
-uci add_list network.wan6.ip6prefix='prefix::/64'
-uci commit
+aller dans network, interfaces, wan6, cliquer sur edit.
+General Settings, Protocol, mettre Static adress puis cliquer sur switch protocol.
+mettre IPv6 assignment length sur disabled.
+mettre IPv6 adress à 2a01:xxxx:xxxx:xxxx::2 (la Freebox se mettra d'elle même en 2a01:xxxx:xxxx:xxxx::1)
+mettre gateway avec l'adresse de lien IPv6 de la freebox de type fe80::xxxx:xxxx:xxxx:xxxx.
+mettre l'IPv6 routed prefix 2a01:xxxx:xxxx:xxxx::/64
+valider.
 
 l'interface wan6 n'a aucune ipv6 publique et aucune gateway, seule l'IPv6-PD est du coup remplie
 
@@ -119,6 +129,7 @@ Advanced Settingd :
 	IPv6 assignment length : 64
 	IPv6 prefix filter : wan6
 	IPv6 suffix : suffix a donner a l'interace
+    # normelament osef
 DHCP server :
 	Advanced settings :
 		DHCP-Options : 6,192.168.1.1 -> dnscrypt-proxy
@@ -129,9 +140,6 @@ DHCP server :
 		NDP-Proxy : disabled
 	IPv6 RA Settings :
 		default router : forced
-	
-aussi :
-modifier les dns par défaut de wan pour ne pas rester sur ceux du FAI
 
 ----[ 6.3 - Routage statique pour ipv6
 
@@ -149,7 +157,7 @@ Install the required packages. Specify configuration parameters for VPN server.
 
 # Install packages
 apk update
-apk install wireguard-tools luci-proto-wireguard qrencode
+apk add wireguard-tools luci-proto-wireguard qrencode
 
 # Configuration parameters
 VPN_IF="vpn"
@@ -233,16 +241,18 @@ https://github.com/DNSCrypt/dnscrypt-proxy/wiki/Installation-on-OpenWrt
 
 # install
 apk update
-apk install dnscrypt-proxy2
+apk add dnscrypt-proxy2
 uci add_list dhcp.@dnsmasq[0].server='127.0.0.53'
 uci commit dhcp
 /etc/init.d/dnsmasq restart
+
+-> ajouter aussi un forward '::53'
 
 # config, que doh pour l'ECH (ne marche pas sous odoh)
 # edit /etc/dnscrypt-proxy2/dnscrypt-proxy.toml
 ------
 ...
-listen_address = ['127.0.0.53:53']
+listen_address = ['127.0.0.53:53', '[::53]:53']
 ...
 ipv6_servers = true
 dnscrypt_servers = false
@@ -273,14 +283,49 @@ config redirect
     option dest_port '53'
     option target 'DNAT'
 
+/etc/init.d/dnscrypt-proxy restart
+
 # test d'ECH :
 https://defo.ie/ech-check.php
 https://tls-ech.dev/
 
+restart 
+# test l'ipv6 vers dnscrypt
+
+--[ record dns
+
+config domain
+        option name 'homepage.lan'
+        option ip '192.168.1.200'
+
+config domain
+        option name 'searxng.lan'
+        option ip '192.168.1.200'
+
+config domain
+        option name 'owncloud.lan'
+        option ip '192.168.1.200'
+
+config domain
+        option name 'mytube.lan'
+        option ip '192.168.1.200'
+
+config domain
+        option name 'paperless.lan'
+        option ip '192.168.1.200'
+
+config domain
+        option name 'calibre.lan'
+        option ip '192.168.1.200'
+
+config domain
+        option name 'jellyfin.lan'
+        option ip '192.168.1.200'
+
 --[ config RPG pour homepage
 
 apk update
-apk install uhttpd-mod-ubus
+apk add uhttpd-mod-ubus
 cat << EOF > /usr/share/rpcd/acl.d/homepage.json
 {
   "homepage": {
@@ -339,4 +384,3 @@ snort-rules --testing
 
 
 +-[ EOF ]=----------------------------------------------------------------+
-
