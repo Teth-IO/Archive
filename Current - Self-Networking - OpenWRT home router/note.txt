@@ -179,11 +179,7 @@ wg genpsk > wgclient.psk
 
 # Server private key
 VPN_KEY="$(cat wgserver.key)"
-
-# Pre-shared key
 VPN_PSK="$(cat wgclient.psk)"
-
-# Client public key
 VPN_PUB="$(cat wgclient.pub)"
 
 ## Firewall
@@ -217,16 +213,6 @@ uci set network.${VPN_IF}.private_key="${VPN_KEY}"
 uci set network.${VPN_IF}.listen_port="${VPN_PORT}"
 uci add_list network.${VPN_IF}.addresses="${VPN_ADDR}"
 uci add_list network.${VPN_IF}.addresses="${VPN_ADDR6}"
-
-# Add VPN peers
-uci -q delete network.wgclient
-uci set network.wgclient="wireguard_${VPN_IF}"
-uci set network.wgclient.public_key="${VPN_PUB}"
-uci set network.wgclient.preshared_key="${VPN_PSK}"
-uci add_list network.wgclient.allowed_ips="${VPN_ADDR%.*}.2/32"
-uci add_list network.wgclient.allowed_ips="${VPN_ADDR6%:*}:2/128"
-uci commit network
-service network restart
 
 # configuration
 
