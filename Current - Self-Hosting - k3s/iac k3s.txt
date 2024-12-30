@@ -15,10 +15,15 @@
     1.5 - stockage
         1.5.1 - pool mirroir
         1.5.2 - dataset
-        1.5.3 - snapshot 
-        1.5.4 - timers
+        1.5.3 - snapshot
+		1.5.3.1 - service et timer
+        1.5.4 - backup
+		1.5.4.1 - service et timer
     1.6 - redis
     1.7 - maintenance
+	1.7.1 - des pods avec flux
+	1.7.2 - du cluster
+		
 2 - apps
     2.0 - CA
     2.1 - Searxng
@@ -168,7 +173,7 @@ sudo bash -c 'cat << EOF > /etc/sanoid/sanoid.conf
 EOF
 '
 
-------[ 1.5.4 - timers
+------[ 1.5.3.1 - service et timer
 
 # pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
 https://wiki.archlinux.org/title/Systemd/Timers
@@ -210,6 +215,52 @@ systemctl list-timers
 # pour lister les snapshot
 zfs list -t snapshot
 
+------[ 1.5.4 - backup
+
+restic vers s3
+passage vers glacier si coute trop chère
+
+céer un compte de service restic sur aws avec les bonnes stratégie
+https://restic.readthedocs.io/en/latest/080_examples.html
+
+besoins des variables :
+export AWS_DEFAULT_REGION="eu-west-3"
+export RESTIC_REPOSITORY="s3:s3.eu-west-3.amazonaws.com/reponame"
+export AWS_ACCESS_KEY_ID="redacted"
+export AWS_SECRET_ACCESS_KEY="redacted"
+export RESTIC_PASSWORD="redacted"
+
+# initie le dépot
+restic init
+
+# première backup
+restic backup /mnt/raid/nas/
+
+--------[ 1.5.4.1 - service et timer
+
+=> à automatiser
+=> pruning des vieilles snapshots
+
+cat << EOF > backup.sh
+#!/bin/bash
+export AWS_DEFAULT_REGION="eu-west-3"
+export RESTIC_REPOSITORY="s3:s3.eu-west-3.amazonaws.com/reponame"
+export AWS_ACCESS_KEY_ID="redacted"
+export AWS_SECRET_ACCESS_KEY="redacted"
+export RESTIC_PASSWORD="redacted"
+/home/core/restic backup /mnt/raid/nas/
+/home/core/restic forget --keep-last 10
+/home/core/restic prune
+EOF
+
+cat << EOF > /etc/systemd/system/restic.service
+
+EOF
+
+cat << EOF > /etc/systemd/system/restic.timer
+
+EOF
+
 ----[ 1.6 - redis
 
 # dragonfly de dispo en remplacement de redis mais ne marche pas.
@@ -250,6 +301,7 @@ flux create image update flux-system \
 => PB sur certain semver
 => en pratique mettre les tags en latest fonctionne pour une maj auto hors job d'automation
 	=> à cause du redémarrage ?
+	=> sinon voir renovate
 
 ------[ 1.7.2 - du cluster
 
@@ -262,6 +314,7 @@ mettre en latest
 
 => en pratique mettre les tags en latest fonctionne pour une maj auto hors job d'automation
 	=> à cause du redémarrage ?
+	=> sinon voir renovate
 
 --[ 2 - apps
 
