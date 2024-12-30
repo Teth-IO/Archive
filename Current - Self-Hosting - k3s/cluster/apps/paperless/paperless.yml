@@ -8,20 +8,58 @@ data:
   username: YWRtaW4=
   password: mdp en base 64
 ---
-apiVersion: postgresql.cnpg.io/v1
-kind: Cluster
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-paperless
+  namespace: default
+  labels:
+    app: pg-paperless
+spec:
+  selector:
+    matchLabels:
+      app: pg-paperless
+  template:
+    metadata:
+      labels:
+        app: pg-paperless
+    spec:
+      containers:
+      - name: pg-paperless
+        image: docker.io/postgres:latest
+        env:
+        - name: POSTGRES_DB
+          value: "paperless"
+        - name: POSTGRES_USER
+          value: "admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: paperless-db-secret
+              key: password
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+          - name: pgdata
+            mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: pgdata
+          hostPath:
+            path: /mnt/raid/nas/pg/pgdata
+---
+apiVersion: v1
+kind: Service
 metadata:
   namespace: default
-  name: paperless-db
+  name: pg-paperless
+  labels:
+    service: pg-paperless
 spec:
-  bootstrap:
-    initdb:
-      database: paperless
-      owner: admin
-      secret:
-        name: paperless-db-secret
-  storage:
-    size: 1Gi
+  selector:
+    app: pg-paperless
+  ports:
+    - port: 5432
+      targetPort: 5432
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,7 +84,7 @@ spec:
         - name: PAPERLESS_REDIS
           value: "redis://redis:6379"
         - name: PAPERLESS_DBHOST
-          value: "paperless-db-rw"
+          value: "pg-paperless"
         - name: PAPERLESS_DBUSER
           value: "admin"
         - name: PAPERLESS_PORT
