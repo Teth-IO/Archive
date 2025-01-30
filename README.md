@@ -1,6 +1,6 @@
 -------------------------------------- current infra -------------------------------------- <br />
 
-=> [slef-hosting sous k3s](./Current%20-%20Self-Hosting%k3s/iac%k3s.txt)
+=> [slef-hosting sous k3s](./Current%20-%20Self-Hosting%k3s/notes.txt)
 
 One node cluster k3s :
 - OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
