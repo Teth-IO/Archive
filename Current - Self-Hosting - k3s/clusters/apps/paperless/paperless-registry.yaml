@@ -2,8 +2,8 @@
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageRepository
 metadata:
-  name: owncloud
+  name: paperless
   namespace: flux-system
 spec:
-  image: docker.io/owncloud/ocis
+  image: ghcr.io/paperless-ngx/paperless-ngx
   interval: 1h0m0s

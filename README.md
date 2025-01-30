@@ -4,17 +4,10 @@
 
 One node cluster k3s :
 - OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
-- stockage : RAID ZFS
+- stockage : RAID ZFS avec snapshot (sanoid) et backup (restic vers S3)
 - hosting sous cluster k3S maintenu en GitOps avec fluc CD
-- maj auto du cluster : WIP
-
-=> [OpenWRT IPS & home router](./Current%20-%20Self-Networking%20-%20OpenWRT%20home%20router/note.txt)
-
-Config d'OpenWRT en home router et IPS :
-- Recup de la delegation de prefixe IPv6
-- acceleration materielle (HFO + WED) + irqbalance
-- DNScrypt-proxy pour DOH + règle de redirection des requetes dns pour enforcing
-- wireguard
+- maj auto : server, cluster et pods
+- tailscale pour accès nomade
 
 -------------------------------------- diverses install --------------------------------------
 
@@ -49,6 +42,17 @@ Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScryp
 - DNScrypt Proxy
 - DoH (pour ECH) + DNSSEC + non-logging et non-blocking
 - IPv6 statique
+</details>
+
+<details>
+<summary><b> OpenWRT home router </b></summary>
+
+Config d'OpenWRT en home router et IPS :
+- Recup de la delegation de prefixe IPv6
+- acceleration materielle (HFO + WED) + irqbalance
+- DNScrypt-proxy pour DOH + règle de redirection des requetes dns pour enforcing
+- wireguard
+- test snort en inline
 </details>
  
 => [Self-Hosting](./ZZold%20-%20Self-Hosting/)

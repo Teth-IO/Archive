@@ -5,8 +5,8 @@ metadata:
   name: paperless-db-secret
 type: kubernetes.io/basic-auth
 data:
-  username: YWRtaW4=
-  password: mdp en base 64
+  username: redacted
+  password: redacted
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,14 +38,14 @@ spec:
               name: paperless-db-secret
               key: password
         ports:
-          - containerPort: 5432
+        - containerPort: 5432
         volumeMounts:
-          - name: pgdata
-            mountPath: /var/lib/postgresql/data
-      volumes:
         - name: pgdata
-          hostPath:
-            path: /mnt/raid/nas/pg/pgdata
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: pgdata
+        hostPath:
+          path: /mnt/raid/nas/pg/paperless
 ---
 apiVersion: v1
 kind: Service
@@ -79,7 +79,7 @@ spec:
     spec:
       containers:
       - name: paperless
-        image: ghcr.io/paperless-ngx/paperless-ngx:2.13.5 # {"$imagepolicy": "flux-system:paperless"}
+        image: ghcr.io/paperless-ngx/paperless-ngx:2.14.6 # {"$imagepolicy": "flux-system:paperless"}
         env:
         - name: PAPERLESS_REDIS
           value: "redis://redis:6379"
@@ -102,33 +102,33 @@ spec:
               name: paperless-db-secret
               key: password
         volumeMounts:
-          - name: data-paperless
-            mountPath: /usr/src/paperless/data
-          - name: media-paperless
-            mountPath: /usr/src/paperless/media
-          - name: export-paperless
-            mountPath: /usr/src/paperless/export
-          - name: consume-paperless
-            mountPath: /usr/src/paperless/consume
-          - name: ca-bundle
-            mountPath: /usr/src/paperless/lan.pem
-            subPath: lan.pem
-      volumes:
         - name: data-paperless
-          hostPath:
-            path: /mnt/raid/nas/paperless/data
+          mountPath: /usr/src/paperless/data
         - name: media-paperless
-          hostPath:
-            path: /mnt/raid/nas/paperless/media
+          mountPath: /usr/src/paperless/media
         - name: export-paperless
-          hostPath:
-            path: /mnt/raid/nas/paperless/export
+          mountPath: /usr/src/paperless/export
         - name: consume-paperless
-          hostPath:
-            path: /mnt/raid/nas/paperless/consume
+          mountPath: /usr/src/paperless/consume
         - name: ca-bundle
-          hostPath: 
-            path: /mnt/raid/nas/ssl
+          mountPath: /usr/src/paperless/lan.pem
+          subPath: lan.pem
+      volumes:
+      - name: data-paperless
+        hostPath:
+          path: /mnt/raid/nas/paperless/data
+      - name: media-paperless
+        hostPath:
+          path: /mnt/raid/nas/paperless/media
+      - name: export-paperless
+        hostPath:
+          path: /mnt/raid/nas/paperless/export
+      - name: consume-paperless
+        hostPath:
+          path: /mnt/raid/nas/paperless/consume
+      - name: ca-bundle
+        hostPath:
+          path: /mnt/raid/nas/ssl
 ---
 apiVersion: v1
 kind: Service
@@ -153,11 +153,11 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - kind: Rule
-    match: Host(`paperless.lan`)
-    services:
-      - kind: Service
-        name: paperless
-        port: 8000
+    - kind: Rule
+      match: Host(`paperless.lan`)
+      services:
+        - kind: Service
+          name: paperless
+          port: 8000
   tls:
     secretName: paperless-secret

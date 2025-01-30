@@ -8,28 +8,29 @@
 
 0 - Introduction
 1 - Installation
-    1.1 - flatcar
+    1.1 - rebase uCore
     1.2 - k3s
     1.3 - Flux CD
     1.4 - Helm
     1.5 - stockage
-        1.5.1 - pool mirroir
-        1.5.2 - dataset
-        1.5.3 - snapshot
-		1.5.3.1 - service et timer
-        1.5.4 - backup
-		1.5.4.1 - service et timer
+        1.5.1 - SecureBoot avec kmod ZFS
+        1.5.2 - pool mirroir
+        1.5.3 - dataset
+        1.5.4 - snapshot 
+            1.5.4.1 - service et timer
+        1.5.5 - backup
+            1.5.5.1 - service et timer
     1.6 - redis
     1.7 - maintenance
-	1.7.1 - des pods avec flux
-	1.7.2 - du cluster
-		
+        1.7.1 - du server en maj auto
+        1.7.2 - des pods avec flux
+        1.7.3 - du cluster
 2 - apps
-    2.0 - CA
+    2.0 - Certificat Authority
     2.1 - Searxng
     2.2 - owncloud infini scale (oCIS)
     2.3 - navidrome
-    2.4 - homepage
+    2.4 - headlamp
     2.5 - paperless-ngx
     2.6 - calibre-web
     2.7 - jellyfin
@@ -38,24 +39,33 @@
 
 --[ 1 - installation
 
-----[ 1.1 - flatcar
+core os rebase en ucore
+uCore car install k3s fonctionnel en une commande
+comprend sanoid et tailscale par défaut
+zfs avec secureboot
+
+----[ 1.1 - rebase ucore
+
+# créer un fichier butane qui comprend =  clef ssh, conf réseaux, maj et reboot auto + rebase uCore en stable-zfs
+-> https://github.com/ublue-os/ucore?tab=readme-ov-file#auto-rebase-install + https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/
+butane --pretty --strict .\truc.bu > .\truc.ign
 
 wget le fichier ignition
-flatcar-install -d /dev/sda -i ignition.json
-
-première co :
-
-systemctl enable --now fstrim.timer
-/etc/selinux/config -> enforcing
-
-reboot
+sudo coreos-installer install /dev/sda --ignition-file /truc.ign
 
 !! bien mettre un hostname à la machine
+=> à spec dans ign
 !! les noeuds sous k8S sont identifier par nom de domaine
 !! si ignoré la machine se l'attribut par dns
 !! risque de récupérer le nom d'un service hebergé, risque de changement de nom de domaine par la suite ce qui entrainer une fausse addition de noeud et une migration des pods
 
-----[ 1.2 - k3s 
+!! dns, les app peuvent vouloir résoudre leur hostname (surtout owncloud)
+pb kube-dns ignore le fichier hosts et ici on utilise nextdns (plus de serveur dns interne à l'infra) qui marche que sur DOH
+
+tailscale up
+tailscale ip = 100.102.192.19
+
+----[ 1.2 - k3s
 
 curl -sfL https://get.k3s.io | sh -
 
@@ -63,6 +73,18 @@ curl -sfL https://get.k3s.io | sh -
 # traefik peut utiliser une custom resource definition (CRD), l'ingressroute
 
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# doit modif les infos tls du cert pour autoriser les co depuis l'int tailscale
+
+cat << EOF > /etc/rancher/k3s/config.yaml
+tls-san: 
+  - 100.102.192.19
+EOF
+
+kubectl -n kube-system delete secrets/k3s-serving
+mv /var/lib/rancher/k3s/server/tls/dynamic-cert.json /tmp/dynamic-cert.json
+
+systemctl restart k3s
 
 ----[ 1.3 - FluxCD
 
@@ -119,7 +141,14 @@ migration entre machine facilité avec syncoid
 => voir activation du sysext pour le ZFS
 => voir ce qu'il en est du future secure boot de flatcar avec le module de kernel
 
-------[ 1.5.1 - pool mirroir
+------[ 1.5.1 - SecureBoot avec kmod ZFS
+
+# ZFS ne marchera pas par défaut sous secureboot avant d'avoir importer la clef publique en machine-owner key (MOK)
+
+sudo mokutil --import /etc/pki/akmods/certs/akmods-ublue.der
+-> demande de saisir un mot de passe, sera demander au prochain démarrage pour enregistrer la MOK
+
+------[ 1.5.2 - pool mirroir
 
 https://jrs-s.net/2018/08/17/zfs-tuning-cheat-sheet/
 
@@ -141,7 +170,7 @@ sudo zpool create -o ashift=12 -O xattr=sa -O compression=lz4 -O atime=off -O re
 ## 1M for reading and writing in fairly large chunks (jpeg, movies...)
 => ne pause pas de pb pour les bdd en terme de cow comme le recodsize du fs est bien supérieurà celui qu'elles utilises
 
-------[ 1.5.2 - dataset
+------[ 1.5.3 - dataset
 
 # un pool est volume, afin bénéficier des capacités du fs (cow, checksum, snap...) il faut créer un dataset dans ce pool
 
@@ -152,9 +181,9 @@ sudo zfs create raid/nas
 
 ## dossier accessible sous /mnt/raid/nas
 
-------[ 1.5.3 - snapshot
+------[ 1.5.4 - snapshot
 
-sudo bash -c 'cat << EOF > /etc/sanoid/sanoid.conf
+cat << EOF > /etc/sanoid/sanoid.conf
 [raid/nas]
 	use_template = production
 
@@ -171,14 +200,13 @@ sudo bash -c 'cat << EOF > /etc/sanoid/sanoid.conf
         autosnap = yes
         autoprune = yes
 EOF
-'
 
-------[ 1.5.3.1 - service et timer
+--------[ 1.5.4.1 - service et timer
 
 # pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
 https://wiki.archlinux.org/title/Systemd/Timers
 
-sudo bash -c 'cat << EOF > /etc/systemd/system/sanoid.service
+cat << EOF > /etc/systemd/system/sanoid.service
 [Unit]
 Description=Snapshot ZFS Pool
 Requires=zfs.target
@@ -190,9 +218,8 @@ Environment=TZ=UTC
 Type=oneshot
 ExecStart=/usr/sbin/sanoid
 EOF
-'
 
-sudo bash -c 'cat << EOF > /etc/systemd/system/sanoid.timer
+cat << EOF > /etc/systemd/system/sanoid.timer
 [Unit]
 Description=Run Sanoid Every 15 Minutes
 
@@ -203,11 +230,10 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
-'
 
-sudo systemctl daemon-reload
-sudo systemctl enable sanoid.timer
-sudo systemctl start sanoid.timer
+systemctl daemon-reload
+systemctl enable sanoid.timer
+systemctl start sanoid.timer
 
 # pour lister les timers 
 systemctl list-timers
@@ -215,7 +241,7 @@ systemctl list-timers
 # pour lister les snapshot
 zfs list -t snapshot
 
-------[ 1.5.4 - backup
+------[ 1.5.5 - backup
 
 restic vers s3
 passage vers glacier si coute trop chère
@@ -223,9 +249,8 @@ passage vers glacier si coute trop chère
 céer un compte de service restic sur aws avec les bonnes stratégie
 https://restic.readthedocs.io/en/latest/080_examples.html
 
-besoins des variables :
-export AWS_DEFAULT_REGION="eu-west-3"
-export RESTIC_REPOSITORY="s3:s3.eu-west-3.amazonaws.com/reponame"
+export AWS_DEFAULT_REGION="redacted"
+export RESTIC_REPOSITORY="redacted"
 export AWS_ACCESS_KEY_ID="redacted"
 export AWS_SECRET_ACCESS_KEY="redacted"
 export RESTIC_PASSWORD="redacted"
@@ -236,17 +261,16 @@ restic init
 # première backup
 restic backup /mnt/raid/nas/
 
---------[ 1.5.4.1 - service et timer
+--------[ 1.5.5.1 - service et timer
 
 => à automatiser
-=> pruning des vieilles snapshots
 
 cat << EOF > backup.sh
 #!/bin/bash
-export AWS_DEFAULT_REGION="eu-west-3"
-export RESTIC_REPOSITORY="s3:s3.eu-west-3.amazonaws.com/reponame"
+export AWS_DEFAULT_REGION="redacted"
+export RESTIC_REPOSITORY="redacted"
 export AWS_ACCESS_KEY_ID="redacted"
-export AWS_SECRET_ACCESS_KEY="redacted"
+export AWS_SECRET_ACCESS_KEY="redacted
 export RESTIC_PASSWORD="redacted"
 /home/core/restic backup /mnt/raid/nas/
 /home/core/restic forget --keep-last 10
@@ -265,16 +289,59 @@ EOF
 
 # dragonfly de dispo en remplacement de redis mais ne marche pas.
 # pb de hardware ?
-# à l'inverse des bdd ici en monolithique comme dragonfly ne traite aucune donnée critique
+# à l'inverse de postgres ici en monolithique comme dragonfly ne traite aucune donnée critique
 # operateur de dispo mais osef du HA
 
-=> restester dragonfly sur un autre cpu
+# dragonfly semble mieux mais pb avec le cpu
 
 ----[ 1.7 - maintenance
 
-------[ 1.7.1 - des pods avec flux
+------[ 1.7.1 - du serveur sous maj auto
 
-pour chaque image on peut créer un job de scan, exemple :
+systemctl edit --force --full rpm-ostreed-upgrade-reboot.service
+
+'
+# workaround for missing reboot policy
+# https://github.com/coreos/rpm-ostree/issues/2843
+[Unit]
+Description=rpm-ostree upgrade and reboot
+ConditionPathExists=/run/ostree-booted
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rpm-ostree upgrade --reboot
+#StandardOutput=null
+Restart=always
+RestartSec=60s
+'
+
+cat << EOF > /etc/systemd/system/rpm-ostreed-upgrade-reboot.timer
+[Unit]
+Description=rpm-ostree upgrade and reboot trigger
+ConditionPathExists=/run/ostree-booted
+
+[Timer]
+OnCalendar=*-*-* 4:00:00
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable rpm-ostreed-upgrade-reboot.timer
+systemctl start rpm-ostreed-upgrade-reboot.timer
+
+reboot
+
+------[ 1.7.1 - des pods
+
+images en latest
+=> marche pour certaines dépôt (quay, docker)
+flux image update automation pour le reste (ghcr)
+=> ne marche que sur du semver
+
+## flux image update automation
+# pour chaque image on peut créer un job de scan, exemple :
 flux create image repository podinfo \
 --image=ghcr.io/stefanprodan/podinfo \
 --interval=60m \
@@ -298,10 +365,9 @@ flux create image update flux-system \
 --commit-template="{{range .Changed.Changes}}{{print .OldValue}} -> {{println .NewValue}}{{end}}" \
 --export > ./flux-system-automation.yaml
 
-=> PB sur certain semver
-=> en pratique mettre les tags en latest fonctionne pour une maj auto hors job d'automation
-	=> à cause du redémarrage ?
-	=> sinon voir renovate
+
+voir rennovate si besoin
+https://www.mend.io/renovate/
 
 ------[ 1.7.2 - du cluster
 
@@ -311,10 +377,6 @@ https://docs.k3s.io/upgrades
 prendre les plans server et agents
 remplacer version par le channel field
 mettre en latest
-
-=> en pratique mettre les tags en latest fonctionne pour une maj auto hors job d'automation
-	=> à cause du redémarrage ?
-	=> sinon voir renovate
 
 --[ 2 - apps
 
@@ -328,8 +390,13 @@ openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj
 
 ----[ 2.1 - searxng
 
+# créer la clef privé du website
 openssl genrsa -out searxng.lan.key 4096
+
+# créer le csr (common name = server hostname = homepage.lan)
 openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
+
+# extension X509 V3
 cat << EOF > searxng.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -339,20 +406,22 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = searxng.lan
 EOF
+
+# le certificat final
 openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
 
-secret :
+# le secret :
 sudo kubectl create secret tls searxng-secret \
   --cert=./searxng.lan.crt \
   --key=./searxng.lan.key
 
 ----[ 2.2 - ocis
 
-# pour nouveau déploiement voir installation officielle avec helm
-
 openssl genrsa -out owncloud.lan.key 4096
+
 openssl req -new -key owncloud.lan.key -out owncloud.lan.csr  -subj "/CN=owncloud.lan"
+
 cat << EOF > owncloud.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -362,21 +431,20 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = owncloud.lan
 EOF
+
 openssl x509 -req -in owncloud.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out owncloud.lan.crt -days 3650 -sha256 -extfile owncloud.lan.ext
 
-secret :
 sudo kubectl create secret tls owncloud-secret \
   --cert=./owncloud.lan.crt \
   --key=./owncloud.lan.key
 
 ----[ 2.3 - navidrome
 
-# pas d'oidc a cause de l'api subsonic
-https://github.com/navidrome/navidrome/issues/858
-
 openssl genrsa -out mytube.lan.key 4096
+
 openssl req -new -key mytube.lan.key -out mytube.lan.csr  -subj "/CN=mytube.lan"
+
 cat << EOF > mytube.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -386,21 +454,20 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = mytube.lan
 EOF
+
 openssl x509 -req -in mytube.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out mytube.lan.crt -days 3650 -sha256 -extfile mytube.lan.ext
 
-secret :
 sudo kubectl create secret tls navidrome-secret \
   --cert=./mytube.lan.crt \
   --key=./mytube.lan.key
 
-----[ 2.4 - homepage
+----[ 2.4 - headlamp
 
-# créer la clef privé du website
 openssl genrsa -out homepage.lan.key 4096
-# créer le csr (common name = server hostname = homepage.lan)
+
 openssl req -new -key homepage.lan.key -out homepage.lan.csr -subj "/CN=homepage.lan"
-# extension X509 V3
+
 cat << EOF > homepage.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -410,22 +477,23 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = homepage.lan
 EOF
-# le certificat final
+
 openssl x509 -req -in homepage.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out homepage.lan.crt -days 3650 -sha256 -extfile homepage.lan.ext
 
-secret :
 sudo kubectl create secret tls homepage-secret \
   --cert=./homepage.lan.crt \
   --key=./homepage.lan.key
 
+# créer le compte de service
+https://headlamp.dev/docs/latest/installation/#create-a-service-account-token
+
 ----[ 2.5 - paperless-ngx
 
-# créer la clef privé du website
 openssl genrsa -out paperless.lan.key 4096
-# créer le csr (common name = server hostname = paperless.lan)
+
 openssl req -new -key paperless.lan.key -out paperless.lan.csr -subj "/CN=paperless.lan"
-# extension X509 V3
+
 cat << EOF > paperless.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -435,28 +503,23 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = paperless.lan
 EOF
-# le certificat final
+
 openssl x509 -req -in paperless.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out paperless.lan.crt -days 3650 -sha256 -extfile paperless.lan.ext
 
-secret :
 sudo kubectl create secret tls paperless-secret \
   --cert=./paperless.lan.crt \
   --key=./paperless.lan.key
 
 # créer le compte admin
 python3 manage.py createsuperuser
-=> une fois connecter au compte admin le connecter au compte social keycloak
-
-# bdd postgres sans rien de spécial car data en hostpath
 
 ----[ 2.6 - calibre-web-automated
 
-# créer la clef privé du website
 openssl genrsa -out calibre.lan.key 4096
-# créer le csr (common name = server hostname = calibre.lan)
+
 openssl req -new -key calibre.lan.key -out calibre.lan.csr -subj "/CN=calibre.lan"
-# extension X509 V3
+
 cat << EOF > calibre.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -466,21 +529,20 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = calibre.lan
 EOF
-# le certificat final
+
 openssl x509 -req -in calibre.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out calibre.lan.crt -days 3650 -sha256 -extfile calibre.lan.ext
 
-secret :
 sudo kubectl create secret tls calibre-secret \
   --cert=./calibre.lan.crt \
   --key=./calibre.lan.key
 
 ----{ 2.7 - jellyfin
 
-=> consomme max cpu
-
 openssl genrsa -out jellyfin.lan.key 4096
+
 openssl req -new -key jellyfin.lan.key -out jellyfin.lan.csr  -subj "/CN=jellyfin.lan"
+
 cat << EOF > jellyfin.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -490,10 +552,35 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = jellyfin.lan
 EOF
+
 openssl x509 -req -in jellyfin.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out jellyfin.lan.crt -days 3650 -sha256 -extfile jellyfin.lan.ext
 
-secret :
 sudo kubectl create secret tls jellyfin-secret \
   --cert=./jellyfin.lan.crt \
   --key=./jellyfin.lan.key
+
+----------------- notes
+
+logs :
+sudo kubectl logs pod-name
+
+shell :
+sudo kubectl exec --stdin --tty pod -- /bin/sh
+
+# toutes les ressources
+kubectl get 
+
+# voir le détails des tag d'images observé
+kubectl -n flux-system describe imagerepositories searxng
+
+# voir le status du traking des images
+flux get images all --all-namespaces
+
+# debug les reconciliation
+flux get ks
+
+flux reconcile kustomization flux-system --with-source
+
+=> pb de node unschedulable
+kubectl patch nodes searxng.lan --patch '{"spec":{"unschedulable": false}}'

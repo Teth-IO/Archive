@@ -14,9 +14,13 @@ spec:
       labels:
         app: owncloud
     spec:
+      hostAliases:
+      - ip: "192.168.1.200"
+        hostnames:
+          - "owncloud.lan"
       containers:
         - name: owncloud
-          image: docker.io/owncloud/ocis:5.0.9 # {"$imagepolicy": "flux-system:owncloud"}
+          image: docker.io/owncloud/ocis:latest
           ports:
             - containerPort: 9200
           env:
@@ -62,11 +66,11 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - kind: Rule
-    match: Host(`owncloud.lan`)
-    services:
-      - kind: Service
-        name: owncloud
-        port: 9200
+    - kind: Rule
+      match: Host(`owncloud.lan`)
+      services:
+        - kind: Service
+          name: owncloud
+          port: 9200
   tls:
     secretName: owncloud-secret

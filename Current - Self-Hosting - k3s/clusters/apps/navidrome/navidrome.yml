@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: navidrome
-          image: docker.io/deluan/navidrome:0.53.3 # {"$imagepolicy": "flux-system:navidrome"}
+          image: docker.io/deluan/navidrome:latest
           ports:
             - containerPort: 4533
           volumeMounts:
@@ -55,11 +55,11 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - kind: Rule
-    match: Host(`mytube.lan`)
-    services:
-      - kind: Service
-        name: navidrome
-        port: 4533
+    - kind: Rule
+      match: Host(`mytube.lan`)
+      services:
+        - kind: Service
+          name: navidrome
+          port: 4533
   tls:
     secretName: navidrome-secret
