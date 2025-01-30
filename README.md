@@ -5,7 +5,7 @@
 One node cluster k3s :
 - OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
 - stockage : RAID ZFS avec snapshot (sanoid) et backup (restic vers S3)
-- hosting sous cluster k3S maintenu en GitOps avec fluc CD
+- hosting sous cluster k3S maintenu en GitOps avec flux CD
 - maj auto : server, cluster et pods
 - tailscale pour accès nomade
 
@@ -23,18 +23,7 @@ One node cluster k3s :
 => [Self-Network](./ZZold%20-%20Self-Networking/)
 
 <details>
-<summary><b> OpenWrt no box </b></summary>
-
-Remplacement de la freebox mini 4k par OpenWrt sur un Mikrotik hEX s.
-Internet en dual stack fonctionnel.
-Une fois les interfaces fonctionnels il n'y a que quelques ajustements à faire :
-- routage static vers la wan pour l'IPv4 (l'IPv6 marche sans)
-- inclure wan4 dans la zone wan du pare-feu
-- une option dans les DHCP pour ajouter les DNS interne
-</details>
-
-<details>
-<summary><b> raspberrypi-hole </b></summary>
+<summary><b> 1 raspberrypi-hole </b></summary>
 
 Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScrypt Proxy :
 - Zram
@@ -45,7 +34,18 @@ Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScryp
 </details>
 
 <details>
-<summary><b> OpenWRT home router </b></summary>
+<summary><b> 2 OpenWrt no box </b></summary>
+
+Remplacement de la freebox mini 4k par OpenWrt sur un Mikrotik hEX s.
+Internet en dual stack fonctionnel.
+Une fois les interfaces fonctionnels il n'y a que quelques ajustements à faire :
+- routage static vers la wan pour l'IPv4 (l'IPv6 marche sans)
+- inclure wan4 dans la zone wan du pare-feu
+- une option dans les DHCP pour ajouter les DNS interne
+</details>
+
+<details>
+<summary><b> 3 OpenWRT home router </b></summary>
 
 Config d'OpenWRT en home router et IPS :
 - Recup de la delegation de prefixe IPv6
@@ -92,7 +92,7 @@ tmpfs par défaut
 </details>
  
 <details>
-<summary><b> 3 HardenedBSD hosting platform] </b></summary>
+<summary><b> 3 HardenedBSD hosting platform </b></summary>
 
 HardenedBSD hosting platform :
 - stockage sous zfs pour self-healing, RAID (volume manager) et backup (snapshot) automatisées par zfsnap
@@ -102,7 +102,7 @@ HardenedBSD hosting platform :
 </details>
 
 <details>
-<summary><b> 4 et 5 uCore hosting platform] </b></summary>
+<summary><b> 4 et 5 uCore hosting platform </b></summary>
 Fedora CoreOS (FCOS) rebase en uCore :
 
     Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
