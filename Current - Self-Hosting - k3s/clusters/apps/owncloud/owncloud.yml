@@ -14,10 +14,6 @@ spec:
       labels:
         app: owncloud
     spec:
-      hostAliases:
-      - ip: "192.168.1.200"
-        hostnames:
-          - "owncloud.lan"
       containers:
         - name: owncloud
           image: docker.io/owncloud/ocis:latest
