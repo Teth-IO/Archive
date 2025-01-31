@@ -22,7 +22,7 @@ storage:
           interface-name=eth0
           [ipv4]
           address1=192.168.1.200/24,192.168.1.1
-          dns=45.90.28.58;
+          dns=
           dns-search=
           may-fail=false
           method=manual
