@@ -59,8 +59,8 @@ sudo coreos-installer install /dev/sda --ignition-file /truc.ign
 !! si ignoré la machine se l'attribut par dns
 !! risque de récupérer le nom d'un service hebergé, risque de changement de nom de domaine par la suite ce qui entrainer une fausse addition de noeud et une migration des pods
 
-!! dns, les app peuvent vouloir résoudre leur hostname (surtout owncloud)
-pb kube-dns ignore le fichier hosts et ici on utilise nextdns (plus de serveur dns interne à l'infra) qui marche que sur DOH
+!! dns, certaines app peuvent vouloir résoudre leur hostname (e.g. owncloud)
+pb coredns ignore le fichier hosts et ne récupère pas le doh de systemd-resolved => modifier le ficheir host interne au pod avec hostAliases
 
 tailscale up
 tailscale ip = 100.102.192.19
