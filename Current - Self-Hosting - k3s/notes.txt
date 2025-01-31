@@ -336,8 +336,8 @@ reboot
 ------[ 1.7.1 - des pods
 
 images en latest
-=> marche pour certaines images (searxng, k3s) mais pas toujours
-flux image update automation pour le reste
+=> marche pour certaines dépôts (docker, quay)
+flux image update automation pour le reste (ghrc)
 => ne marche que sur du semver, nul pour le reste
 
 ## flux image update automation
