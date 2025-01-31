@@ -336,9 +336,9 @@ reboot
 ------[ 1.7.1 - des pods
 
 images en latest
-=> marche pour certaines dépôt (quay, docker)
-flux image update automation pour le reste (ghcr)
-=> ne marche que sur du semver
+=> marche pour certaines images (searxng, k3s) mais pas toujours
+flux image update automation pour le reste
+=> ne marche que sur du semver, nul pour le reste
 
 ## flux image update automation
 # pour chaque image on peut créer un job de scan, exemple :
@@ -364,7 +364,6 @@ flux create image update flux-system \
 --author-email=fluxcdbot@users.noreply.github.com \
 --commit-template="{{range .Changed.Changes}}{{print .OldValue}} -> {{println .NewValue}}{{end}}" \
 --export > ./flux-system-automation.yaml
-
 
 voir rennovate si besoin
 https://www.mend.io/renovate/
