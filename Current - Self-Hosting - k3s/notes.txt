@@ -59,8 +59,7 @@ sudo coreos-installer install /dev/sda --ignition-file /truc.ign
 !! si ignoré la machine se l'attribut par dns
 !! risque de récupérer le nom d'un service hebergé, risque de changement de nom de domaine par la suite ce qui entrainer une fausse addition de noeud et une migration des pods
 
-!! dns, certaines app peuvent vouloir résoudre leur hostname (e.g. owncloud)
-pb coredns ignore le fichier hosts et ne récupère pas le doh de systemd-resolved => modifier le ficheir host interne au pod avec hostAliases
+!! attention au dns, certaines app peuvent vouloir résoudre leur hostname (e.g. owncloud)
 
 tailscale up
 tailscale ip = 100.102.192.19
@@ -388,7 +387,8 @@ openssl genrsa -out lan.key 4096
 openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
 
 # Pour la partie DNS ici on fait une simple réécriture *.lan → 100.102.192.19 depuis Nextdns
-# bien utilisé le DNS de tailscale avec nextdns en global nameserver, sans magicdns et avec l'override des local DNS
+# bien utilisé le DNS de tailscale avec nextdns en global nameserver, sans magicdns (obligatoire pour android)
+# activer l'override des local DNS pour que toutes les requêtes DNS passe par tailscale (system-wide DNS sur tout les appareils)
 => lag dans la résolution des services sinon car les appareils vont chercher sur plusieurs interfaces 
 
 ----[ 2.1 - searxng
