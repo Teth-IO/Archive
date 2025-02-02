@@ -34,7 +34,6 @@
     2.5 - paperless-ngx
     2.6 - calibre-web
     2.7 - jellyfin
-    2.8 - qbittorrent
 
 --[ 0 - Introduction
 
@@ -563,29 +562,6 @@ openssl x509 -req -in jellyfin.lan.csr -CA lan.pem -CAkey lan.key \
 sudo kubectl create secret tls jellyfin-secret \
   --cert=./jellyfin.lan.crt \
   --key=./jellyfin.lan.key
-
-----{ 2.8 - qbittorrent
-
-openssl genrsa -out qbittorrent.lan.key 4096
-
-openssl req -new -key qbittorrent.lan.key -out qbittorrent.lan.csr  -subj "/CN=qbittorrent.lan"
-
-cat << EOF > qbittorrent.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = qbittorrent.lan
-EOF
-
-openssl x509 -req -in qbittorrent.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out qbittorrent.lan.crt -days 3650 -sha256 -extfile qbittorrent.lan.ext
-
-sudo kubectl create secret tls qbittorrent-secret \
-  --cert=./qbittorrent.lan.crt \
-  --key=./qbittorrent.lan.key
 
 ----------------- notes
 
