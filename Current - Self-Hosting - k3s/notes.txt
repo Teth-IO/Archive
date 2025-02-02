@@ -34,6 +34,7 @@
     2.5 - paperless-ngx
     2.6 - calibre-web
     2.7 - jellyfin
+    2.8 - qbittorrent
 
 --[ 0 - Introduction
 
