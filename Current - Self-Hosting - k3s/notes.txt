@@ -27,13 +27,17 @@
         1.7.3 - du cluster
 2 - apps
     2.0 - Certificat Authority
-    2.1 - Searxng
-    2.2 - owncloud infini scale (oCIS)
-    2.3 - navidrome
-    2.4 - headlamp
-    2.5 - paperless-ngx
-    2.6 - calibre-web
-    2.7 - jellyfin
+    2.1 - headlamp
+    2.2 - keycloak 
+    2.3 - Collabora 
+    2.4 - owncloud infini scale (oCIS)
+    2.5 - Searxng
+    2.6 - navidrome
+    2.7 - paperless-ngx
+    2.8 - calibre-web automated
+    2.9 - jellyfin
+    2.10 - overleaf 
+
 
 --[ 0 - Introduction
 
@@ -171,7 +175,7 @@ sudo zpool create -o ashift=12 -O xattr=sa -O compression=lz4 -O atime=off -O re
 
 ------[ 1.5.3 - dataset
 
-# un pool est volume, afin bénéficier des capacités du fs (cow, checksum, snap...) il faut créer un dataset dans ce pool
+# un pool est un volume, afin bénéficier des capacités du fs (cow, checksum, snap...) il faut créer un dataset dans ce pool
 
 sudo zfs create raid/nas
 
@@ -391,7 +395,200 @@ openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj
 # bien utiliser le DNS de tailscale avec nextdns en global nameserver, sans magicdns (obligatoire pour android)
 # activer l'override des local DNS pour que toutes les requêtes DNS passe par tailscale (system-wide DNS sur tout les appareils)
 
-----[ 2.1 - searxng
+----[ 2.1 - Headlamp
+
+# solution pour superviser le cluster k3s, consulter les logs des pod, entrer dans des shell...
+
+# créer le compte de service
+https://headlamp.dev/docs/latest/installation/#create-a-service-account-token
+
+openssl genrsa -out homepage.lan.key 4096
+
+openssl req -new -key homepage.lan.key -out homepage.lan.csr -subj "/CN=homepage.lan"
+
+cat << EOF > homepage.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = homepage.lan
+EOF
+
+openssl x509 -req -in homepage.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out homepage.lan.crt -days 3650 -sha256 -extfile homepage.lan.ext
+
+sudo kubectl create secret tls homepage-secret \
+  --cert=./homepage.lan.crt \
+  --key=./homepage.lan.key
+
+----[ 2.2 - keycloak
+
+# Solution de SSO pour centraliser la gestion des identités et gestion d'accès
+
+realm lan
+créer les clients :
+ocis web : ocis
+desktop : xdXOt13JKxym1B1QcEncf2XDkLAexMBFwiT9j6EfhhHFJhs2KM9jbjTmf8JBXE69
+android : e4rAsNUSIUs0lF4nbv9FmCeUkTlV9GdgTLDH1b5uie7syb90SzEVrbN7HIpmWJeD
+paperless web : paperless
+
+Access settings :
+Root URL : https://owncloud.lan/*
+
+Redirect URIs :
+web : https://owncloud.lan/*
+Desktop : http://127.0.0.1
+Android : oc://android.owncloud.com
+
+Web origins : *
+
+Capability config :
+toutes les Authentication flow cochables
+
+ssl:
+----
+openssl genrsa -out keycloak.lan.key 4096
+openssl req -new -key keycloak.lan.key -out keycloak.lan.csr  -subj "/CN=keycloak.lan"
+cat << EOF > keycloak.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = keycloak.lan
+EOF
+openssl x509 -req -in keycloak.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out keycloak.lan.crt -days 3650 -sha256 -extfile keycloak.lan.ext
+
+secret :
+kubectl create secret tls keycloak-secret \
+  --cert=./keycloak.lan.crt \
+  --key=./keycloak.lan.key
+
+----[ 2.3 - Collabora
+
+# suite office en ligne, s'utilise depuis ocis par WOPI
+
+openssl genrsa -out office.lan.key 4096
+openssl req -new -key office.lan.key -out office.lan.csr  -subj "/CN=office.lan"
+cat << EOF > office.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = office.lan
+EOF
+openssl x509 -req -in office.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out office.lan.crt -days 3650 -sha256 -extfile office.lan.ext
+
+secret :
+kubectl create secret tls office-secret \
+  --cert=./office.lan.crt \
+  --key=./office.lan.key
+
+----[ 2.4 - ocis
+
+# owncloud version moderne, légère, écrite en go
+
+besoin d'une deuxième instance pour la deuxième instance et de plusieurs services :
+wopi -> service entre instance de collab et collabora
+registry -> com entre services, instance de collab et instance principale
+
+Besoin d'un Content Security Policy (CSP) dans ocis-config pour autoriser Collabora et keycloak
+csp.yaml :
+---------
+cat << EOF > csp.yaml
+directives:
+  child-src:
+    - '''self'''
+  connect-src:
+    - '''self'''
+    - 'blob:'
+    - 'https://keycloak.lan'
+  default-src:
+    - '''none'''
+  font-src:
+    - '''self'''
+  frame-ancestors:
+    - '''self'''
+  frame-src:
+    - '''self'''
+    - 'blob:'
+    - 'https://embed.diagrams.net/'
+    # In contrary to bash and docker the default is given after the | character
+    - 'https://office.lan'
+    # This is needed for the external-sites web extension when embedding sites
+    - 'https://docs.opencloud.eu'
+  img-src:
+    - '''self'''
+    - 'data:'
+    - 'blob:'
+    - 'https://raw.githubusercontent.com/opencloud-eu/awesome-apps/'
+    # In contrary to bash and docker the default is given after the | character
+    - 'https://office.lan'
+  manifest-src:
+    - '''self'''
+  media-src:
+    - '''self'''
+  object-src:
+    - '''self'''
+    - 'blob:'
+  script-src:
+    - '''self'''
+    - '''unsafe-inline'''
+  style-src:
+    - '''self'''
+    - '''unsafe-inline'''
+EOF
+
+ssl
+---
+openssl genrsa -out owncloud.lan.key 4096
+openssl req -new -key owncloud.lan.key -out owncloud.lan.csr  -subj "/CN=owncloud.lan"
+cat << EOF > owncloud.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = owncloud.lan
+EOF
+openssl x509 -req -in owncloud.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out owncloud.lan.crt -days 3650 -sha256 -extfile owncloud.lan.ext
+
+secret :
+kubectl create secret tls owncloud-secret \
+  --cert=./owncloud.lan.crt \
+  --key=./owncloud.lan.key
+
+openssl genrsa -out wopi.lan.key 4096
+openssl req -new -key wopi.lan.key -out wopi.lan.csr  -subj "/CN=wopi.lan"
+cat << EOF > wopi.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = wopi.lan
+EOF
+openssl x509 -req -in wopi.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out wopi.lan.crt -days 3650 -sha256 -extfile wopi.lan.ext
+
+secret :
+kubectl create secret tls wopi-secret \
+  --cert=./wopi.lan.crt \
+  --key=./wopi.lan.key
+
+----[ 2.5 - searxng
+
+# metamoteur de recherche pour des resultats plus opti
 
 # créer la clef privé du website
 openssl genrsa -out searxng.lan.key 4096
@@ -419,30 +616,9 @@ sudo kubectl create secret tls searxng-secret \
   --cert=./searxng.lan.crt \
   --key=./searxng.lan.key
 
-----[ 2.2 - ocis
+----[ 2.6 - navidrome
 
-openssl genrsa -out owncloud.lan.key 4096
-
-openssl req -new -key owncloud.lan.key -out owncloud.lan.csr  -subj "/CN=owncloud.lan"
-
-cat << EOF > owncloud.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = owncloud.lan
-EOF
-
-openssl x509 -req -in owncloud.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out owncloud.lan.crt -days 3650 -sha256 -extfile owncloud.lan.ext
-
-sudo kubectl create secret tls owncloud-secret \
-  --cert=./owncloud.lan.crt \
-  --key=./owncloud.lan.key
-
-----[ 2.3 - navidrome
+# serveur de musique avec l'API subsonic
 
 openssl genrsa -out mytube.lan.key 4096
 
@@ -465,33 +641,9 @@ sudo kubectl create secret tls navidrome-secret \
   --cert=./mytube.lan.crt \
   --key=./mytube.lan.key
 
-----[ 2.4 - headlamp
+----[ 2.7 - paperless-ngx
 
-openssl genrsa -out homepage.lan.key 4096
-
-openssl req -new -key homepage.lan.key -out homepage.lan.csr -subj "/CN=homepage.lan"
-
-cat << EOF > homepage.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = homepage.lan
-EOF
-
-openssl x509 -req -in homepage.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out homepage.lan.crt -days 3650 -sha256 -extfile homepage.lan.ext
-
-sudo kubectl create secret tls homepage-secret \
-  --cert=./homepage.lan.crt \
-  --key=./homepage.lan.key
-
-# créer le compte de service
-https://headlamp.dev/docs/latest/installation/#create-a-service-account-token
-
-----[ 2.5 - paperless-ngx
+# Solution d'archivage de documents
 
 openssl genrsa -out paperless.lan.key 4096
 
@@ -517,7 +669,9 @@ sudo kubectl create secret tls paperless-secret \
 # créer le compte admin
 python3 manage.py createsuperuser
 
-----[ 2.6 - calibre-web-automated
+----[ 2.8 - calibre-web-automated
+
+# bibliothèque en ligne
 
 openssl genrsa -out calibre.lan.key 4096
 
@@ -540,7 +694,9 @@ sudo kubectl create secret tls calibre-secret \
   --cert=./calibre.lan.crt \
   --key=./calibre.lan.key
 
-----{ 2.7 - jellyfin
+----{ 2.9 - jellyfin
+
+# serveur multimédia
 
 openssl genrsa -out jellyfin.lan.key 4096
 
@@ -562,6 +718,29 @@ openssl x509 -req -in jellyfin.lan.csr -CA lan.pem -CAkey lan.key \
 sudo kubectl create secret tls jellyfin-secret \
   --cert=./jellyfin.lan.crt \
   --key=./jellyfin.lan.key
+
+----[ 2.10 - overleaf
+
+# editeur LaTex en ligne
+
+openssl genrsa -out tex.lan.key 4096
+openssl req -new -key tex.lan.key -out tex.lan.csr  -subj "/CN=tex.lan"
+cat << EOF > tex.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = tex.lan
+EOF
+openssl x509 -req -in tex.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out tex.lan.crt -days 3650 -sha256 -extfile tex.lan.ext
+
+secret :
+kubectl create secret tls tex-secret \
+  --cert=./tex.lan.crt \
+  --key=./tex.lan.key
 
 ----------------- notes
 
@@ -587,3 +766,14 @@ flux reconcile kustomization flux-system --with-source
 
 => pb de node unschedulable
 kubectl patch nodes searxng.lan --patch '{"spec":{"unschedulable": false}}'
+
+au niveau du dns:
+les container on connaissances des services côté non de domaine (ex : "redis://redis:6379" renvoi vers le service redis)
+pour modifier le fichier host, notamment pour une connaissance d'un domaine hors k3s on peut uitliser hostaliases
+exemple : 
+    spec:
+      hostAliases:
+      - ip: "192.168.1.200"
+        hostnames:
+          - "owncloud.lan"
+          - "office.lan"
