@@ -20,15 +20,15 @@ spec:
           ports:
             - containerPort: 4533
           volumeMounts:
-            - name: config-navidrome
+            - name: config
               mountPath: /data
-            - name: data-navidrome
+            - name: data
               mountPath: /music
       volumes:
-        - name: config-navidrome
+        - name: config
           hostPath:
             path: /mnt/raid/nas/music/conf
-        - name: data-navidrome
+        - name: data
           hostPath:
             path: /mnt/raid/nas/music/albums
 ---

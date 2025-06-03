@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: default
+  name: keycloak-db-secret
+type: kubernetes.io/basic-auth
+data:
+  username: YWRtaW4=
+  password: redacted
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-keycloak
+  namespace: default
+  labels:
+    app: pg-keycloak
+spec:
+  selector:
+    matchLabels:
+      app: pg-keycloak
+  template:
+    metadata:
+      labels:
+        app: pg-keycloak
+    spec:
+      containers:
+      - name: pg-keycloak
+        image: docker.io/postgres:latest
+        env:
+        - name: POSTGRES_DB
+          value: "keycloak"
+        - name: POSTGRES_USER
+          value: "admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-db-secret
+              key: password
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: pgdata
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: pgdata
+        hostPath:
+          path: /mnt/raid/nas/pg/keycloak
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: pg-keycloak
+  labels:
+    service: pg-keycloak
+spec:
+  selector:
+    app: pg-keycloak
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: default
+  labels:
+    app: keycloak
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:latest
+        args: ["start", "--cache-stack=kubernetes"]
+        env:
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          value: "test"
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          value: "admin"
+        - name: KC_PROXY
+          value: "edge"
+        - name: jgroups.dns.query
+          value: "keycloak"
+        - name: KC_DB
+          value: "postgres"
+        - name: KC_DB_URL
+          value: "jdbc:postgresql://pg-keycloak/keycloak"
+        - name: KC_DB_USERNAME
+          value: "admin"
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-db-secret
+              key: password
+        - name: KC_HOSTNAME
+          value: "https://keycloak.lan"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: default
+  labels:
+    app: keycloak
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: keycloak
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: keycloak
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - kind: Rule
+    match: Host(`keycloak.lan`)
+    services:
+      - kind: Service
+        name: keycloak
+        port: 8080
+  tls:
+    secretName: keycloak-secret

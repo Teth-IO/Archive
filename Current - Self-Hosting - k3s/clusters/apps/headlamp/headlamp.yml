@@ -14,10 +14,10 @@ spec:
     spec:
       containers:
       - name: headlamp
-        image: ghcr.io/headlamp-k8s/headlamp:v0.28.0 # {"$imagepolicy": "flux-system:headlamp"}
+        image: ghcr.io/headlamp-k8s/headlamp:v0.30.0
         args:
-          - "-in-cluster"
-          - "-plugins-dir=/headlamp/plugins"
+        - "-in-cluster"
+        - "-plugins-dir=/headlamp/plugins"
         ports:
         - containerPort: 4466
 ---

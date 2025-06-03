@@ -5,8 +5,8 @@ metadata:
   name: paperless-db-secret
 type: kubernetes.io/basic-auth
 data:
-  username: redacted
-  password: redacted
+  username: YWRtaW4=
+  password: redactd
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -77,9 +77,13 @@ spec:
       labels:
         app: paperless
     spec:
+      hostAliases:
+      - ip: "192.168.1.200"
+        hostnames:
+          - "keycloak.lan"
       containers:
       - name: paperless
-        image: ghcr.io/paperless-ngx/paperless-ngx:2.14.6 # {"$imagepolicy": "flux-system:paperless"}
+        image: ghcr.io/paperless-ngx/paperless-ngx:2.16.2 # {"$imagepolicy": "flux-system:paperless"}
         env:
         - name: PAPERLESS_REDIS
           value: "redis://redis:6379"
@@ -101,29 +105,34 @@ spec:
             secretKeyRef:
               name: paperless-db-secret
               key: password
+        - name: PAPERLESS_SOCIALACCOUNT_PROVIDERS
+          value : |
+            {"openid_connect": {"APPS": [{"provider_id": "keycloak","name": "Keycloak","client_id": "paperless", "settings": {"server_url": "https://keycloak.lan/realms/lan"}}]}}
+        - name: PAPERLESS_APPS
+          value: "allauth.socialaccount.providers.openid_connect"
         volumeMounts:
-        - name: data-paperless
+        - name: data
           mountPath: /usr/src/paperless/data
-        - name: media-paperless
+        - name: media
           mountPath: /usr/src/paperless/media
-        - name: export-paperless
+        - name: export
           mountPath: /usr/src/paperless/export
-        - name: consume-paperless
+        - name: consume
           mountPath: /usr/src/paperless/consume
         - name: ca-bundle
           mountPath: /usr/src/paperless/lan.pem
           subPath: lan.pem
       volumes:
-      - name: data-paperless
+      - name: data
         hostPath:
           path: /mnt/raid/nas/paperless/data
-      - name: media-paperless
+      - name: media
         hostPath:
           path: /mnt/raid/nas/paperless/media
-      - name: export-paperless
+      - name: export
         hostPath:
           path: /mnt/raid/nas/paperless/export
-      - name: consume-paperless
+      - name: consume
         hostPath:
           path: /mnt/raid/nas/paperless/consume
       - name: ca-bundle

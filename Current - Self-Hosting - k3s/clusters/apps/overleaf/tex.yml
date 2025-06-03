@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-tex
+  namespace: default
+  labels:
+    app: mongo-tex
+spec:
+  selector:
+    matchLabels:
+      app: mongo-tex
+  template:
+    metadata:
+      labels:
+        app: mongo-tex
+    spec:
+      containers:
+        - name: mongo-tex
+          image: docker.io/mongo:latest
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: "tex"
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: data
+          hostPath:
+            path: /mnt/raid/nas/mongo/tex
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-tex
+  namespace: default
+  labels:
+    service: mongo-tex
+spec:
+  selector:
+    app: mongo-tex
+  ports:
+    - port: 27017
+      targetPort: 27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tex
+  namespace: default
+  labels:
+    app: tex
+spec:
+  selector:
+    matchLabels:
+      app: tex
+  template:
+    metadata:
+      labels:
+        app: tex
+    spec:
+      containers:
+        - name: tex
+          image: docker.io/sharelatex/sharelatex:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: OVERLEAF_APP_NAME
+              value: "Overleaf Community Edition"
+            - name: OVERLEAF_REDIS_HOST
+              value: "redis"
+            - name: REDIS_HOST
+              value: "redis"
+            - name: ENABLED_LINKED_FILE_TYPES
+              value: "project_file,project_output_file"
+            - name: ENABLE_CONVERSIONS
+              value: "false"
+            - name: EMAIL_CONFIRMATION_DISABLED
+              value: "false"
+            - name: OVERLEAF_MONGO_URL
+              value: "mongodb://mongo-tex/tex"
+          volumeMounts:
+            - name: config
+              mountPath: /var/lib/overleaf
+      volumes:
+        - name: config
+          hostPath:
+            path: /mnt/raid/nas/tex/data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tex
+  namespace: default
+  labels:
+    service: tex
+spec:
+  selector:
+    app: tex
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tex
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - kind: Rule
+    match: Host(`tex.lan`)
+    services:
+      - kind: Service
+        name: tex
+        port: 80
+  tls:
+    secretName: tex-secret

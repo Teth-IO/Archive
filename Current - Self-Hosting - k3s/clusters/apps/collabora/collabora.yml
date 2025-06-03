@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: office
+  namespace: default
+  labels:
+    app: office
+spec:
+  selector:
+    matchLabels:
+      app: office
+  template:
+    metadata:
+      labels:
+        app: office
+    spec:
+      hostAliases:
+      - ip: "192.168.1.200"
+        hostnames:
+          - "wopi.lan"
+      containers:
+        - name: office
+          image: docker.io/collabora/code:latest
+          ports:
+            - containerPort: 9980
+          command: ["/bin/sh","-c"]
+          args: ["coolconfig generate-proof-key && /start-collabora-online.sh"]
+          env:
+            - name: aliasgroup1
+              value: "https://wopi.lan:443"
+            - name: username
+              value: "admin"
+            - name: password
+              value: "admin"
+            - name: DONT_GEN_SSL_CERT
+              value: "YES"
+            - name: extra_params
+              value:  "--o:ssl.enable=false --o:ssl.ssl_verification=false --o:ssl.termination=true --o:welcome.enable=false --o:net.frame_ancestors=owncloud.lan"
+          securityContext:
+            capabilities:
+              add: ["MKNOD"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: office
+  namespace: default
+  labels:
+    service: office
+spec:
+  selector:
+    app: office
+  ports:
+    - port: 9980
+      targetPort: 9980
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: office
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`office.lan`)
+      services:
+        - kind: Service
+          name: office
+          port: 9980
+  tls:
+    secretName: office-secret
