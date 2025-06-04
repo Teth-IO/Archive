@@ -37,7 +37,7 @@
     2.8 - calibre-web automated
     2.9 - jellyfin
     2.10 - overleaf 
-    2.11 - stalwart & roundclub
+    2.11 - stalwart & roundcube
 
 --[ 0 - Introduction
 
@@ -743,7 +743,7 @@ kubectl create secret tls tex-secret \
   --cert=./tex.lan.crt \
   --key=./tex.lan.key
 
-----[ 2.11 - stalwart & roundclub
+----[ 2.11 - stalwart & roundcube
 
 # pour la com par mail des app (e.g. les credential reset de keycloak)
 
