@@ -292,10 +292,7 @@ EOF
 
 # dragonfly de dispo en remplacement de redis mais ne marche pas.
 # pb de hardware ?
-# à l'inverse de postgres ici en monolithique comme dragonfly ne traite aucune donnée critique
-# operateur de dispo mais osef du HA
-
-# dragonfly semble mieux mais pb avec le cpu
+# à l'inverse de postgres ici en monolithique comme redis ne traite aucune donnée critique
 
 ----[ 1.7 - maintenance
 
@@ -425,7 +422,7 @@ sudo kubectl create secret tls homepage-secret \
 
 ----[ 2.2 - keycloak
 
-# Solution de SSO pour centraliser la gestion des identités et gestion d'accès
+# Solution de SSO pour centraliser la gestion des identités et gestion d'accès, permet la customisation des flux d'authentification et d'utiliser des méthodes modernes (passwordless
 # pour la mise en place du passwordless besoin d'un server mail pour envoyer le lien d'enregistrement à l'utilisateur (voir 2.11)
 
 realm lan
