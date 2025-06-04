@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail
+  namespace: default
+  labels:
+    app: mail
+spec:
+  selector:
+    matchLabels:
+      app: mail
+  template:
+    metadata:
+      labels:
+        app: mail
+    spec:
+      containers:
+        - name: mail
+          image: docker.io/stalwartlabs/stalwart:latest
+          ports:
+            - containerPort: 8080
+            - containerPort: 25
+            - containerPort: 143
+          volumeMounts:
+            - name: config
+              mountPath: /opt/stalwart
+      volumes:
+        - name: config
+          hostPath:
+            path: /mnt/raid/nas/mail/config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp
+  namespace: default
+  labels:
+    service: smtp
+spec:
+  selector:
+    app: mail
+  ports:
+    - port: 25
+      targetPort: 25
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imap
+  namespace: default
+  labels:
+    service: imap
+spec:
+  selector:
+    app: mail
+  ports:
+    - port: 143
+      targetPort: 143
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mail
+  namespace: default
+  labels:
+    service: mail
+spec:
+  selector:
+    app: mail
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mail
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`mail.lan`)
+      services:
+        - kind: Service
+          name: mail
+          port: 8080
+  tls:
+    secretName: mail-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webmail
+  namespace: default
+  labels:
+    app: webmail
+spec:
+  selector:
+    matchLabels:
+      app: webmail
+  template:
+    metadata:
+      labels:
+        app: webmail
+    spec:
+      containers:
+        - name: webmail
+          image: docker.io/roundcube/roundcubemail:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: ROUNDCUBEMAIL_DEFAULT_HOST
+              value: "imap"
+            - name: ROUNDCUBEMAIL_SMTP_SERVER
+              value: "smtp"
+          volumeMounts:
+            - name: html
+              mountPath: /var/www/html
+            - name: db
+              mountPath: /var/roundcube/db
+      volumes:
+        - name: html
+          hostPath:
+            path: /mnt/raid/nas/mail/webclient/html
+        - name: db
+          hostPath:
+            path: /mnt/raid/nas/mail/webclient/db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webmail
+  namespace: default
+  labels:
+    service: webmail
+spec:
+  selector:
+    app: webmail
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: webmail
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`webmail.lan`)
+      services:
+        - kind: Service
+          name: webmail
+          port: 80
+  tls:
+    secretName: webmail-secret

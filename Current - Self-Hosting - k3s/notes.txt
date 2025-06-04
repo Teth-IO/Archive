@@ -37,7 +37,7 @@
     2.8 - calibre-web automated
     2.9 - jellyfin
     2.10 - overleaf 
-
+    2.11 - stalwart & roundclub
 
 --[ 0 - Introduction
 
@@ -426,6 +426,7 @@ sudo kubectl create secret tls homepage-secret \
 ----[ 2.2 - keycloak
 
 # Solution de SSO pour centraliser la gestion des identités et gestion d'accès
+# pour la mise en place du passwordless besoin d'un server mail pour envoyer le lien d'enregistrement à l'utilisateur (voir 2.11)
 
 realm lan
 créer les clients :
@@ -741,6 +742,58 @@ secret :
 kubectl create secret tls tex-secret \
   --cert=./tex.lan.crt \
   --key=./tex.lan.key
+
+----[ 2.11 - stalwart & roundclub
+
+# pour la com par mail des app (e.g. les credential reset de keycloak)
+
+roundcube pour l'instant car
+pas de webclient intégré à stalwart atm
+pas de webclient intégré à ocis atm
+
+config dns :
+------------
+hostname : smtp (identique au service)
+domaine : mail.lan
+comptes en user@mail.lan
+
+openssl genrsa -out mail.lan.key 4096
+openssl req -new -key mail.lan.key -out mail.lan.csr  -subj "/CN=mail.lan"
+cat << EOF > mail.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = mail.lan
+EOF
+openssl x509 -req -in mail.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out mail.lan.crt -days 3650 -sha256 -extfile mail.lan.ext
+
+secret :
+kubectl create secret tls mail-secret \
+  --cert=./mail.lan.crt \
+  --key=./mail.lan.key
+
+openssl genrsa -out webmail.lan.key 4096
+openssl req -new -key webmail.lan.key -out webmail.lan.csr  -subj "/CN=webmail.lan"
+cat << EOF > webmail.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = webmail.lan
+EOF
+openssl x509 -req -in webmail.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out webmail.lan.crt -days 3650 -sha256 -extfile webmail.lan.ext
+
+secret :
+kubectl create secret tls webmail-secret \
+  --cert=./webmail.lan.crt \
+  --key=./webmail.lan.key
 
 ----------------- notes
 
