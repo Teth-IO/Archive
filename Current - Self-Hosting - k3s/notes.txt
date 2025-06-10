@@ -466,6 +466,18 @@ kubectl create secret tls keycloak-secret \
   --cert=./keycloak.lan.crt \
   --key=./keycloak.lan.key
 
+# Pour utiliser des passkeys sous android besoin d'un paramétarge spécifique :
+l'enregistrement d'une passkey ne marche pas sur firefox android (l'enregistrer depuis un chromium)
+sur chrome avec les paramètres Authentification/policies/Webauthn Passwordless Policy:
+Authenticator Attachment -> si platform = échec donc laissé en not specified
+Require discoverable credential -> yes
+    empêche l'enregistrement en locale de la passkey (cet appareil), mais celui ci ne marche pas (google password manager dit qu'aucune clef n'est dispo car justement pas discoverable...)
+
+donc besoin d'une app tierse pour l'enregistrer :
+-> bientôt keepassdx compatible
+https://github.com/Kunzisoft/KeePassDX/issues/1421
+-> proton pass en attendant ou google password manager
+
 ----[ 2.3 - Collabora
 
 # suite office en ligne, s'utilise depuis ocis par WOPI
