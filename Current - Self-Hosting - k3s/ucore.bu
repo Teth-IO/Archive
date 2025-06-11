@@ -22,7 +22,7 @@ storage:
           interface-name=eth0
           [ipv4]
           address1=192.168.1.200/24,192.168.1.1
-          dns=
+          dns=1.1.1.1
           dns-search=
           may-fail=false
           method=manual
@@ -30,15 +30,6 @@ storage:
           addr-gen-mode=eui64
           dns-search=
           method=disabled
-    - path: /etc/systemd/resolved.conf.d/nextdns.conf
-      contents:
-        inline : |
-          [Resolve]
-          DNS=45.90.28.0#redacted.dns.nextdns.io
-          DNS=2a07:a8c0::#redacted.dns.nextdns.io
-          DNS=45.90.30.0#redacted.dns.nextdns.io
-          DNS=2a07:a8c1::#redacted.dns.nextdns.io
-          DNSOverTLS=yes
   directories:
     - path: /etc/ucore-autorebase
       mode: 0754
