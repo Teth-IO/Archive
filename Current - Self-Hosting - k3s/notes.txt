@@ -137,12 +137,9 @@ longhorn et rook sont du stockage distribuer sous hyperconvergeance
 => besoin de plusieurs noeuds, répartissent les données d'eux mêmes, pas la main sur leur positions
 n'agira pas comme un remplaçant pour le raid
 
-=> zfs toujours dispo, inclus dans les extansions de flatcar
-sanoid et syncoid sont des scripts à skip donc toujours dispo
-migration entre machine facilité avec syncoid
-
-=> voir activation du sysext pour le ZFS
-=> voir ce qu'il en est du future secure boot de flatcar avec le module de kernel
+zfs dispo avec secureboot
+sanoid dispo pour automatiser la prise de snapshot
+récupérer le binaire de restic pour les backup
 
 ------[ 1.5.1 - SecureBoot avec kmod ZFS
 
@@ -246,8 +243,7 @@ zfs list -t snapshot
 
 ------[ 1.5.5 - backup
 
-restic vers s3
-passage vers glacier si coute trop chère
+restic vers amazon s3
 
 céer un compte de service restic sur aws avec les bonnes stratégie
 https://restic.readthedocs.io/en/latest/080_examples.html
