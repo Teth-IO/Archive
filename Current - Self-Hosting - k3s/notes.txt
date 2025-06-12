@@ -38,6 +38,7 @@
     2.9 - jellyfin
     2.10 - overleaf 
     2.11 - stalwart & roundcube
+    2.12 - Trilium Next
 
 --[ 0 - Introduction
 
@@ -799,6 +800,29 @@ secret :
 kubectl create secret tls webmail-secret \
   --cert=./webmail.lan.crt \
   --key=./webmail.lan.key
+
+----[ 2.12 - Trilium Next
+
+Application de prise de note, Gestion des connaissances dispo par interface web
+
+openssl genrsa -out note.lan.key 4096
+openssl req -new -key note.lan.key -out note.lan.csr  -subj "/CN=note.lan"
+cat << EOF > note.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = note.lan
+EOF
+openssl x509 -req -in note.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out note.lan.crt -days 3650 -sha256 -extfile note.lan.ext
+
+secret :
+kubectl create secret tls note-secret \
+  --cert=./note.lan.crt \
+  --key=./note.lan.key
 
 ----------------- notes
 
