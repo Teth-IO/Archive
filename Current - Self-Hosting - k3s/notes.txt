@@ -826,22 +826,25 @@ kubectl create secret tls note-secret \
 
 ----------------- notes
 
+Vérif de l'image utilisé par l'OS : 
+rpm-ostree status
+
 logs :
 sudo kubectl logs pod-name
 
 shell :
 sudo kubectl exec --stdin --tty pod -- /bin/sh
 
-# toutes les ressources
+toutes les ressources :
 kubectl get 
 
-# voir le détails des tag d'images observé
+voir le détails des tag d'images observé :
 kubectl -n flux-system describe imagerepositories searxng
 
-# voir le status du traking des images
+voir le status du traking des images :
 flux get images all --all-namespaces
 
-# debug les reconciliation
+debug les reconciliation :
 flux get ks
 
 flux reconcile kustomization flux-system --with-source
