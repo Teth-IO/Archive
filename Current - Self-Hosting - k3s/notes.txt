@@ -51,7 +51,7 @@ zfs avec secureboot
 
 ----[ 1.1 - rebase ucore
 
-# créer un fichier butane qui comprend =  clef ssh, conf réseaux, maj et reboot auto + rebase uCore en stable-zfs
+# créer un fichier butane qui comprend =  clef ssh, conf réseaux, maj et reboot auto + rebase uCore stable
 -> https://github.com/ublue-os/ucore?tab=readme-ov-file#auto-rebase-install + https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/
 butane --pretty --strict .\truc.bu > .\truc.ign
 
