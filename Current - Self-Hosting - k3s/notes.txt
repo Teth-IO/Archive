@@ -37,8 +37,7 @@
     2.8 - calibre-web automated
     2.9 - jellyfin
     2.10 - overleaf 
-    2.11 - stalwart & roundcube
-    2.12 - Trilium Next
+    2.11 - Trilium Next
 
 --[ 0 - Introduction
 
@@ -389,6 +388,35 @@ openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj
 # bien utiliser le DNS de tailscale avec nextdns en global nameserver, sans magicdns (obligatoire pour android)
 # activer l'override des local DNS pour que toutes les requêtes DNS passe par tailscale (system-wide DNS sur tout les appareils)
 
+# Pour chaque app création d'un certif signé par lan.
+# Exemple pour searxng :
+
+# créer la clef privé du website
+openssl genrsa -out searxng.lan.key 4096
+
+# créer le csr (common name = server hostname = homepage.lan)
+openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
+
+# extension X509 V3
+cat << EOF > searxng.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = searxng.lan
+EOF
+
+# le certificat final
+openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
+
+# enregistrement de la pair en secret dans kubernetes pour application au niveau de l'ingress
+kubectl create secret tls homepage-secret \
+  --cert=./homepage.lan.crt \
+  --key=./homepage.lan.key
+
 ----[ 2.1 - Headlamp
 
 # solution pour superviser le cluster k3s, consulter les logs des pod, entrer dans des shell...
@@ -396,31 +424,9 @@ openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj
 # créer le compte de service
 https://headlamp.dev/docs/latest/installation/#create-a-service-account-token
 
-openssl genrsa -out homepage.lan.key 4096
-
-openssl req -new -key homepage.lan.key -out homepage.lan.csr -subj "/CN=homepage.lan"
-
-cat << EOF > homepage.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = homepage.lan
-EOF
-
-openssl x509 -req -in homepage.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out homepage.lan.crt -days 3650 -sha256 -extfile homepage.lan.ext
-
-sudo kubectl create secret tls homepage-secret \
-  --cert=./homepage.lan.crt \
-  --key=./homepage.lan.key
-
 ----[ 2.2 - keycloak
 
-# Solution de SSO pour centraliser la gestion des identités et gestion d'accès, permet la customisation des flux d'authentification et d'utiliser des méthodes modernes (passwordless
-# pour la mise en place du passwordless besoin d'un server mail pour envoyer le lien d'enregistrement à l'utilisateur (voir 2.11)
+# Solution de SSO pour centraliser la gestion des identités et gestion d'accès, permet la customisation des flux d'authentification et d'utiliser des méthodes modernes (passwordless)
 
 realm lan
 créer les clients :
@@ -442,26 +448,10 @@ Web origins : *
 Capability config :
 toutes les Authentication flow cochables
 
-ssl:
-----
-openssl genrsa -out keycloak.lan.key 4096
-openssl req -new -key keycloak.lan.key -out keycloak.lan.csr  -subj "/CN=keycloak.lan"
-cat << EOF > keycloak.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
+# pour enregister les passkeys se co avec le compte user lan https://keycloak.lan/realms/lan/account/
 
-[alt_names]
-DNS.1 = keycloak.lan
-EOF
-openssl x509 -req -in keycloak.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out keycloak.lan.crt -days 3650 -sha256 -extfile keycloak.lan.ext
-
-secret :
-kubectl create secret tls keycloak-secret \
-  --cert=./keycloak.lan.crt \
-  --key=./keycloak.lan.key
+# besoin de modifier dans l'authentification du realm l'entrée broswer (cookie -> idp redirector -> webauthn passwordless authenticator) pour prioriser le passwordless
+revoir le bug du account-console qui était innaccessible (droit du compte, impersonation du compte admin realms master, bidouillage de l'entré account et account-console...)
 
 # Pour utiliser des passkeys sous android besoin d'un paramétarge spécifique :
 l'enregistrement d'une passkey ne marche pas sur firefox android (l'enregistrer depuis un chromium)
@@ -479,30 +469,11 @@ https://github.com/Kunzisoft/KeePassDX/issues/1421
 
 # suite office en ligne, s'utilise depuis ocis par WOPI
 
-openssl genrsa -out office.lan.key 4096
-openssl req -new -key office.lan.key -out office.lan.csr  -subj "/CN=office.lan"
-cat << EOF > office.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = office.lan
-EOF
-openssl x509 -req -in office.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out office.lan.crt -days 3650 -sha256 -extfile office.lan.ext
-
-secret :
-kubectl create secret tls office-secret \
-  --cert=./office.lan.crt \
-  --key=./office.lan.key
-
 ----[ 2.4 - ocis
 
 # owncloud version moderne, légère, écrite en go
 
-besoin d'une deuxième instance pour la deuxième instance et de plusieurs services :
+besoin d'une deuxième instance pour le wopiu et de plusieurs services :
 wopi -> service entre instance de collab et collabora
 registry -> com entre services, instance de collab et instance principale
 
@@ -553,8 +524,8 @@ directives:
     - '''unsafe-inline'''
 EOF
 
-ssl
----
+ici 2 créations de cert ssl comme 2 instances
+---------------------------------------------
 openssl genrsa -out owncloud.lan.key 4096
 openssl req -new -key owncloud.lan.key -out owncloud.lan.csr  -subj "/CN=owncloud.lan"
 cat << EOF > owncloud.lan.ext
@@ -597,81 +568,13 @@ kubectl create secret tls wopi-secret \
 
 # metamoteur de recherche pour des resultats plus opti
 
-# créer la clef privé du website
-openssl genrsa -out searxng.lan.key 4096
-
-# créer le csr (common name = server hostname = homepage.lan)
-openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
-
-# extension X509 V3
-cat << EOF > searxng.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = searxng.lan
-EOF
-
-# le certificat final
-openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
-
-# le secret :
-sudo kubectl create secret tls searxng-secret \
-  --cert=./searxng.lan.crt \
-  --key=./searxng.lan.key
-
 ----[ 2.6 - navidrome
 
 # serveur de musique avec l'API subsonic
 
-openssl genrsa -out mytube.lan.key 4096
-
-openssl req -new -key mytube.lan.key -out mytube.lan.csr  -subj "/CN=mytube.lan"
-
-cat << EOF > mytube.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = mytube.lan
-EOF
-
-openssl x509 -req -in mytube.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out mytube.lan.crt -days 3650 -sha256 -extfile mytube.lan.ext
-
-sudo kubectl create secret tls navidrome-secret \
-  --cert=./mytube.lan.crt \
-  --key=./mytube.lan.key
-
 ----[ 2.7 - paperless-ngx
 
 # Solution d'archivage de documents
-
-openssl genrsa -out paperless.lan.key 4096
-
-openssl req -new -key paperless.lan.key -out paperless.lan.csr -subj "/CN=paperless.lan"
-
-cat << EOF > paperless.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = paperless.lan
-EOF
-
-openssl x509 -req -in paperless.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out paperless.lan.crt -days 3650 -sha256 -extfile paperless.lan.ext
-
-sudo kubectl create secret tls paperless-secret \
-  --cert=./paperless.lan.crt \
-  --key=./paperless.lan.key
 
 # créer le compte admin
 python3 manage.py createsuperuser
@@ -680,149 +583,17 @@ python3 manage.py createsuperuser
 
 # bibliothèque en ligne
 
-openssl genrsa -out calibre.lan.key 4096
-
-openssl req -new -key calibre.lan.key -out calibre.lan.csr -subj "/CN=calibre.lan"
-
-cat << EOF > calibre.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = calibre.lan
-EOF
-
-openssl x509 -req -in calibre.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out calibre.lan.crt -days 3650 -sha256 -extfile calibre.lan.ext
-
-sudo kubectl create secret tls calibre-secret \
-  --cert=./calibre.lan.crt \
-  --key=./calibre.lan.key
-
 ----{ 2.9 - jellyfin
 
 # serveur multimédia
-
-openssl genrsa -out jellyfin.lan.key 4096
-
-openssl req -new -key jellyfin.lan.key -out jellyfin.lan.csr  -subj "/CN=jellyfin.lan"
-
-cat << EOF > jellyfin.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = jellyfin.lan
-EOF
-
-openssl x509 -req -in jellyfin.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out jellyfin.lan.crt -days 3650 -sha256 -extfile jellyfin.lan.ext
-
-sudo kubectl create secret tls jellyfin-secret \
-  --cert=./jellyfin.lan.crt \
-  --key=./jellyfin.lan.key
 
 ----[ 2.10 - overleaf
 
 # editeur LaTex en ligne
 
-openssl genrsa -out tex.lan.key 4096
-openssl req -new -key tex.lan.key -out tex.lan.csr  -subj "/CN=tex.lan"
-cat << EOF > tex.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
+----[ 2.11 - Trilium Next
 
-[alt_names]
-DNS.1 = tex.lan
-EOF
-openssl x509 -req -in tex.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out tex.lan.crt -days 3650 -sha256 -extfile tex.lan.ext
-
-secret :
-kubectl create secret tls tex-secret \
-  --cert=./tex.lan.crt \
-  --key=./tex.lan.key
-
-----[ 2.11 - stalwart & roundcube
-
-# pour la com par mail des app (e.g. les credential reset de keycloak)
-
-roundcube pour l'instant car
-pas de webclient intégré à stalwart atm
-pas de webclient intégré à ocis atm
-
-config dns :
-------------
-hostname : smtp (identique au service)
-domaine : mail.lan
-comptes en user@mail.lan
-
-openssl genrsa -out mail.lan.key 4096
-openssl req -new -key mail.lan.key -out mail.lan.csr  -subj "/CN=mail.lan"
-cat << EOF > mail.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = mail.lan
-EOF
-openssl x509 -req -in mail.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out mail.lan.crt -days 3650 -sha256 -extfile mail.lan.ext
-
-secret :
-kubectl create secret tls mail-secret \
-  --cert=./mail.lan.crt \
-  --key=./mail.lan.key
-
-openssl genrsa -out webmail.lan.key 4096
-openssl req -new -key webmail.lan.key -out webmail.lan.csr  -subj "/CN=webmail.lan"
-cat << EOF > webmail.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = webmail.lan
-EOF
-openssl x509 -req -in webmail.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out webmail.lan.crt -days 3650 -sha256 -extfile webmail.lan.ext
-
-secret :
-kubectl create secret tls webmail-secret \
-  --cert=./webmail.lan.crt \
-  --key=./webmail.lan.key
-
-----[ 2.12 - Trilium Next
-
-Application de prise de note, Gestion des connaissances dispo par interface web
-
-openssl genrsa -out note.lan.key 4096
-openssl req -new -key note.lan.key -out note.lan.csr  -subj "/CN=note.lan"
-cat << EOF > note.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = note.lan
-EOF
-openssl x509 -req -in note.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out note.lan.crt -days 3650 -sha256 -extfile note.lan.ext
-
-secret :
-kubectl create secret tls note-secret \
-  --cert=./note.lan.crt \
-  --key=./note.lan.key
+# Application de prise de note, Gestion des connaissances dispo par interface web
 
 ----------------- notes
 
