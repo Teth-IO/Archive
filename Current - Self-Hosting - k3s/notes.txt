@@ -394,7 +394,7 @@ openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj
 # créer la clef privé du website
 openssl genrsa -out searxng.lan.key 4096
 
-# créer le csr (common name = server hostname = homepage.lan)
+# créer le csr (common name = server hostname = searxng.lan)
 openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
 
 # extension X509 V3
@@ -413,9 +413,9 @@ openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
 -CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
 
 # enregistrement de la pair en secret dans kubernetes pour application au niveau de l'ingress
-kubectl create secret tls homepage-secret \
-  --cert=./homepage.lan.crt \
-  --key=./homepage.lan.key
+kubectl create secret tls searxng-secret \
+  --cert=./searxng.lan.crt \
+  --key=./searxng.lan.key
 
 ----[ 2.1 - Headlamp
 
