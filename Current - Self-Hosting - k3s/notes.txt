@@ -38,6 +38,7 @@
     2.9 - jellyfin
     2.10 - overleaf 
     2.11 - Trilium Next
+	2.12 - ntfy
 
 --[ 0 - Introduction
 
@@ -380,7 +381,7 @@ mettre en latest
 # créer la key
 openssl genrsa -out lan.key 4096
 # creér le root certificate (le common name indique le domaine sous lequel on signe, ici lan)
-# le root certificate est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
+# le root certificate (lan.pem) est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
 openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
 
 # Pour la partie DNS ici on utilise pas un server DNS local mais NextDNS
@@ -594,6 +595,14 @@ python3 manage.py createsuperuser
 ----[ 2.11 - Trilium Next
 
 # Application de prise de note, Gestion des connaissances dispo par interface web
+
+----[ 2.12 - ntfy
+
+# pub-sub notification service pour le monitoring du ZFS et du SMART des SSD
+ZFS besoin de paramétrer /etc/zfs/zed.d/zed.rc :
+url ntfy : https://ntfy.lan
+sujet : ZFS
+-> notif envoyé à https://ntfy.lan/ZFS
 
 ----------------- notes
 
