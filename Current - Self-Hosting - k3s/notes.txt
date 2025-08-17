@@ -19,7 +19,7 @@
         1.5.4 - snapshot 
             1.5.4.1 - service et timer
         1.5.5 - backup
-            1.5.5.1 - service et timer
+            1.5.5.1 - script
     1.6 - redis
     1.7 - maintenance
         1.7.1 - du server en maj auto
@@ -261,9 +261,10 @@ restic init
 # première backup
 restic backup /mnt/raid/nas/
 
---------[ 1.5.5.1 - service et timer
+--------[ 1.5.5.1 - script
 
-=> à automatiser
+# non automatisé car prend de la bande passante (impact non transparant aujourd'hui)
+# curl l'ouput des commande vers ntfy pour travail en headless
 
 cat << EOF > backup.sh
 #!/bin/bash
@@ -272,17 +273,9 @@ export RESTIC_REPOSITORY="redacted"
 export AWS_ACCESS_KEY_ID="redacted"
 export AWS_SECRET_ACCESS_KEY="redacted
 export RESTIC_PASSWORD="redacted"
-/home/core/restic backup /mnt/raid/nas/
-/home/core/restic forget --keep-last 10
-/home/core/restic prune
-EOF
-
-cat << EOF > /etc/systemd/system/restic.service
-
-EOF
-
-cat << EOF > /etc/systemd/system/restic.timer
-
+curl -X POST -d "$(/home/core/restic backup /mnt/raid/nas/ --exclude /mnt/raid/nas/jellyfin/data)" https://ntfy.lan/Backup
+curl -X POST -d "$(/home/core/restic forget --keep-last 10)" https://ntfy.lan/Backup
+curl -X POST -d "$(/home/core/restic prune)" https://ntfy.lan/Backup
 EOF
 
 ----[ 1.6 - redis
