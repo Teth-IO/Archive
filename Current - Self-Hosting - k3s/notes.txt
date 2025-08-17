@@ -598,6 +598,27 @@ sujet : ZFS
 verbosité : 1
 -> notif envoyé à https://ntfy.lan/ZFS
 
+----[ 2.13 - gitea
+
+# version self hosté de github
+
+## intégrer openid :
+depuis l'interface web aller sur administration du site > identié et accès > source d'authentification
+créer une entrée Oauth2 avec un fournisseur OpenID connect
+
+côté keycloak mettre client authentification pour credential
+
+création d'un secret avec le pem :
+kubectl create secret generic lan-pem --from-file=lan.pem
+=> le mapper dans le conteneur en lecture seule
+
+openid connect url de découverte :
+https://keycloak.lan/realms/lan/.well-known/openid-configuration 
+
+## intégration de ntfy en webhooks
+
+## renovate soon(tm)
+
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
