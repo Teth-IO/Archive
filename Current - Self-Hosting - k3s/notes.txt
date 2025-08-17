@@ -595,6 +595,7 @@ python3 manage.py createsuperuser
 ZFS besoin de paramétrer /etc/zfs/zed.d/zed.rc :
 url ntfy : https://ntfy.lan
 sujet : ZFS
+verbosité : 1
 -> notif envoyé à https://ntfy.lan/ZFS
 
 ----------------- notes
