@@ -626,6 +626,10 @@ créer un runner dépuis l'interface web, récupérer le token pour le manifest 
 besoin de l'image Docker in Docker (dind) comme on est sur kubernetes
 utilisation de l'image de vegardit https://github.com/vegardit/docker-gitea-act-runner sinon pb de timeout réseau ce qui fait échoué les actions
 nécessite securityContext: privileged: true
+comme ici le CA et les nom de domaine ne sont pas resolvable sans configuration on tout nouveau monde de douleur s'ouvre à nous pour que les conteneurs dans le pod puisse se connecter :
+	-> besoin de mapper un config.yaml demandans à docker d'utiliser le host network pour l'aspect DNS
+	-> besoin de bind mount le pem venant du volume mount du pod pour fournir le certificat
+
 => vérifier que le runner apparait bien dans l'interface web
 
 # rennovate
