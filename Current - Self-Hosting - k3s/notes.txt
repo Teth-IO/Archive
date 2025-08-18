@@ -615,9 +615,22 @@ kubectl create secret generic lan-pem --from-file=lan.pem
 openid connect url de découverte :
 https://keycloak.lan/realms/lan/.well-known/openid-configuration 
 
-## intégration de ntfy en webhooks
+## renovate
 
-## renovate soon(tm)
+# setup les gitea actions :
+-> gitea runner :
+
+créer un runner dépuis l'interface web, récupérer le token pour le manifest du runner
+besoin de l'image Docker in Docker (dind) comme on est sur kubernetes
+nécessite securityContext: privileged: true
+=> vérifier que le runner apparait bien dans l'interface web
+
+activer les actions pour le repo
+
+# rennovate
+
+suivre :
+https://about.gitea.com/resources/tutorials/use-gitea-and-renovate-bot-to-automatically-monitor-software-packages
 
 ----------------- notes
 
