@@ -624,6 +624,7 @@ https://keycloak.lan/realms/lan/.well-known/openid-configuration
 
 créer un runner dépuis l'interface web, récupérer le token pour le manifest du runner
 besoin de l'image Docker in Docker (dind) comme on est sur kubernetes
+utilisation de l'image de vegardit https://github.com/vegardit/docker-gitea-act-runner sinon pb de timeout réseau ce qui fait échoué les actions
 nécessite securityContext: privileged: true
 => vérifier que le runner apparait bien dans l'interface web
 
