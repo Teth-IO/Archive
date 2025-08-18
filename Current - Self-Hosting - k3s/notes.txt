@@ -40,7 +40,7 @@
     2.10 - overleaf 
     2.11 - Trilium Next
 	2.12 - ntfy
-	2.23 - gitea
+	2.13 - gitea
 
 --[ 0 - Introduction
 
