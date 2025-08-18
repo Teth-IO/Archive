@@ -627,13 +627,12 @@ besoin de l'image Docker in Docker (dind) comme on est sur kubernetes
 nécessite securityContext: privileged: true
 => vérifier que le runner apparait bien dans l'interface web
 
-activer les actions pour le repo
-
 # rennovate
 
 suivre :
 https://about.gitea.com/resources/tutorials/use-gitea-and-renovate-bot-to-automatically-monitor-software-packages
 
+# bien créer le runner avant le workflow sinon il ne seront pas pris en compte (besoin de supprimer .gitea et les reimporter)
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
