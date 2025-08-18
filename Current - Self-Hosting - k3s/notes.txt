@@ -25,6 +25,7 @@
         1.7.1 - du server en maj auto
         1.7.2 - des pods avec flux
         1.7.3 - du cluster
+	1.8 - SOPS
 2 - apps
     2.0 - Certificat Authority
     2.1 - headlamp
@@ -39,6 +40,7 @@
     2.10 - overleaf 
     2.11 - Trilium Next
 	2.12 - ntfy
+	2.23 - gitea
 
 --[ 0 - Introduction
 
