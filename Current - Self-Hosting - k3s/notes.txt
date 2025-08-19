@@ -248,7 +248,8 @@ creation_rules:
   - encrypted_regex: '^(data|stringData)$'
     age: age1dyl0es8xaqda3qr0dmlrapdgz5ffslkv2sag5amccus8qdfgtsqslmk4hy
 
-il suffit de faire : sops --encrypt --in-place *.yaml
+il suffit de faire : sops encrypt -i *.yaml
+chiffre in-place (remplace le fichier visé par sa version chiffré)
 la clef publique pour le chiffrement est récupéré du fichier de config (le fichier doit être dans le chemin d'où la commande est lancé)
 
 pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
@@ -437,7 +438,7 @@ afin de stocker les variables précédentes de façon sécurisé on met les vari
 
 que l'on vient chiffrer avec notre clef publique age et SOPS
 
-./sops --encrypt --age age1dyl0es8xaqda3qr0dmlrapdgz5ffslkv2sag5amccus8qdfgtsqslmk4hy --in-place env.json
+sops encrypt -i test.json
 
 une commande #sops decrypt env.json les déchiffres biens en stdout
 avec le process exec-env on peut déchiffrer et export les variables directement dans un programme, ici sh
