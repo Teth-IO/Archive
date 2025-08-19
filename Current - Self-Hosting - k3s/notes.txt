@@ -637,7 +637,6 @@ comme ici le CA et les nom de domaine ne sont pas resolvable sans configuration 
 suivre :
 https://about.gitea.com/resources/tutorials/use-gitea-and-renovate-bot-to-automatically-monitor-software-packages
 
-# bien créer le runner avant le workflow sinon il ne seront pas pris en compte (besoin de supprimer .gitea et les reimporter)
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
