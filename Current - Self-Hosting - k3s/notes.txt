@@ -637,6 +637,12 @@ comme ici le CA et les nom de domaine ne sont pas resolvable sans configuration 
 suivre :
 https://about.gitea.com/resources/tutorials/use-gitea-and-renovate-bot-to-automatically-monitor-software-packages
 
+créer un compte pour le bot renovate + un token
+creér un renovate.json à la racine du dépôt sur lequel renovate doit agir + ajouter le comppte du bot en collaborateur
+créer un dépôts pour la config de renovate
+mettre dans ce dépôt le config.json et le workflows de renovate
+mettre le token dans ce dépôt
+
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
