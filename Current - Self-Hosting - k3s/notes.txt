@@ -648,6 +648,10 @@ mettre le token dans ce dépôt
 git semble ignorer le system store alors que le pem est bien mapper
 => ajout d'env var supplémentaire au workflow NODE_EXTRA_CA_CERTS et GIT_SSL_CAINFO pointant vers le pem
 
+# A aussi besoin d'un token GITHUB pour récupérer des changelogs
+
+ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépôt
+
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
