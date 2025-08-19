@@ -643,6 +643,15 @@ créer un dépôts pour la config de renovate
 mettre dans ce dépôt le config.json et le workflows de renovate
 mettre le token dans ce dépôt
 
+# pb aléatoire du runner
+
+crash au set up : Error response from daemon: Get "https://ghcr.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+crash au checkout : fatal: unable to access 'https://gitea.lan/admin/renovate-config/': Could not resolve host: gitea.lan
+crash a renovate : Error authenticating with Gitea. UNABLE_TO_VERIFY_LEAF_SIGNATURE
+
+=> comme si git ignorait le system store alors que le pem est bien mapper
+ajout d'env var supplémentaire au workflow NODE_EXTRA_CA_CERTS et GIT_SSL_CAINFO pointant vers le pem
+
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
