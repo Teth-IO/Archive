@@ -14,18 +14,19 @@
         1.3.1 - SecureBoot avec kmod ZFS
         1.3.2 - pool mirroir
         1.3.3 - dataset
-        1.3.4 - snapshot 
-            1.3.4.1 - service et timer
-        1.3.5 - backup
-            1.3.5.1 - script
 	1.4 - Certificat Authority
 	1.5 - Gitea
     1.6 - Flux CD
-    1.7 - maintenance
-        1.7.1 - du server en maj auto
-        1.7.2 - des pods avec flux
-        1.7.3 - du cluster
-	1.8 - SOPS
+	1.7 - SOPS
+    1.8 - maintenance
+        1.8.1 - du server en maj auto
+        1.8.2 - des pods avec renovate
+        1.8.3 - du cluster
+		1.8.4 - du stockage
+			1.8.4.1 - snapshot 
+            	1.8.4.1.1 - service et timer
+        	1.8.4.2 - backup
+            	1.8.4.2.1 - script
 2 - apps
     2.1 - headlamp
     2.2 - keycloak 
@@ -140,102 +141,6 @@ sudo zfs create raid/nas
 
 ## dossier accessible sous /mnt/raid/nas
 
-------[ 1.3.4 - snapshot
-
-cat << EOF > /etc/sanoid/sanoid.conf
-[raid/nas]
-	use_template = production
-
-#############################
-# templates below this line #
-#############################
-
-[template_production]
-        frequently = 0
-        hourly = 0
-        daily = 30
-        monthly = 0
-        yearly = 0
-        autosnap = yes
-        autoprune = yes
-EOF
-
---------[ 1.3.4.1 - service et timer
-
-# pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
-https://wiki.archlinux.org/title/Systemd/Timers
-
-cat << EOF > /etc/systemd/system/sanoid.service
-[Unit]
-Description=Snapshot ZFS Pool
-Requires=zfs.target
-After=zfs.target
-ConditionFileNotEmpty=/etc/sanoid/sanoid.conf
-
-[Service]
-Environment=TZ=UTC
-Type=oneshot
-ExecStart=/usr/sbin/sanoid
-EOF
-
-cat << EOF > /etc/systemd/system/sanoid.timer
-[Unit]
-Description=Run Sanoid Every 15 Minutes
-
-[Timer]
-OnCalendar=*:0/15
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-EOF
-
-systemctl daemon-reload
-systemctl enable sanoid.timer
-systemctl start sanoid.timer
-
-# pour lister les timers 
-systemctl list-timers
-
-# pour lister les snapshot
-zfs list -t snapshot
-
-------[ 1.3.5 - backup
-
-restic vers amazon s3
-
-céer un compte de service restic sur aws avec les bonnes stratégie
-https://restic.readthedocs.io/en/latest/080_examples.html
-
-export AWS_DEFAULT_REGION="redacted"
-export RESTIC_REPOSITORY="redacted"
-export AWS_ACCESS_KEY_ID="redacted"
-export AWS_SECRET_ACCESS_KEY="redacted"
-export RESTIC_PASSWORD="redacted"
-
-# initie le dépot
-restic init
-
-# première backup
-restic backup /mnt/raid/nas/
-
---------[ 1.3.5.1 - script
-
-# non automatisé car prend de la bande passante (impact non transparant aujourd'hui)
-# curl l'ouput des commande vers ntfy pour travail en headless
-
-cat << EOF > backup.sh
-#!/bin/bash
-export AWS_DEFAULT_REGION="redacted"
-export RESTIC_REPOSITORY="redacted"
-export AWS_ACCESS_KEY_ID="redacted"
-export AWS_SECRET_ACCESS_KEY="redacted
-export RESTIC_PASSWORD="redacted"
-curl -X POST -d "$(/home/core/restic backup /mnt/raid/nas/ --exclude /mnt/raid/nas/jellyfin/data)" https://ntfy.lan/Backup
-curl -X POST -d "$(/home/core/restic forget --keep-last 10)" https://ntfy.lan/Backup
-curl -X POST -d "$(/home/core/restic prune)" https://ntfy.lan/Backup
-EOF
-
 ----[ 1.4 - Certificat Authority
 
 # créer la key
@@ -324,9 +229,35 @@ git push origin main
 maj auto, possible de pull manuellement :
 # flux reconcile kustomization flux-system --with-source
 
-----[ 1.7 - maintenance
+----[ 1.7 - SOPS
 
-------[ 1.7.1 - du serveur sous maj auto
+# pour le stockage des secrets (cluster, scripts...) avec age
+
+création de la pair de clef :
+age-keygen -o keys.txt
+
+enrollement dans le cluster :
+cat keys.txt |
+kubectl create secret generic sops-age \
+--namespace=flux-system \
+--from-file=keys.txt=/dev/stdin
+
+création d'un fichier de config SOPS à la racine du dépôt pour chiffrement plus rapide :
+.sops.yaml
+creation_rules:
+  - encrypted_regex: '^(data|stringData)$'
+    age: age1dyl0es8xaqda3qr0dmlrapdgz5ffslkv2sag5amccus8qdfgtsqslmk4hy
+
+il suffit de faire : sops --encrypt --in-place *.yaml
+la clef publique pour le chiffrement est récupéré du fichier de config (le fichier doit être dans le chemin d'où la commande est lancé)
+
+pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
+
+hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.8.4.2.1)
+
+----[ 1.8 - maintenance
+
+------[ 1.8.1 - du serveur sous maj auto
 
 systemctl edit --force --full rpm-ostreed-upgrade-reboot.service
 
@@ -363,7 +294,7 @@ systemctl start rpm-ostreed-upgrade-reboot.timer
 
 reboot
 
-------[ 1.7.1 - des pods
+------[ 1.8.2 - des pods
 
 ## Renovate
 # setup les gitea actions :
@@ -399,7 +330,7 @@ git semble ignorer le system store alors que le pem est bien mapper
 
 ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépôt
 
-------[ 1.7.2 - du cluster
+------[ 1.8.3 - du cluster
 
 https://docs.k3s.io/upgrades
 # k3s intègre une custom resource definition (CRD), les plans
@@ -407,6 +338,126 @@ https://docs.k3s.io/upgrades
 prendre les plans server et agents
 remplacer version par le channel field
 mettre en latest
+
+------[ 1.8.4 - du stockage
+--------[ 1.8.4.1 - snapshot du dataset
+
+avec sanoid
+
+cat << EOF > /etc/sanoid/sanoid.conf
+[raid/nas]
+	use_template = production
+
+#############################
+# templates below this line #
+#############################
+
+[template_production]
+        frequently = 0
+        hourly = 0
+        daily = 30
+        monthly = 0
+        yearly = 0
+        autosnap = yes
+        autoprune = yes
+EOF
+
+----------[ 1.8.4.1.1 - service et timer
+
+# pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
+https://wiki.archlinux.org/title/Systemd/Timers
+
+cat << EOF > /etc/systemd/system/sanoid.service
+[Unit]
+Description=Snapshot ZFS Pool
+Requires=zfs.target
+After=zfs.target
+ConditionFileNotEmpty=/etc/sanoid/sanoid.conf
+
+[Service]
+Environment=TZ=UTC
+Type=oneshot
+ExecStart=/usr/sbin/sanoid
+EOF
+
+cat << EOF > /etc/systemd/system/sanoid.timer
+[Unit]
+Description=Run Sanoid Every 15 Minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable sanoid.timer
+systemctl start sanoid.timer
+
+# pour lister les timers 
+systemctl list-timers
+
+# pour lister les snapshot
+zfs list -t snapshot
+
+--------[ 1.8.4.2 - backup du raid
+
+restic vers amazon s3
+
+céer un compte de service restic sur aws avec les bonnes stratégie
+https://restic.readthedocs.io/en/latest/080_examples.html
+
+besoin d'une pair de variables 
+
+AWS_DEFAULT_REGION="redacted"
+RESTIC_REPOSITORY="redacted"
+AWS_ACCESS_KEY_ID="redacted"
+AWS_SECRET_ACCESS_KEY="redacted"
+RESTIC_PASSWORD="redacted"
+
+# initie le dépot
+restic init
+
+# première backup
+restic backup /mnt/raid/nas/
+
+----------[ 1.8.4.2.1 - script
+
+afin de stocker les variables précédentes de façon sécurisé on met les variables précédentes dans un env.json
+
+{
+        "AWS_DEFAULT_REGION": "redacted",
+        "RESTIC_REPOSITORY": "redacted",
+        "AWS_ACCESS_KEY_ID": "redacted",
+        "AWS_SECRET_ACCESS_KEY": "redacted",
+        "RESTIC_PASSWORD": "redacted"
+}
+
+que l'on vient chiffrer avec notre clef publique age et SOPS
+
+./sops --encrypt --age age1dyl0es8xaqda3qr0dmlrapdgz5ffslkv2sag5amccus8qdfgtsqslmk4hy --in-place env.json
+
+une commande #sops decrypt env.json les déchiffres biens en stdout
+avec le process exec-env on peut déchiffrer et export les variables directement dans un programme, ici sh
+
+sops exec-env env.json 'sh'
+
+donc pour un script qui lance la backup (avec # curl l'ouput des commande vers ntfy (2.11)) :
+
+launch.sh
+#!/bin/bash
+/home/core/sops exec-env /home/core/env.json 'sh /home/core/backup.sh'
+
+backup.sh
+#!/bin/bash
+curl -X POST -d "$(/home/core/restic backup /mnt/raid/nas/ --exclude /mnt/raid/nas/jellyfin/data)" https://ntfy.lan/Backup
+curl -X POST -d "$(/home/core/restic forget --keep-last 10)" https://ntfy.lan/Backup
+curl -X POST -d "$(/home/core/restic prune)" https://ntfy.lan/Backup
+exit
+
+# curl l'ouput des commande vers ntfy (2.11) pour travail en headless
 
 --[ 2 - apps
 
