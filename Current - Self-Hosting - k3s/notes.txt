@@ -10,24 +10,23 @@
 1 - Installation
     1.1 - rebase uCore
     1.2 - k3s
-    1.3 - Flux CD
-    1.4 - Helm
-    1.5 - stockage
-        1.5.1 - SecureBoot avec kmod ZFS
-        1.5.2 - pool mirroir
-        1.5.3 - dataset
-        1.5.4 - snapshot 
-            1.5.4.1 - service et timer
-        1.5.5 - backup
-            1.5.5.1 - script
-    1.6 - redis
+    1.3 - stockage
+        1.3.1 - SecureBoot avec kmod ZFS
+        1.3.2 - pool mirroir
+        1.3.3 - dataset
+        1.3.4 - snapshot 
+            1.3.4.1 - service et timer
+        1.3.5 - backup
+            1.3.5.1 - script
+	1.4 - Certificat Authority
+	1.5 - Gitea
+    1.6 - Flux CD
     1.7 - maintenance
         1.7.1 - du server en maj auto
         1.7.2 - des pods avec flux
         1.7.3 - du cluster
 	1.8 - SOPS
 2 - apps
-    2.0 - Certificat Authority
     2.1 - headlamp
     2.2 - keycloak 
     2.3 - Collabora 
@@ -92,49 +91,7 @@ mv /var/lib/rancher/k3s/server/tls/dynamic-cert.json /tmp/dynamic-cert.json
 
 systemctl restart k3s
 
-----[ 1.3 - FluxCD
-
-# heberge les manifest sous git
-# flux reconcilie le cluster avec l'état attendu sous git
-# monitoring des repository avec maj auto
-
-curl -s https://fluxcd.io/install.sh | sudo bash
-. <(flux completion bash)
-cp  /etc/rancher/k3s/k3s.yaml ~/.kube/config
-flux check --pre
-
-# bootstrap GitHub Personal Account avec les components pour l'automation
-export GITHUB_TOKEN=<your-token>
-export GITHUB_USER=<your-username>
-flux bootstrap github \
-  --components-extra=image-reflector-controller,image-automation-controller \
-  --owner=$GITHUB_USER \
-  --repository=k3s \
-  --branch=main \
-  --path=clusters/my-cluster \
-  --read-write-key \
-  --personal
-
-cloner le repo
-mettre les manifest dans /clusters/my-cluster
-  attention : les manifests doivent spécifier le namespace à utiliser sinon timeout
-push :
-git add -A && \
-git commit -m "add apps" && \
-git push origin main
-
-maj auto, possible de pull manuellement :
-# flux reconcile kustomization flux-system --with-source
-
-----[ 1.4 - Helm
-
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-./get_helm.sh
-=> évidemment ne marche pas car fs read only
--> utiliser le binaire au pif du coup
-
-----[ 1.5 - stockage
+----[ 1.3 - stockage
 
 longhorn et rook sont du stockage distribuer sous hyperconvergeance
 => besoin de plusieurs noeuds, répartissent les données d'eux mêmes, pas la main sur leur positions
@@ -144,14 +101,14 @@ zfs dispo avec secureboot
 sanoid dispo pour automatiser la prise de snapshot
 récupérer le binaire de restic pour les backup
 
-------[ 1.5.1 - SecureBoot avec kmod ZFS
+------[ 1.3.1 - SecureBoot avec kmod ZFS
 
 # ZFS ne marchera pas par défaut sous secureboot avant d'avoir importer la clef publique en machine-owner key (MOK)
 
 sudo mokutil --import /etc/pki/akmods/certs/akmods-ublue.der
 -> demande de saisir un mot de passe, sera demander au prochain démarrage pour enregistrer la MOK
 
-------[ 1.5.2 - pool mirroir
+------[ 1.3.2 - pool mirroir
 
 https://jrs-s.net/2018/08/17/zfs-tuning-cheat-sheet/
 
@@ -173,7 +130,7 @@ sudo zpool create -o ashift=12 -O xattr=sa -O compression=lz4 -O atime=off -O re
 ## 1M for reading and writing in fairly large chunks (jpeg, movies...)
 => ne pause pas de pb pour les bdd en terme de cow comme le recodsize du fs est bien supérieurà celui qu'elles utilises
 
-------[ 1.5.3 - dataset
+------[ 1.3.3 - dataset
 
 # un pool est un volume, afin bénéficier des capacités du fs (cow, checksum, snap...) il faut créer un dataset dans ce pool
 
@@ -184,7 +141,7 @@ sudo zfs create raid/nas
 
 ## dossier accessible sous /mnt/raid/nas
 
-------[ 1.5.4 - snapshot
+------[ 1.3.4 - snapshot
 
 cat << EOF > /etc/sanoid/sanoid.conf
 [raid/nas]
@@ -204,7 +161,7 @@ cat << EOF > /etc/sanoid/sanoid.conf
         autoprune = yes
 EOF
 
---------[ 1.5.4.1 - service et timer
+--------[ 1.3.4.1 - service et timer
 
 # pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
 https://wiki.archlinux.org/title/Systemd/Timers
@@ -244,7 +201,7 @@ systemctl list-timers
 # pour lister les snapshot
 zfs list -t snapshot
 
-------[ 1.5.5 - backup
+------[ 1.3.5 - backup
 
 restic vers amazon s3
 
@@ -263,7 +220,7 @@ restic init
 # première backup
 restic backup /mnt/raid/nas/
 
---------[ 1.5.5.1 - script
+--------[ 1.3.5.1 - script
 
 # non automatisé car prend de la bande passante (impact non transparant aujourd'hui)
 # curl l'ouput des commande vers ntfy pour travail en headless
@@ -280,11 +237,93 @@ curl -X POST -d "$(/home/core/restic forget --keep-last 10)" https://ntfy.lan/Ba
 curl -X POST -d "$(/home/core/restic prune)" https://ntfy.lan/Backup
 EOF
 
-----[ 1.6 - redis
+----[ 1.4 - Certificat Authority
 
-# dragonfly de dispo en remplacement de redis mais ne marche pas.
-# pb de hardware ?
-# à l'inverse de postgres ici en monolithique comme redis ne traite aucune donnée critique
+# créer la key
+openssl genrsa -out lan.key 4096
+# creér le root certificate (le common name indique le domaine sous lequel on signe, ici lan)
+# le root certificate (lan.pem) est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
+openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
+
+# Pour la partie DNS ici on utilise pas un server DNS local mais NextDNS
+# on fait une simple réécriture *.lan → 100.102.192.19 depuis Nextdns
+# bien utiliser le DNS de tailscale avec nextdns en global nameserver, sans magicdns (obligatoire pour android)
+# activer l'override des local DNS pour que toutes les requêtes DNS passe par tailscale (system-wide DNS sur tout les appareils)
+
+# Pour chaque app création d'un certif signé par lan.
+# Exemple pour searxng :
+
+# créer la clef privé du website
+openssl genrsa -out searxng.lan.key 4096
+
+# créer le csr (common name = server hostname = searxng.lan)
+openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
+
+# extension X509 V3
+cat << EOF > searxng.lan.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = searxng.lan
+EOF
+
+# le certificat final
+openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
+
+# enregistrement de la pair en secret dans kubernetes pour application au niveau de l'ingress
+kubectl create secret tls searxng-secret \
+  --cert=./searxng.lan.crt \
+  --key=./searxng.lan.key
+
+=> voir pour cert-manager
+
+----[ 1.5 - Gitea
+
+# version self hosté de github
+# en attendant fluxcd on applique un manifest manuellement
+kubectl apply -f gitea.yaml
+
+## intégrer openid (après keycloak en 2.2) :
+depuis l'interface web aller sur administration du site > identié et accès > source d'authentification
+créer une entrée Oauth2 avec un fournisseur OpenID connect
+
+côté keycloak mettre client authentification pour credential
+
+création d'un secret avec le pem :
+kubectl create secret generic lan-pem --from-file=lan.pem
+=> le mapper dans le conteneur en lecture seule
+
+openid connect url de découverte :
+https://keycloak.lan/realms/lan/.well-known/openid-configuration 
+
+----[ 1.6 - FluxCD
+
+# heberge les manifest sous git
+# flux reconcilie le cluster avec l'état attendu sous git
+# monitoring des repository avec maj auto
+
+curl -s https://fluxcd.io/install.sh | sudo bash
+. <(flux completion bash)
+cp  /etc/rancher/k3s/k3s.yaml ~/.kube/config
+flux check --pre
+
+# bootstrap vers Gitea
+flux bootstrap git --url=https://gitea.lan/admin/NixOS-k3s --username=admin --password=redacted --token-auth=true --path=k3s
+
+cloner le repo
+mettre les manifest dans /clusters/my-cluster
+  attention : les manifests doivent spécifier le namespace à utiliser sinon timeout
+push :
+git add -A && \
+git commit -m "add apps" && \
+git push origin main
+
+maj auto, possible de pull manuellement :
+# flux reconcile kustomization flux-system --with-source
 
 ----[ 1.7 - maintenance
 
@@ -327,38 +366,39 @@ reboot
 
 ------[ 1.7.1 - des pods
 
-images en latest
-=> marche pour certaines dépôts (docker, quay)
-flux image update automation pour le reste (ghrc)
-=> ne marche que sur du semver, nul pour le reste
+## Renovate
+# setup les gitea actions :
+-> gitea runner :
 
-## flux image update automation
-# pour chaque image on peut créer un job de scan, exemple :
-flux create image repository podinfo \
---image=ghcr.io/stefanprodan/podinfo \
---interval=60m \
---export > ./podinfo-registry.yaml
+créer un runner dépuis l'interface web, récupérer le token pour le manifest du runner
+besoin de l'image Docker in Docker (dind) comme on est sur kubernetes
+utilisation de l'image de vegardit https://github.com/vegardit/docker-gitea-act-runner sinon pb de timeout réseau ce qui fait échoué les actions
+nécessite securityContext: privileged: true
+comme ici le CA et les nom de domaine ne sont pas resolvable sans configuration on tout nouveau monde de douleur s'ouvre à nous pour que les conteneurs dans le pod puisse se connecter :
+	-> besoin de mapper un config.yaml demandans à docker d'utiliser le host network pour l'aspect DNS
+	-> besoin de bind mount le pem venant du volume mount du pod pour fournir le certificat
 
-# on désigne ensuite la stratégie à utiliser pour filtrer ces tags (que les patch, ques les versions mineurs, inclure les pre-release...)
-flux create image policy podinfo \
---image-ref=podinfo \
---select-semver='>=1.0.0' \
---export > ./podinfo-policy.yaml
+=> vérifier que le runner apparait bien dans l'interface web
 
-# on créer ensuite imageupdateautomation pour mettre à jour les manifest lors de la detection des nouvelles images
-flux create image update flux-system \
---interval=60m \
---git-repo-ref=flux-system \
---git-repo-path="./clusters/my-cluster" \
---checkout-branch=main \
---push-branch=main \
---author-name=fluxcdbot \
---author-email=fluxcdbot@users.noreply.github.com \
---commit-template="{{range .Changed.Changes}}{{print .OldValue}} -> {{println .NewValue}}{{end}}" \
---export > ./flux-system-automation.yaml
+# rennovate
 
-voir rennovate si besoin
-https://www.mend.io/renovate/
+suivre :
+https://about.gitea.com/resources/tutorials/use-gitea-and-renovate-bot-to-automatically-monitor-software-packages
+
+créer un compte pour le bot renovate + un token
+creér un renovate.json à la racine du dépôt sur lequel renovate doit agir + ajouter le comppte du bot en collaborateur
+créer un dépôts pour la config de renovate
+mettre dans ce dépôt le config.json et le workflows de renovate
+mettre le token dans ce dépôt
+
+# pb aléatoire du runner
+
+git semble ignorer le system store alors que le pem est bien mapper
+=> ajout d'env var supplémentaire au workflow NODE_EXTRA_CA_CERTS et GIT_SSL_CAINFO pointant vers le pem
+
+# A aussi besoin d'un token GITHUB pour récupérer des changelogs
+
+ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépôt
 
 ------[ 1.7.2 - du cluster
 
@@ -370,48 +410,6 @@ remplacer version par le channel field
 mettre en latest
 
 --[ 2 - apps
-
-----[ 2.0 - Certificat Authority
-
-# créer la key
-openssl genrsa -out lan.key 4096
-# creér le root certificate (le common name indique le domaine sous lequel on signe, ici lan)
-# le root certificate (lan.pem) est à installer sur toutes les machines qui ont besoin d'accéder aux services lan
-openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj "/CN=lan"
-
-# Pour la partie DNS ici on utilise pas un server DNS local mais NextDNS
-# on fait une simple réécriture *.lan → 100.102.192.19 depuis Nextdns
-# bien utiliser le DNS de tailscale avec nextdns en global nameserver, sans magicdns (obligatoire pour android)
-# activer l'override des local DNS pour que toutes les requêtes DNS passe par tailscale (system-wide DNS sur tout les appareils)
-
-# Pour chaque app création d'un certif signé par lan.
-# Exemple pour searxng :
-
-# créer la clef privé du website
-openssl genrsa -out searxng.lan.key 4096
-
-# créer le csr (common name = server hostname = searxng.lan)
-openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
-
-# extension X509 V3
-cat << EOF > searxng.lan.ext
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = searxng.lan
-EOF
-
-# le certificat final
-openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
-
-# enregistrement de la pair en secret dans kubernetes pour application au niveau de l'ingress
-kubectl create secret tls searxng-secret \
-  --cert=./searxng.lan.crt \
-  --key=./searxng.lan.key
 
 ----[ 2.1 - Headlamp
 
@@ -599,58 +597,6 @@ url ntfy : https://ntfy.lan
 sujet : ZFS
 verbosité : 1
 -> notif envoyé à https://ntfy.lan/ZFS
-
-----[ 2.13 - gitea
-
-# version self hosté de github
-
-## intégrer openid :
-depuis l'interface web aller sur administration du site > identié et accès > source d'authentification
-créer une entrée Oauth2 avec un fournisseur OpenID connect
-
-côté keycloak mettre client authentification pour credential
-
-création d'un secret avec le pem :
-kubectl create secret generic lan-pem --from-file=lan.pem
-=> le mapper dans le conteneur en lecture seule
-
-openid connect url de découverte :
-https://keycloak.lan/realms/lan/.well-known/openid-configuration 
-
-## renovate
-
-# setup les gitea actions :
--> gitea runner :
-
-créer un runner dépuis l'interface web, récupérer le token pour le manifest du runner
-besoin de l'image Docker in Docker (dind) comme on est sur kubernetes
-utilisation de l'image de vegardit https://github.com/vegardit/docker-gitea-act-runner sinon pb de timeout réseau ce qui fait échoué les actions
-nécessite securityContext: privileged: true
-comme ici le CA et les nom de domaine ne sont pas resolvable sans configuration on tout nouveau monde de douleur s'ouvre à nous pour que les conteneurs dans le pod puisse se connecter :
-	-> besoin de mapper un config.yaml demandans à docker d'utiliser le host network pour l'aspect DNS
-	-> besoin de bind mount le pem venant du volume mount du pod pour fournir le certificat
-
-=> vérifier que le runner apparait bien dans l'interface web
-
-# rennovate
-
-suivre :
-https://about.gitea.com/resources/tutorials/use-gitea-and-renovate-bot-to-automatically-monitor-software-packages
-
-créer un compte pour le bot renovate + un token
-creér un renovate.json à la racine du dépôt sur lequel renovate doit agir + ajouter le comppte du bot en collaborateur
-créer un dépôts pour la config de renovate
-mettre dans ce dépôt le config.json et le workflows de renovate
-mettre le token dans ce dépôt
-
-# pb aléatoire du runner
-
-git semble ignorer le system store alors que le pem est bien mapper
-=> ajout d'env var supplémentaire au workflow NODE_EXTRA_CA_CERTS et GIT_SSL_CAINFO pointant vers le pem
-
-# A aussi besoin d'un token GITHUB pour récupérer des changelogs
-
-ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépôt
 
 ----------------- notes
 
