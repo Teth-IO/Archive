@@ -236,6 +236,10 @@ maj auto, possible de pull manuellement :
 création de la pair de clef :
 age-keygen -o keys.txt
 
+le fichier contient la clef public et privé
+la public chiffre et la privé déchiffre
+si pas spécifier dans la commande pour déchiffrement le programme la cherche dans ~/.config/sops/age/keys.txt
+
 enrollement dans le cluster :
 cat keys.txt |
 kubectl create secret generic sops-age \
@@ -255,6 +259,8 @@ la clef publique pour le chiffrement est récupéré du fichier de config (le fi
 pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
 
 hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.8.4.2.1)
+
+
 
 ----[ 1.8 - maintenance
 
