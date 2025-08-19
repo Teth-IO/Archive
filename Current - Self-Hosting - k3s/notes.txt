@@ -311,7 +311,7 @@ cp  /etc/rancher/k3s/k3s.yaml ~/.kube/config
 flux check --pre
 
 # bootstrap vers Gitea
-flux bootstrap gitea --hostname=gitea.lan --owner=admin --repository=NixOS-k3s --token-auth --private=false --personal=true --branch=main --path=k3s
+flux bootstrap gitea --hostname=gitea.lan --owner=admin --repository=NixOS-k3s --token-auth --private=false --personal=true --branch=main --path=k3s --ca-file=/mnt/raid/nas/ssl/lan.pem
 
 cloner le repo
 mettre les manifest dans /clusters/my-cluster
