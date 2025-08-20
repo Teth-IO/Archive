@@ -215,19 +215,27 @@ curl -s https://fluxcd.io/install.sh | sudo bash
 cp  /etc/rancher/k3s/k3s.yaml ~/.kube/config
 flux check --pre
 
-# bootstrap vers Gitea
+## bootstrap vers Gitea
+
+# besoin que le hostname gitea.lan soit connu de CoreDNS (ce qui pose problème en l'absence de server DNS)
+# on peut appliquer un ConfigMap pour le définir
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  gitea.server: |
+    gitea.lan {
+      hosts {
+          192.168.1.200 gitea.lan
+          fallthrough
+      }
+    }
+
+# bootstrap :
 flux bootstrap gitea --hostname=gitea.lan --owner=admin --repository=NixOS-k3s --token-auth --private=false --personal=true --branch=main --path=k3s --ca-file=/mnt/raid/nas/ssl/lan.pem
-
-cloner le repo
-mettre les manifest dans /clusters/my-cluster
-  attention : les manifests doivent spécifier le namespace à utiliser sinon timeout
-push :
-git add -A && \
-git commit -m "add apps" && \
-git push origin main
-
-maj auto, possible de pull manuellement :
-# flux reconcile kustomization flux-system --with-source
 
 ----[ 1.7 - SOPS
 
