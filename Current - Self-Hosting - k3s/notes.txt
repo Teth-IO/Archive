@@ -329,7 +329,7 @@ mettre le token dans ce dépôt
 # pb aléatoire du runner
 
 git semble ignorer le system store alors que le pem est bien mapper
-=> ajout d'env var supplémentaire NODE_EXTRA_CA_CERTS et GIT_SSL_CAINFO pointant vers le pem
+=> ajout d'env var supplémentaire NODE_EXTRA_CA_CERTS et GIT_SSL_CAINFO pointant vers le pem, dans le workflow et le manifest
 
 # A aussi besoin d'un token GITHUB pour récupérer des changelogs
 
