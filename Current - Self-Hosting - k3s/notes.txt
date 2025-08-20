@@ -37,9 +37,9 @@
     2.7 - paperless-ngx
     2.8 - calibre-web automated
     2.9 - jellyfin
-    2.10 - overleaf 
-    2.11 - Trilium Next
-	2.12 - ntfy
+    2.10 - Trilium Next
+	2.11 - ntfy
+	2.12 - tailscale operator
 
 --[ 0 - Introduction
 
@@ -636,15 +636,11 @@ python3 manage.py createsuperuser
 
 # serveur multimédia
 
-----[ 2.10 - overleaf
-
-# editeur LaTex en ligne
-
-----[ 2.11 - Trilium Next
+----[ 2.10 - Trilium Next
 
 # Application de prise de note, Gestion des connaissances dispo par interface web
 
-----[ 2.12 - ntfy
+----[ 2.11 - ntfy
 
 # pub-sub notification service pour le monitoring du ZFS et du SMART des SSD
 ZFS besoin de paramétrer /etc/zfs/zed.d/zed.rc :
@@ -652,6 +648,24 @@ url ntfy : https://ntfy.lan
 sujet : ZFS
 verbosité : 1
 -> notif envoyé à https://ntfy.lan/ZFS
+
+----[ 2.12 - tailscale operator
+
+installation par helm car manifest chargé (+ de 5200 lignes)
+
+permet plein d'options de réseaux utile à travers le tailnet :
+    API server proxy
+    Egress
+    Ingress
+    Cross cluster
+    Cloud services
+    Subnet routers and exit nodes
+    App connector
+    Recorder nodes
+    Session recording
+    Operator resource customization
+    Troubleshooting
+    Multi-cluster ArgoCD
 
 ----------------- notes
 
