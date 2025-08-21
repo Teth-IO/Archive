@@ -14,6 +14,7 @@
         1.3.1 - SecureBoot avec kmod ZFS
         1.3.2 - pool mirroir
         1.3.3 - dataset
+		1.3.4 - Gestion du stockage sous kubernetes
 	1.4 - Certificat Authority
 	1.5 - Gitea
     1.6 - Flux CD
@@ -140,6 +141,14 @@ sudo zfs create raid/nas
 ## sauf indication contraire le dataset hérite des attribues du pool
 
 ## dossier accessible sous /mnt/raid/nas
+
+------[ 1.3.4 - Gestion du stockage sous kubernetes
+
+on est ici sous un cluster d'un noeud donc pas de volume distribuer
+par défaut kubernetes marche avec des volumes
+ici par simplicité on preferera des volumes en localPath qui pointe vers le raid
+helmRelease vont créer des pvc qui par défaut sont sous /var/lib/rancher/k3s/storage
+pour les rediriger au préalable on supprime /var/lib/rancher/k3s/storage et créer un lien ln -s /mnt/raid/nas/pvc  -T /var/lib/rancher/k3s/storage
 
 ----[ 1.4 - Certificat Authority
 
