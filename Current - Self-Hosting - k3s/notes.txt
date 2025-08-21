@@ -147,8 +147,8 @@ sudo zfs create raid/nas
 on est ici sous un cluster d'un noeud donc pas de volume distribuer
 par défaut kubernetes marche avec des volumes
 ici par simplicité on preferera des volumes en localPath qui pointe vers le raid
-helmRelease vont créer des pvc qui par défaut sont sous /var/lib/rancher/k3s/storage
-pour les rediriger au préalable on supprime /var/lib/rancher/k3s/storage et créer un lien ln -s /mnt/raid/nas/pvc  -T /var/lib/rancher/k3s/storage
+les helm vont créer des pvc qui avec local-path-provisioner de k3s irront par défaut sous /var/lib/rancher/k3s/storage
+on peut modifier le chemin dans la ConfigMap local-path-config
 
 ----[ 1.4 - Certificat Authority
 
