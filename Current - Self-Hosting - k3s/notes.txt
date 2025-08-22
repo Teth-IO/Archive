@@ -725,12 +725,6 @@ sudo kubectl exec --stdin --tty pod -- /bin/sh
 toutes les ressources :
 kubectl get 
 
-voir le détails des tag d'images observé :
-kubectl -n flux-system describe imagerepositories searxng
-
-voir le status du traking des images :
-flux get images all --all-namespaces
-
 debug les reconciliation :
 flux get ks
 
