@@ -16,18 +16,19 @@
         1.3.3 - dataset
 		1.3.4 - Gestion du stockage sous kubernetes
 	1.4 - Certificat Authority
-	1.5 - Gitea
-    1.6 - Flux CD
-	1.7 - SOPS
-    1.8 - maintenance
-        1.8.1 - du server en maj auto
-        1.8.2 - des pods avec renovate
-        1.8.3 - du cluster
-		1.8.4 - du stockage
-			1.8.4.1 - snapshot 
-            	1.8.4.1.1 - service et timer
-        	1.8.4.2 - backup
-            	1.8.4.2.1 - script
+	1.5 - DNS
+	1.6 - Gitea
+    1.7 - Flux CD
+	1.8 - SOPS
+    1.9 - maintenance
+        1.9.1 - du server en maj auto
+        1.9.2 - des pods avec renovate
+        1.9.3 - du cluster
+		1.9.4 - du stockage
+			1.9.4.1 - snapshot 
+            	1.9.4.1.1 - service et timer
+        	1.9.4.2 - backup
+            	1.9.4.2.1 - script
 2 - apps
     2.1 - headlamp
     2.2 - keycloak 
@@ -41,6 +42,7 @@
     2.10 - Trilium Next
 	2.11 - ntfy
 	2.12 - tailscale operator
+	2.13 - technitium
 
 --[ 0 - Introduction
 
@@ -194,7 +196,18 @@ kubectl create secret tls searxng-secret \
 
 => voir pour cert-manager
 
-----[ 1.5 - Gitea
+----[ 1.5 - DNS
+
+Le server est boostrap en 1.1.1.1 et celà est hérité par k3s (coredns)
+
+Les noms de domaine interne en lan (1.4) sont gérer par fichier host, configMap pour coredns et hostAliases pour les pods le temps de finir le déploiement.
+
+Un pod technitium (2.13) est le server DNS pour la zone lan au sein d'un réseau tailscale qui englobe toute l'infra ce qui la rend agnostic lan/wan
+les clients accèdes aux services à travers l'ip du server sous tailscale, technitium est le global nameserver du tailnet avec l'override DNS server pour l'utiliser dans la résolution des noms hors du tailnet et donc s'épargner la configuration du server dns de chaque machine.
+
+Tout doit pointer à l'ip server pour arriver à l'ingress qui fait l'offload TLS et le routage, les noms doivent donc correspondre au match SNI de l'ingressroute de traefik pour être bien routé et au domaine indiquer dans l'enregistrement des cert TLS pour la vérification du navigateur
+
+----[ 1.6 - Gitea
 
 # version self hosté de github
 # en attendant fluxcd on applique un manifest manuellement
@@ -213,7 +226,7 @@ kubectl create secret generic lan-pem --from-file=lan.pem
 openid connect url de découverte :
 https://keycloak.lan/realms/lan/.well-known/openid-configuration 
 
-----[ 1.6 - FluxCD
+----[ 1.7 - FluxCD
 
 # heberge les manifest sous git
 # flux reconcilie le cluster avec l'état attendu sous git
@@ -246,7 +259,7 @@ data:
 # bootstrap :
 flux bootstrap gitea --hostname=gitea.lan --owner=admin --repository=NixOS-k3s --token-auth --private=false --personal=true --branch=main --path=k3s --ca-file=/mnt/raid/nas/ssl/lan.pem
 
-----[ 1.7 - SOPS
+----[ 1.8 - SOPS
 
 # pour le stockage des secrets (cluster, scripts...) avec age
 
@@ -275,11 +288,11 @@ la clef publique pour le chiffrement est récupéré du fichier de config (le fi
 
 pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
 
-hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.8.4.2.1)
+hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.9.4.2.1)
 
-----[ 1.8 - maintenance
+----[ 1.9 - maintenance
 
-------[ 1.8.1 - du serveur sous maj auto
+------[ 1.9.1 - du serveur sous maj auto
 
 systemctl edit --force --full rpm-ostreed-upgrade-reboot.service
 
@@ -316,7 +329,7 @@ systemctl start rpm-ostreed-upgrade-reboot.timer
 
 reboot
 
-------[ 1.8.2 - des pods
+------[ 1.9.2 - des pods
 
 ## Renovate
 # setup les gitea actions :
@@ -352,7 +365,7 @@ git semble ignorer le system store alors que le pem est bien mapper
 
 ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépôt
 
-------[ 1.8.3 - du cluster
+------[ 1.9.3 - du cluster
 
 https://docs.k3s.io/upgrades
 # k3s intègre une custom resource definition (CRD), les plans
@@ -361,8 +374,8 @@ prendre les plans server et agents
 remplacer version par le channel field
 mettre en latest
 
-------[ 1.8.4 - du stockage
---------[ 1.8.4.1 - snapshot du dataset
+------[ 1.9.4 - du stockage
+--------[ 1.9.4.1 - snapshot du dataset
 
 avec sanoid
 
@@ -384,7 +397,7 @@ cat << EOF > /etc/sanoid/sanoid.conf
         autoprune = yes
 EOF
 
-----------[ 1.8.4.1.1 - service et timer
+----------[ 1.9.4.1.1 - service et timer
 
 # pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
 https://wiki.archlinux.org/title/Systemd/Timers
@@ -424,7 +437,7 @@ systemctl list-timers
 # pour lister les snapshot
 zfs list -t snapshot
 
---------[ 1.8.4.2 - backup du raid
+--------[ 1.9.4.2 - backup du raid
 
 restic vers amazon s3
 
@@ -445,7 +458,7 @@ restic init
 # première backup
 restic backup /mnt/raid/nas/
 
-----------[ 1.8.4.2.1 - script
+----------[ 1.9.4.2.1 - script
 
 afin de stocker les variables précédentes de façon sécurisé on met les variables précédentes dans un env.json
 
@@ -683,6 +696,18 @@ permet plein d'options de réseaux utile à travers le tailnet :
     Operator resource customization
     Troubleshooting
     Multi-cluster ArgoCD
+
+----[ 2.12 - technitium
+
+# blocking list
+# upstream DOH (quad9) pour l'ECH 
+# caching
+
+le service technitium est exposer depuis tailscale pour fournir directement les port 53 udp/tcp sans passer par l'ingress qui elle est plus faite pour du TLS offloading et routage
+
+technitium est le global nameserver sous tailscale avec l'override des serveur DNS pour l'appliquer à toutes les machines du tailnet
+
+pour les enregistremment DNS dans technitium on créer d'abord une zone primaire pour lan. Les enregistrement NS et SOA sont créer par défaut, il y a juste à ajouter des enregistrement A pour chaque nom sous lan pointant vers l'ip du server sous tailscale
 
 ----------------- notes
 
