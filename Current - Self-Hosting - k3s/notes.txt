@@ -167,35 +167,37 @@ openssl req -x509 -new -nodes -key lan.key -sha256 -days 3650 -out lan.pem -subj
 # activer l'override des local DNS pour que toutes les requêtes DNS passe par tailscale (system-wide DNS sur tout les appareils)
 
 # Pour chaque app création d'un certif signé par lan.
-# Exemple pour searxng :
+# Exemple pour gitea :
 
 # créer la clef privé du website
-openssl genrsa -out searxng.lan.key 4096
+openssl genrsa -out gitea.lan.key 4096
 
-# créer le csr (common name = server hostname = searxng.lan)
-openssl req -new -key searxng.lan.key -out searxng.lan.csr  -subj "/CN=searxng.lan"
+# créer le csr (common name = server hostname = gitea.lan)
+openssl req -new -key gitea.lan.key -out gitea.lan.csr  -subj "/CN=gitea.lan"
 
 # extension X509 V3
-cat << EOF > searxng.lan.ext
+cat << EOF > gitea.lan.ext
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = searxng.lan
+DNS.1 = gitea.lan
 EOF
 
 # le certificat final
-openssl x509 -req -in searxng.lan.csr -CA lan.pem -CAkey lan.key \
--CAcreateserial -out searxng.lan.crt -days 3650 -sha256 -extfile searxng.lan.ext
+openssl x509 -req -in gitea.lan.csr -CA lan.pem -CAkey lan.key \
+-CAcreateserial -out gitea.lan.crt -days 3650 -sha256 -extfile gitea.lan.ext
 
 # enregistrement de la pair en secret dans kubernetes pour application au niveau de l'ingress
-kubectl create secret tls searxng-secret \
-  --cert=./searxng.lan.crt \
-  --key=./searxng.lan.key
+kubectl create secret tls gitea-secret \
+  --cert=./gitea.lan.crt \
+  --key=./gitea.lan.key
 
-La création et gestion des certificats est automatisé par la suite avec cert-manager (1.10)
+Le secret est ensuite désigner dans l'IngressRoute pour  assurer la terminaison TLS
+Besoin de créer et fournir manuellement des certificats pour Gitea et headlamp, la création et gestion des certificats est automatisé par la suite avec cert-manager (1.10) installé par healmRealease (FluxCD)
+cert-manager ne marche que sur des Ingress et Gateway
 
 ----[ 1.5 - DNS
 
@@ -300,7 +302,7 @@ hors cluster les secrets peuvent être passer à d'autre programme, voir https:/
 
 ----[ 1.10 - cert-manager
 
-# notre root CA est déclaré dans un secret et utilisé en temps qu'issuer
+# notre root CA est déclaré dans un secret et est utilisé en tant qu'issuer
 
 ----[ 1.11 - maintenance
 
