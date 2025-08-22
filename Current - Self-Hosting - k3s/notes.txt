@@ -199,16 +199,13 @@ kubectl create secret tls searxng-secret \
 ----[ 1.5 - DNS
 
 Le server est boostrap en 9.9.9.9 et celà est hérité par k3s (coredns)
-
-Les noms de domaine interne en lan (1.4) sont gérer par fichier host, configMap pour coredns et hostAliases pour les pods le temps de finir le déploiement.
-
+Les noms de domaine interne en lan (1.4) sont gérer déclaré au besoin par fichier host pour le serveur, configMap pour coredns et hostAliases pour les pods à défaut d'un server DNS externe.
 Un pod technitium (2.13) est le server DNS pour la zone lan au sein d'un réseau tailscale qui englobe toute l'infra ce qui la rend agnostic lan/wan
 les clients accèdes aux services à travers l'ip du server sous tailscale, technitium est le global nameserver du tailnet avec l'override DNS server pour l'utiliser dans la résolution des noms hors du tailnet et donc s'épargner la configuration du server dns de chaque machine.
+le server doit être exempt de cet override dns de tailscale sinon lui même et les conteneurs n'auront plus de DNS en cas de redémarrage :
+tailscale set --accept-dns=false
 
 Tout doit pointer à l'ip server pour arriver à l'ingress qui fait l'offload TLS et le routage, les noms doivent donc correspondre au match SNI de l'ingressroute de traefik pour être bien routé et au domaine indiquer dans l'enregistrement des cert TLS pour la vérification du navigateur
-
-le server est exempt du dns de tailscale sinon lui même et les conteneurs n'auront plus de DNS en cas de redémarrage :
-tailscale set --accept-dns=false
 
 ----[ 1.6 - Gitea
 
