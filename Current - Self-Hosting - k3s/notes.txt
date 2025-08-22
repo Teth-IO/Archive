@@ -276,14 +276,13 @@ kubectl create secret generic sops-age \
 --namespace=flux-system \
 --from-file=keys.txt=/dev/stdin
 
-création d'un fichier de config SOPS à la racine du dépôt pour chiffrement plus rapide :
+création d'un fichier de config SOPS à la racine du dépôt pour la commande sops soit preconfigurer avec les bons champ :
 .sops.yaml
 creation_rules:
   - encrypted_regex: '^(data|stringData)$'
     age: age1dyl0es8xaqda3qr0dmlrapdgz5ffslkv2sag5amccus8qdfgtsqslmk4hy
 
-pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
-!!!! attention le déchiffrement doit être en place (secret age et kustomization) avant la synchro avec les fichier chiffré sops sinon cela bloque la source kustomization 
+pour pour configurer le déchiffrement dans le cluster on peut éditer directement le kustomization sous gotk-sync.yaml avec decryption.provider sops et decryption.secretRef.name sops-age
 
 pour le chiffrement il suffit de faire : sops encrypt -i *.yaml
 chiffre in-place (remplace le fichier visé par sa version chiffré)
