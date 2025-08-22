@@ -43,6 +43,7 @@
 	2.11 - ntfy
 	2.12 - tailscale operator
 	2.13 - technitium
+	2.14 - cert-manager
 
 --[ 0 - Introduction
 
@@ -194,7 +195,7 @@ kubectl create secret tls searxng-secret \
   --cert=./searxng.lan.crt \
   --key=./searxng.lan.key
 
-=> voir pour cert-manager
+La création et gestion des certificats est automatisé par la suite avec cert-manager (2.14)
 
 ----[ 1.5 - DNS
 
@@ -700,7 +701,7 @@ permet plein d'options de réseaux utile à travers le tailnet :
     Troubleshooting
     Multi-cluster ArgoCD
 
-----[ 2.12 - technitium
+----[ 2.13 - technitium
 
 # blocking list : Hagezi multi pro ++
 # upstream DOH (quad9) pour l'ECH 
@@ -711,6 +712,11 @@ le service technitium est exposer depuis tailscale pour fournir directement les 
 technitium est le global nameserver sous tailscale avec l'override des serveur DNS pour l'appliquer à toutes les machines du tailnet
 
 pour les enregistremment DNS dans technitium on créer d'abord une zone primaire pour lan. Les enregistrement NS et SOA sont créer par défaut, il y a juste à ajouter des enregistrement A pour chaque nom sous lan pointant vers l'ip du server sous tailscale
+
+----[ 2.14 - cert-manager
+
+# notre root CA est déclaré dans un secret et utilisé en temps qu'issuer
+
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
