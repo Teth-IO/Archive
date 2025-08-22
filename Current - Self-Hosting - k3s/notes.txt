@@ -198,7 +198,7 @@ kubectl create secret tls searxng-secret \
 
 ----[ 1.5 - DNS
 
-Le server est boostrap en 1.1.1.1 et celà est hérité par k3s (coredns)
+Le server est boostrap en 9.9.9.9 et celà est hérité par k3s (coredns)
 
 Les noms de domaine interne en lan (1.4) sont gérer par fichier host, configMap pour coredns et hostAliases pour les pods le temps de finir le déploiement.
 
@@ -206,6 +206,9 @@ Un pod technitium (2.13) est le server DNS pour la zone lan au sein d'un réseau
 les clients accèdes aux services à travers l'ip du server sous tailscale, technitium est le global nameserver du tailnet avec l'override DNS server pour l'utiliser dans la résolution des noms hors du tailnet et donc s'épargner la configuration du server dns de chaque machine.
 
 Tout doit pointer à l'ip server pour arriver à l'ingress qui fait l'offload TLS et le routage, les noms doivent donc correspondre au match SNI de l'ingressroute de traefik pour être bien routé et au domaine indiquer dans l'enregistrement des cert TLS pour la vérification du navigateur
+
+le server est exempt du dns de tailscale sinon lui même et les conteneurs n'auront plus de DNS en cas de redémarrage :
+tailscale set --accept-dns=false
 
 ----[ 1.6 - Gitea
 
@@ -702,7 +705,7 @@ permet plein d'options de réseaux utile à travers le tailnet :
 
 ----[ 2.12 - technitium
 
-# blocking list
+# blocking list : Hagezi multi pro ++
 # upstream DOH (quad9) pour l'ECH 
 # caching
 
@@ -711,10 +714,6 @@ le service technitium est exposer depuis tailscale pour fournir directement les 
 technitium est le global nameserver sous tailscale avec l'override des serveur DNS pour l'appliquer à toutes les machines du tailnet
 
 pour les enregistremment DNS dans technitium on créer d'abord une zone primaire pour lan. Les enregistrement NS et SOA sont créer par défaut, il y a juste à ajouter des enregistrement A pour chaque nom sous lan pointant vers l'ip du server sous tailscale
-
-# condition de course en cas d'upgrade de l'opérateur, les conteneurs tailscale (technitium compris) ne pourront pas démarré car ils sont leur propre DNS (pull d'image impossible)
-# besoin de virer l'override DNS tailscale
-
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
