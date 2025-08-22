@@ -365,6 +365,9 @@ git semble ignorer le system store alors que le pem est bien mapper
 
 ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépôt
 
+# renovate ne lit pas les manifest déclarant plusieurs éléments (séparé par trois -)
+Il ne lit que le premier
+
 ------[ 1.9.3 - du cluster
 
 https://docs.k3s.io/upgrades
