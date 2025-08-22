@@ -17,33 +17,33 @@
 		1.3.4 - Gestion du stockage sous kubernetes
 	1.4 - Certificat Authority
 	1.5 - DNS
-	1.6 - Gitea
-    1.7 - Flux CD
-	1.8 - SOPS
-    1.9 - maintenance
-        1.9.1 - du server en maj auto
-        1.9.2 - des pods avec renovate
-        1.9.3 - du cluster
-		1.9.4 - du stockage
-			1.9.4.1 - snapshot 
-            	1.9.4.1.1 - service et timer
-        	1.9.4.2 - backup
-            	1.9.4.2.1 - script
+	1.6 - headlamp
+	1.7 - Gitea
+    1.8 - Flux CD
+	1.9 - SOPS
+	1.10 - cert-manager
+    1.11 - maintenance
+        1.11.1 - du server en maj auto
+        1.11.2 - des pods avec renovate
+        1.11.3 - du cluster
+		1.11.4 - du stockage
+			1.11.4.1 - snapshot 
+            	1.11.4.1.1 - service et timer
+        	1.11.4.2 - backup
+            	1.11.4.2.1 - script
 2 - apps
-    2.1 - headlamp
-    2.2 - keycloak 
-    2.3 - Collabora 
-    2.4 - owncloud infini scale (oCIS)
-    2.5 - Searxng
-    2.6 - navidrome
-    2.7 - paperless-ngx
-    2.8 - calibre-web automated
-    2.9 - jellyfin
-    2.10 - Trilium Next
-	2.11 - ntfy
-	2.12 - tailscale operator
-	2.13 - technitium
-	2.14 - cert-manager
+    2.1 - keycloak 
+    2.2 - Collabora 
+    2.3 - owncloud infini scale (oCIS)
+    2.4 - Searxng
+    2.5 - navidrome
+    2.6 - paperless-ngx
+    2.7 - calibre-web automated
+    2.8 - jellyfin
+    2.9 - Trilium Next
+	2.10 - ntfy
+	2.11 - tailscale operator
+	2.12 - technitium
 
 --[ 0 - Introduction
 
@@ -195,7 +195,7 @@ kubectl create secret tls searxng-secret \
   --cert=./searxng.lan.crt \
   --key=./searxng.lan.key
 
-La création et gestion des certificats est automatisé par la suite avec cert-manager (2.14)
+La création et gestion des certificats est automatisé par la suite avec cert-manager (1.10)
 
 ----[ 1.5 - DNS
 
@@ -208,13 +208,20 @@ tailscale set --accept-dns=false
 
 Tout doit pointer à l'ip server pour arriver à l'ingress qui fait l'offload TLS et le routage, les noms doivent donc correspondre au match SNI de l'ingressroute de traefik pour être bien routé et au domaine indiquer dans l'enregistrement des cert TLS pour la vérification du navigateur
 
-----[ 1.6 - Gitea
+----[ 1.6 - Headlamp
+
+# solution pour superviser le cluster k3s, consulter les logs des pod, entrer dans des shell...
+
+# créer le compte de service
+https://headlamp.dev/docs/latest/installation/#create-a-service-account-token
+
+----[ 1.7 - Gitea
 
 # version self hosté de github
 # en attendant fluxcd on applique un manifest manuellement
 kubectl apply -f gitea.yaml
 
-## intégrer openid (après keycloak en 2.2) :
+## intégrer openid (après keycloak en 2.1) :
 depuis l'interface web aller sur administration du site > identié et accès > source d'authentification
 créer une entrée Oauth2 avec un fournisseur OpenID connect
 
@@ -227,7 +234,7 @@ kubectl create secret generic lan-pem --from-file=lan.pem
 openid connect url de découverte :
 https://keycloak.lan/realms/lan/.well-known/openid-configuration 
 
-----[ 1.7 - FluxCD
+----[ 1.8 - FluxCD
 
 # heberge les manifest sous git
 # flux reconcilie le cluster avec l'état attendu sous git
@@ -260,9 +267,9 @@ data:
 # bootstrap :
 flux bootstrap gitea --hostname=gitea.lan --owner=admin --repository=NixOS-k3s --token-auth --private=false --personal=true --branch=main --path=k3s --ca-file=/mnt/raid/nas/ssl/lan.pem
 
-----[ 1.8 - SOPS
+----[ 1.9 - SOPS
 
-# pour le stockage des secrets (cluster, scripts...) avec age
+# pour la gestion des secrets, permet le chiffrements de fichier et leur déchiffrements ici avec age
 
 création de la pair de clef :
 age-keygen -o keys.txt
@@ -289,11 +296,15 @@ pour le chiffrement il suffit de faire : sops encrypt -i *.yaml
 chiffre in-place (remplace le fichier visé par sa version chiffré)
 la clef publique pour le chiffrement est récupéré du fichier de config (le fichier doit être dans le chemin d'où la commande est lancé)
 
-hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.9.4.2.1)
+hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.11.4.2.1)
 
-----[ 1.9 - maintenance
+----[ 1.10 - cert-manager
 
-------[ 1.9.1 - du serveur sous maj auto
+# notre root CA est déclaré dans un secret et utilisé en temps qu'issuer
+
+----[ 1.11 - maintenance
+
+------[ 1.11.1 - du serveur sous maj auto
 
 systemctl edit --force --full rpm-ostreed-upgrade-reboot.service
 
@@ -330,7 +341,7 @@ systemctl start rpm-ostreed-upgrade-reboot.timer
 
 reboot
 
-------[ 1.9.2 - des pods
+------[ 1.11.2 - des pods
 
 ## Renovate
 # setup les gitea actions :
@@ -369,7 +380,7 @@ ajout d'une env var RENOVATE_GITHUB_COM_TOKEN et ajouter le token dans le dépô
 # renovate ne lit pas les manifest déclarant plusieurs éléments (séparé par trois -)
 Il ne lit que le premier
 
-------[ 1.9.3 - du cluster
+------[ 1.11.3 - du cluster
 
 https://docs.k3s.io/upgrades
 # k3s intègre une custom resource definition (CRD), les plans
@@ -378,8 +389,8 @@ prendre les plans server et agents
 remplacer version par le channel field
 mettre en latest
 
-------[ 1.9.4 - du stockage
---------[ 1.9.4.1 - snapshot du dataset
+------[ 1.11.4 - du stockage
+--------[ 1.11.4.1 - snapshot du dataset
 
 avec sanoid
 
@@ -401,7 +412,7 @@ cat << EOF > /etc/sanoid/sanoid.conf
         autoprune = yes
 EOF
 
-----------[ 1.9.4.1.1 - service et timer
+----------[ 1.11.4.1.1 - service et timer
 
 # pas cron sur le system pour lancer sanoid donc utiliser systemd Timers
 https://wiki.archlinux.org/title/Systemd/Timers
@@ -441,7 +452,7 @@ systemctl list-timers
 # pour lister les snapshot
 zfs list -t snapshot
 
---------[ 1.9.4.2 - backup du raid
+--------[ 1.11.4.2 - backup du raid
 
 restic vers amazon s3
 
@@ -462,7 +473,7 @@ restic init
 # première backup
 restic backup /mnt/raid/nas/
 
-----------[ 1.9.4.2.1 - script
+----------[ 1.11.4.2.1 - script
 
 afin de stocker les variables précédentes de façon sécurisé on met les variables précédentes dans un env.json
 
@@ -500,14 +511,7 @@ exit
 
 --[ 2 - apps
 
-----[ 2.1 - Headlamp
-
-# solution pour superviser le cluster k3s, consulter les logs des pod, entrer dans des shell...
-
-# créer le compte de service
-https://headlamp.dev/docs/latest/installation/#create-a-service-account-token
-
-----[ 2.2 - keycloak
+----[ 2.1 - keycloak
 
 # Solution de SSO pour centraliser la gestion des identités et gestion d'accès, permet la customisation des flux d'authentification et d'utiliser des méthodes modernes (passwordless)
 
@@ -548,11 +552,11 @@ donc besoin d'une app tierse pour l'enregistrer :
 https://github.com/Kunzisoft/KeePassDX/issues/1421
 -> proton pass en attendant ou google password manager
 
-----[ 2.3 - Collabora
+----[ 2.2 - Collabora
 
 # suite office en ligne, s'utilise depuis ocis par WOPI
 
-----[ 2.4 - ocis
+----[ 2.3 - ocis
 
 # owncloud version moderne, légère, écrite en go
 
@@ -647,34 +651,34 @@ kubectl create secret tls wopi-secret \
   --cert=./wopi.lan.crt \
   --key=./wopi.lan.key
 
-----[ 2.5 - searxng
+----[ 2.4 - searxng
 
 # metamoteur de recherche pour des resultats plus opti
 
-----[ 2.6 - navidrome
+----[ 2.5 - navidrome
 
 # serveur de musique avec l'API subsonic
 
-----[ 2.7 - paperless-ngx
+----[ 2.6 - paperless-ngx
 
 # Solution d'archivage de documents
 
 # créer le compte admin
 python3 manage.py createsuperuser
 
-----[ 2.8 - calibre-web-automated
+----[ 2.7 - calibre-web-automated
 
 # bibliothèque en ligne
 
-----{ 2.9 - jellyfin
+----{ 2.8 - jellyfin
 
 # serveur multimédia
 
-----[ 2.10 - Trilium Next
+----[ 2.9 - Trilium Next
 
 # Application de prise de note, Gestion des connaissances dispo par interface web
 
-----[ 2.11 - ntfy
+----[ 2.10 - ntfy
 
 # pub-sub notification service pour le monitoring du ZFS et du SMART des SSD
 ZFS besoin de paramétrer /etc/zfs/zed.d/zed.rc :
@@ -683,7 +687,7 @@ sujet : ZFS
 verbosité : 1
 -> notif envoyé à https://ntfy.lan/ZFS
 
-----[ 2.12 - tailscale operator
+----[ 2.11 - tailscale operator
 
 installation par helm car manifest chargé (+ de 5200 lignes)
 
@@ -701,7 +705,7 @@ permet plein d'options de réseaux utile à travers le tailnet :
     Troubleshooting
     Multi-cluster ArgoCD
 
-----[ 2.13 - technitium
+----[ 2.12 - technitium
 
 # blocking list : Hagezi multi pro ++
 # upstream DOH (quad9) pour l'ECH 
@@ -712,10 +716,6 @@ le service technitium est exposer depuis tailscale pour fournir directement les 
 technitium est le global nameserver sous tailscale avec l'override des serveur DNS pour l'appliquer à toutes les machines du tailnet
 
 pour les enregistremment DNS dans technitium on créer d'abord une zone primaire pour lan. Les enregistrement NS et SOA sont créer par défaut, il y a juste à ajouter des enregistrement A pour chaque nom sous lan pointant vers l'ip du server sous tailscale
-
-----[ 2.14 - cert-manager
-
-# notre root CA est déclaré dans un secret et utilisé en temps qu'issuer
 
 ----------------- notes
 
