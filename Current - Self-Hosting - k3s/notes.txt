@@ -282,11 +282,12 @@ creation_rules:
   - encrypted_regex: '^(data|stringData)$'
     age: age1dyl0es8xaqda3qr0dmlrapdgz5ffslkv2sag5amccus8qdfgtsqslmk4hy
 
-il suffit de faire : sops encrypt -i *.yaml
+pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
+!!!! attention le déchiffrement doit être en place (secret age et kustomization) avant la synchro avec les fichier chiffré sops sinon cela bloque la source kustomization 
+
+pour le chiffrement il suffit de faire : sops encrypt -i *.yaml
 chiffre in-place (remplace le fichier visé par sa version chiffré)
 la clef publique pour le chiffrement est récupéré du fichier de config (le fichier doit être dans le chemin d'où la commande est lancé)
-
-pour kubernetes un fichier kustomization vient indiquer l'utilisation du secret sops-age au fichier chiffré
 
 hors cluster les secrets peuvent être passer à d'autre programme, voir https://getsops.io/docs/#passing-secrets-to-other-processes (utilisé dans le script de backup 1.9.4.2.1)
 
