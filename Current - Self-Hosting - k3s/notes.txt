@@ -719,6 +719,10 @@ technitium est le global nameserver sous tailscale avec l'override des serveur D
 
 pour les enregistremment DNS dans technitium on créer d'abord une zone primaire pour lan. Les enregistrement NS et SOA sont créer par défaut, il y a juste à ajouter des enregistrement A pour chaque nom sous lan pointant vers l'ip du server sous tailscale
 
+----[ 2.12 - readeck
+
+solution d'archivage web
+
 ----------------- notes
 
 Vérif de l'image utilisé par l'OS : 
