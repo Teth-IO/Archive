@@ -6,8 +6,9 @@ One node cluster k3s :
 - OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
 - stockage : RAID ZFS avec snapshot (sanoid) et backup (restic vers S3)
 - hosting sous cluster k3S maintenu en GitOps avec flux CD
-- 0 maintenance : maj auto du server, de k3s et des containers
+- 0 maintenance : maj auto du server, de k3s et des containers (rennovate)
 - tailscale pour accès nomade
+- propre CA et certifiat automatisé par cert-manager
 - supervision avec headlamp
 - IDP avec keycloak : SSO et passwordless quand possible
 
