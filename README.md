@@ -9,6 +9,7 @@ One node cluster k3s :
 - 0 maintenance : maj auto du server, de k3s et des containers (rennovate)
 - tailscale pour accès nomade
 - propre CA et certifiat automatisé par cert-manager
+- gestion des sercrets avec SOPS
 - supervision avec headlamp
 - IDP avec keycloak : SSO et passwordless quand possible
 
