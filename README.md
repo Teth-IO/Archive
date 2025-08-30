@@ -2,19 +2,21 @@ Dépôt d'archive pour les notes d'installation de mes vieilles infra et projets
 
 # Divers notes d'installation
 
-=> [Bation guacamole](./ZZold%20-%20Projets/)<br />
-=> [Suricata IPS layer 2 avec ELK](./ZZold%20-%20Projets/)<br />
-=> [MAAS/JUJU - OpenStack](./ZZold%20-%20Projets/)<br />
-=> [MAAS/JUJU - Kubernetes](./ZZold%20-%20Projets/)<br />
-=> [cisco](./ZZold%20-%20Projets/)<br />
-=> [netdisco](./ZZold%20-%20Projets/)<br />
+=> [Projets](./Projets/)
+
+- Bation guacamole
+- Suricata IPS layer 2 avec ELK
+- MAAS/JUJU - OpenStack
+- MAAS/JUJU - Kubernetes
+- cisco
+- netdisco
 
 # Self-Networking
 
-=> [Self-Network](./ZZold%20-%20Self-Networking/)
+=> [Self-Network](./Self-Networking/)
 
 <details>
-<summary><b> 1 raspberrypi-hole </b></summary>
+<summary><b> 1 raspberry pi-hole </b></summary>
 
 Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScrypt Proxy :
 - Zram
@@ -25,9 +27,9 @@ Serveur DNS menteur sous Raspberry Pi OS Lite, redirige les requête sur DNScryp
 </details>
 
 <details>
-<summary><b> 2 OpenWrt no box </b></summary>
+<summary><b> 2 OpenWRT no box </b></summary>
 
-Remplacement de la freebox mini 4k par OpenWrt sur un Mikrotik hEX s.
+Remplacement de la freebox mini 4k par OpenWrt sur un Mikrotik hEXs.
 Internet en dual stack fonctionnel.
 Une fois les interfaces fonctionnels il n'y a que quelques ajustements à faire :
 - routage static vers la wan pour l'IPv4 (l'IPv6 marche sans)
@@ -38,7 +40,7 @@ Une fois les interfaces fonctionnels il n'y a que quelques ajustements à faire 
 <details>
 <summary><b> 3 OpenWRT home router </b></summary>
 
-Config d'OpenWRT en home router et IPS :
+Config d'OpenWRT en home router et tentative d'IPS :
 - Recup de la delegation de prefixe IPv6
 - acceleration materielle (HFO + WED) + irqbalance
 - DNScrypt-proxy pour DOH + règle de redirection des requetes dns pour enforcing
@@ -47,7 +49,7 @@ Config d'OpenWRT en home router et IPS :
 </details>
 
 # Self-Hosting
-=> [Self-Hosting](./ZZold%20-%20Self-Hosting/)
+=> [Self-Hosting](./Self-Hosting/)
 
 <details>
 <summary><b> 0 VPS SearXNG </b></summary>
@@ -63,7 +65,7 @@ Sur un debian :
 </details>
 
 <details>
-<summary><b> 1 sous ROCKPro64 </b></summary>
+<summary><b> 1 Dietpi ROCKPro64 </b></summary>
 
 NAS DIY avec la ROCKPro64 sous Dietpi :
 - RAID 1 par btrfs
@@ -73,7 +75,7 @@ tmpfs par défaut
 </details>
 
 <details>
-<summary><b> 2 sous OpenBSD + hyperviseur </b></summary>
+<summary><b> 2 OpenBSD hyperviseur </b></summary>
 
 - NAS Nextcloud sous RAID1 <br />
 - Backup incrémentielles journalières & smartd <br />
@@ -84,7 +86,7 @@ tmpfs par défaut
 </details>
  
 <details>
-<summary><b> 3 HardenedBSD hosting platform </b></summary>
+<summary><b> 3 HardenedBSD CBSD </b></summary>
 
 HardenedBSD hosting platform :
 - stockage sous zfs pour self-healing, RAID (volume manager) et backup (snapshot) automatisées par zfsnap
@@ -94,7 +96,17 @@ HardenedBSD hosting platform :
 </details>
 
 <details>
-<summary><b> 4 et 5 uCore hosting platform </b></summary>
+<summary><b> 4 uCore docker </b></summary>
+Fedora CoreOS (FCOS) rebase en uCore :
+- Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
+- uCore-ZFS avec module signé et batteries included (podman, docker, sanoid, firewalld, cockpit ...)
+- data sous un RAID ZFS avec snapshot journalière
+- hosting de diférent container sous docker
+- services : searxng, owncloud ocis, navidrome, homepage
+</details>
+
+<details>
+<summary><b> 5 uCore podman quadlet rootless </b></summary>
 Fedora CoreOS (FCOS) rebase en uCore :
 - Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
 - uCore-ZFS avec module signé et batteries included (podman, docker, sanoid, firewalld, cockpit ...)
@@ -119,7 +131,7 @@ One node cluster k3s :
 </details>
 
 # Workstation
-=> [workstation](./ZZold%20-%20Workstation/)
+=> [workstation](./workstation/)
  
 <details>
 <summary><b> 1 hardened archlinux </b></summary>
