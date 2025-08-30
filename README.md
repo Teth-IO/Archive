@@ -1,19 +1,6 @@
--------------------------------------- current infra -------------------------------------- <br />
+Dépôt d'archive pour les notes d'installation de mes vieilles infra et projets
 
-=> [slef-hosting sous k3s](./Current%20-%20Self-Hosting%20-%20k3s/notes.txt)
-
-One node cluster k3s :
-- OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
-- stockage : RAID ZFS avec snapshot (sanoid) et backup (restic vers S3)
-- hosting sous cluster k3S maintenu en GitOps avec flux CD
-- 0 maintenance : maj auto du server, de k3s et des containers (rennovate)
-- tailscale pour accès nomade
-- propre CA et certifiat automatisé par cert-manager
-- gestion des sercrets avec SOPS
-- supervision avec headlamp
-- IDP avec keycloak : SSO et passwordless quand possible
-
--------------------------------------- diverses install --------------------------------------
+# Divers notes d'installation
 
 => [Bation guacamole](./ZZold%20-%20Projets/)<br />
 => [Suricata IPS layer 2 avec ELK](./ZZold%20-%20Projets/)<br />
@@ -22,7 +9,7 @@ One node cluster k3s :
 => [cisco](./ZZold%20-%20Projets/)<br />
 => [netdisco](./ZZold%20-%20Projets/)<br />
 
--------------------------------------- OBSOLÈTE --------------------------------------
+# Self-Networking
 
 => [Self-Network](./ZZold%20-%20Self-Networking/)
 
@@ -58,7 +45,8 @@ Config d'OpenWRT en home router et IPS :
 - wireguard
 - test snort en inline
 </details>
- 
+
+# Self-Hosting
 => [Self-Hosting](./ZZold%20-%20Self-Hosting/)
 
 <details>
@@ -66,7 +54,7 @@ Config d'OpenWRT en home router et IPS :
 
 Métamoteur de recherche, permet de choisir ce que l'on veut comme outil de recherche. 
 
-Sur un debian truc en plus dessus :
+Sur un debian :
 - swapfile
 - Zram
 - tmpfs
@@ -108,15 +96,29 @@ HardenedBSD hosting platform :
 <details>
 <summary><b> 4 et 5 uCore hosting platform </b></summary>
 Fedora CoreOS (FCOS) rebase en uCore :
-
-    Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
-    uCore-ZFS avec module signé et batteries included (podman, docker, sanoid, firewalld, cockpit ...)
-    data sous un RAID ZFS avec sbapshot journalière
-    hosting de diférent container sous podman quadlet en rootless
-    services accessible par traefik avec routage par domaine + tls
-    services : searxng, owncloud ocis, navidrome, homepage
+- Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
+- uCore-ZFS avec module signé et batteries included (podman, docker, sanoid, firewalld, cockpit ...)
+- data sous un RAID ZFS avec snapshot journalière
+- hosting de diférent container sous podman quadlet en rootless
+- services accessible par traefik avec routage par domaine + tls
+- services : searxng, owncloud ocis, navidrome, homepage
 </details>
- 
+
+<details>
+<summary><b> 6 uCore k3S </b></summary>
+One node cluster k3s :
+- OS Immutable, atomic auto update, secure (SELinux + SecureBoot + immutable)
+- stockage : RAID ZFS avec snapshot (sanoid) et backup (restic vers S3)
+- hosting sous cluster k3S maintenu en GitOps avec flux CD
+- 0 maintenance : maj auto du server, de k3s et des containers (rennovate)
+- tailscale pour accès nomade
+- propre CA et certifiat automatisé par cert-manager
+- gestion des sercrets avec SOPS
+- supervision avec headlamp
+- IDP avec keycloak : SSO et passwordless quand possible
+</details>
+
+# Workstation
 => [workstation](./ZZold%20-%20Workstation/)
  
 <details>
